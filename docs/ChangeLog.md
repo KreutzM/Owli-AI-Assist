@@ -24,6 +24,18 @@ Format (angelehnt an Keep a Changelog / SemVer):
 
 ---
 
+## [0.1.3] – 2025-12-13
+
+### Added
+- README im Projekt-Root mit Setup/Bedienung/Architektur.
+- TTS-Reset, damit mehrfach gesprochen wird, Hazard-Decay 800 ms.
+
+### Changed
+- Hazard-Mapping label-basiert (Person/Fahrzeug/Ampel), Threshold 0.4.
+- Pipeline stop/close aufgeräumt (Detector erst bei close, nicht bei stop).
+
+---
+
 ## [0.1.2] – 2025-12-10
 
 ### Added
