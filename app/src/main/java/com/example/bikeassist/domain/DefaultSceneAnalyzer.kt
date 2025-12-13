@@ -8,17 +8,19 @@ import com.example.bikeassist.ml.Detection
 class DefaultSceneAnalyzer : SceneAnalyzer {
     private var lastRelevantDetectionAt: Long = 0L
     private val decayMillis: Long = 800L
-    private val confidenceThreshold: Float = 0.5f
+    private val confidenceThreshold: Float = 0.4f
 
     override fun analyze(detections: List<Detection>): SceneState {
         val now = System.currentTimeMillis()
 
-        val relevant = detections
-            .filter { it.confidence >= confidenceThreshold && it.label.lowercase() in RELEVANT_LABELS }
-            .maxByOrNull { it.confidence }
+        val hazardCandidates = detections
+            .filter { it.confidence >= confidenceThreshold }
+            .mapNotNull { mapDetectionToHazard(it) }
 
-        if (relevant == null) {
-            if (now - lastRelevantDetectionAt > decayMillis) {
+        if (hazardCandidates.isEmpty()) {
+            // Decay nach Timeout: zurück auf NONE
+            if (lastRelevantDetectionAt != 0L && now - lastRelevantDetectionAt > decayMillis) {
+                lastRelevantDetectionAt = 0L
                 return SceneState(
                     timestamp = now,
                     detections = detections,
@@ -27,7 +29,6 @@ class DefaultSceneAnalyzer : SceneAnalyzer {
                     overallHazardLevel = HazardLevel.NONE
                 )
             }
-            // innerhalb der Decay-Zeit: nichts Neues, behalte den letzten Status (keine neue Message)
             return SceneState(
                 timestamp = now,
                 detections = detections,
@@ -38,58 +39,50 @@ class DefaultSceneAnalyzer : SceneAnalyzer {
         }
 
         lastRelevantDetectionAt = now
-        val hazard = mapDetectionToHazard(relevant)
-        val hazards = listOfNotNull(hazard)
-        val message = hazard?.let { it.second }
-        val overallLevel = hazard?.first?.urgency ?: HazardLevel.NONE
+        val hazards = hazardCandidates.map { it.first }
+        val overallLevel = hazards.maxOfOrNull { it.urgency } ?: HazardLevel.NONE
+        val primary = hazardCandidates.maxByOrNull { it.third }
+
         return SceneState(
             timestamp = now,
             detections = detections,
-            hazards = hazards.map { it.first },
-            primaryMessage = message,
+            hazards = hazards,
+            primaryMessage = primary?.second,
             overallHazardLevel = overallLevel
         )
     }
 
-    private fun mapDetectionToHazard(detection: Detection): Pair<HazardEvent, String?>? {
+    private fun mapDetectionToHazard(detection: Detection): Triple<HazardEvent, String?, Float>? {
         val label = detection.label.lowercase()
         return when (label) {
-            "person" -> {
+            "person" -> Triple(
                 HazardEvent(
                     type = HazardType.PERSON_AHEAD,
                     direction = Direction.CENTER,
                     urgency = HazardLevel.WARNING
-                ) to "Achtung, Person voraus"
-            }
-            "car", "truck", "bus", "motorcycle", "bicycle" -> {
+                ),
+                "Achtung, Person voraus",
+                detection.confidence
+            )
+            "car", "truck", "bus", "motorcycle", "bicycle" -> Triple(
                 HazardEvent(
                     type = HazardType.VEHICLE_AHEAD,
                     direction = Direction.CENTER,
                     urgency = HazardLevel.WARNING
-                ) to "Achtung, Fahrzeug voraus"
-            }
-            "traffic light", "traffic_light", "trafficlight" -> {
+                ),
+                "Achtung, Fahrzeug voraus",
+                detection.confidence
+            )
+            "traffic light", "traffic_light", "trafficlight" -> Triple(
                 HazardEvent(
                     type = HazardType.TRAFFIC_LIGHT_RED,
                     direction = Direction.CENTER,
                     urgency = HazardLevel.NONE
-                ) to null
-            }
+                ),
+                null,
+                detection.confidence
+            )
             else -> null
         }
-    }
-
-    private companion object {
-        val RELEVANT_LABELS = setOf(
-            "person",
-            "car",
-            "truck",
-            "bus",
-            "motorcycle",
-            "bicycle",
-            "traffic light",
-            "traffic_light",
-            "trafficlight"
-        )
     }
 }

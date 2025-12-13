@@ -23,24 +23,33 @@ class AudioFeedbackEngine(
     private var pendingMessage: String? = null
     private var pendingLevel: HazardLevel = HazardLevel.NONE
     private var ttsReady: Boolean = false
+    private var ttsState: TtsState = TtsState.INITIALIZING
+    private var lastNotReadyLog: Long = 0L
+    private val notReadyLogInterval = 1_000L
 
     init {
         tts = TextToSpeech(context) { status ->
-            Log.d(TAG, "TTS init status=$status")
             if (status == TextToSpeech.SUCCESS) {
-                tts?.language = Locale.getDefault()
-                ttsReady = true
-                Log.d(TAG, "TTS ready=true, pendingMessage=$pendingMessage")
+                val result = tts?.setLanguage(Locale.getDefault()) ?: TextToSpeech.LANG_NOT_SUPPORTED
+                ttsReady = result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED
+                ttsState = if (ttsReady) TtsState.READY else TtsState.ERROR
+                Log.d(TAG, "TTS init success, languageResult=$result, ready=$ttsReady, pendingMessage=$pendingMessage")
                 speakPendingIfPossible()
             } else {
                 ttsReady = false
-                Log.d(TAG, "TTS init failed, ready=false")
+                ttsState = TtsState.ERROR
+                Log.d(TAG, "TTS init failed, status=$status")
             }
         }
     }
 
     fun onSceneUpdated(state: SceneState) {
-        val message = state.primaryMessage ?: return
+        val message = state.primaryMessage ?: run {
+            // Reset, damit bei erneuter Warnung wieder gesprochen wird.
+            lastMessage = null
+            lastLevel = state.overallHazardLevel
+            return
+        }
         val now = System.currentTimeMillis()
         val levelIncreased = state.overallHazardLevel.ordinal > lastLevel.ordinal
         val messageChanged = message != lastMessage
@@ -49,7 +58,10 @@ class AudioFeedbackEngine(
         if (!ttsReady) {
             pendingMessage = message
             pendingLevel = state.overallHazardLevel
-            Log.d(TAG, "TTS not ready, pendingMessage=$pendingMessage")
+            if (now - lastNotReadyLog >= notReadyLogInterval) {
+                Log.d(TAG, "TTS not ready (state=$ttsState), pendingMessage=$pendingMessage")
+                lastNotReadyLog = now
+            }
             return
         }
 
@@ -101,4 +113,6 @@ class AudioFeedbackEngine(
     companion object {
         private const val TAG = "AudioFeedbackEngine"
     }
+
+    private enum class TtsState { INITIALIZING, READY, ERROR }
 }

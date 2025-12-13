@@ -1,5 +1,7 @@
 package com.example.bikeassist.ml
 
+import android.graphics.Bitmap
+
 /**
  * Fake-Detector, der immer eine Beispiel-Person liefert.
  */
@@ -8,7 +10,7 @@ class FakeDetector : Detector {
         // Kein Warmup nötig.
     }
 
-    override fun detect(input: FloatArray): List<Detection> {
+    override fun detect(input: Bitmap): List<Detection> {
         val bbox = BoundingBox(
             xMin = 0.35f,
             yMin = 0.45f,

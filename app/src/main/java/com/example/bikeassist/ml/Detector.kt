@@ -1,5 +1,6 @@
 package com.example.bikeassist.ml
 
+import android.graphics.Bitmap
 import java.io.Closeable
 
 /**
@@ -7,5 +8,5 @@ import java.io.Closeable
  */
 interface Detector : Closeable {
     fun warmup()
-    fun detect(input: FloatArray): List<Detection>
+    fun detect(input: Bitmap): List<Detection>
 }
