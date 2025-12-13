@@ -31,16 +31,22 @@ class DefaultVisionPipeline(
     private var processing = false
     @Volatile
     private var running = false
+    private var lastProcessedAt: Long = 0L
+    private val minProcessIntervalMs: Long = 250L
 
     private val frameListener = object : FrameListener {
         override fun onFrame(image: ImageProxy) {
-            if (processing) return
+            val now = System.currentTimeMillis()
+            if (processing || now - lastProcessedAt < minProcessIntervalMs) {
+                return
+            }
             processing = true
             try {
                 val input = preprocessor.preprocess(image)
                 val detections = detector.detect(input)
                 val sceneState = sceneAnalyzer.analyze(detections)
                 _sceneStates.tryEmit(sceneState)
+                lastProcessedAt = now
             } finally {
                 processing = false
             }

@@ -15,6 +15,18 @@ Format (angelehnt an Keep a Changelog / SemVer):
 
 ---
 
+## [0.1.2] – 2025-12-10
+
+### Added
+- Einfache FPS-Drosselung (ca. 250 ms) in `DefaultVisionPipeline`.
+- Placeholder `DefaultPreprocessor` für zukünftiges YUV→RGB/Normalize.
+- Detection-Overlay zeichnet Bounding Boxes über der Preview.
+
+### Changed
+- CameraFrameSource stoppt Executor beim Stopp, Pipeline-Guards für mehrfaches Starten/Stoppen.
+
+---
+
 ## [0.1.1] – 2025-12-10
 
 ### Added

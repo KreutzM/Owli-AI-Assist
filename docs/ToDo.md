@@ -17,11 +17,12 @@ Status: `[x]` erledigt, `[ ]` offen
 - [ ] Pipeline-Throttle/FPS-Limiter (`PipelineConfig` o.ä.).
 - [ ] ImageProxy→Tensor Helper (YUV→RGB, Resize, Normalize).
 - [ ] NMS-/BoundingBox-Utilities.
+- [x] Pipeline-Throttle/FPS-Limiter (einfach, 250ms) in DefaultVisionPipeline.
 
 ## Processing & ML
 - [x] `processing/ModelInputSpec`.
 - [x] `processing/Preprocessor` Interface.
-- [ ] `processing/DefaultPreprocessor` (YUV→RGB, Resize, Normalize).
+- [x] `processing/DefaultPreprocessor` Placeholder (noch ohne echtes YUV→RGB).
 - [x] `ml/BoundingBox`, `ml/Detection`.
 - [x] `ml/ModelSpec`, `ml/DetectorConfig` inkl. Backend-Enum.
 - [x] `ml/Detector`, `ml/DetectorFactory` Interfaces.
