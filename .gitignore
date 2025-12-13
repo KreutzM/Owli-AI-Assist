@@ -13,3 +13,11 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Android Studio / IntelliJ
+.idea/
+*.iml
+
+# TensorFlow Lite models
+*.tflite
+
