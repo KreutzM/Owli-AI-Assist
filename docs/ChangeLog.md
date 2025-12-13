@@ -24,6 +24,19 @@ Format (angelehnt an Keep a Changelog / SemVer):
 
 ---
 
+## [0.1.4] – 2025-12-13
+
+### Added
+- README aktualisiert (YUV→RGB Preprocessing ohne JPEG, Rotation/Downscale, TTS/Hazard-Mapping).
+- Rotationstext im Overlay (`Rot: <deg>`), Logs für Pipeline/Camera/Preprocessor.
+
+### Changed
+- Lifecycle/CameraX: Pipeline/PipelineHandle neu pro Activity, Stop/Start idempotent, CameraFrameSource Logging.
+- Preprocessing: performantes YUV_420_888→ARGB_8888 ohne JPEG, Rotation angewendet, optional Downscale.
+- Hazard-Mapping label-basiert mit Decay; TTS reset bei Message=null.
+
+---
+
 ## [0.1.3] – 2025-12-13
 
 ### Added

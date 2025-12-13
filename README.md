@@ -39,14 +39,16 @@ BikeBuddy ist eine Android-Demo-App für ein Fahrrad-Assistenzsystem mit On-Devi
 
 ## Konfiguration
 - Detector-Optionen: `TfliteDetectorOptions` (Threads, NNAPI), Pfad: `models/efficientdet_lite2_int8.tflite`
-- Hazard-Schwelle: DefaultSceneAnalyzer nutzt `confidenceThreshold = 0.4`, Decay 800 ms.
-- TTS-Cooldown: 2500 ms, spricht bei Message-Wechsel oder Hazard-Level-Anstieg.
+- Hazard-Schwelle: DefaultSceneAnalyzer nutzt `confidenceThreshold = 0.4`, Decay 800 ms. Mapping: Person → Personenwarnung, Fahrzeugklassen → Fahrzeugwarnung, Ampel → Info.
+- TTS-Cooldown: 2500 ms, spricht bei Message-Wechsel oder Hazard-Level-Anstieg; Reset, wenn keine Meldung vorliegt.
+- Preprocessing: YUV_420_888 → ARGB_8888 ohne JPEG-Roundtrip, Rotation wird angewendet (`rotationDegrees`), optional Downscale.
 
 ## Fehlerquellen / Hinweise
 - Fehlt das Modell-Asset, wird automatisch der FakeDetector verwendet (Status-Anzeige).
 - TTS braucht ggf. Sekunden bis READY; pendingMessage wird erst bei Ready gesprochen.
 - Auf schwachen Geräten kann der JPEG-Roundtrip im Preprocessor bremsen; YUV→RGB-Optimierung empfehlenswert.
 - Traffic-Light wird aktuell nur als Info ohne Level/Sprachmeldung behandelt.
+- Bei Rotation: Overlay zeigt `Rot: <deg>`, Pipeline setzt Rotation pro Frame; Preview sollte nach Drehen zurückkehren (Lifecycle-robust).
 
 ## Lizenz / Nutzung
 Interner Demo-/Prototyp-Status; keine Produktionsfreigabe, keine Gewährleistung. Modelle/Assets nur verwenden, wenn lizenzrechtlich geklärt.
