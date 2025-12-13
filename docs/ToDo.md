@@ -55,4 +55,5 @@ Status: `[x]` erledigt, `[ ]` offen
 - [ ] Unit-Tests: Pipeline mit Fakes (Frame→SceneState).
 - [ ] Unit-Tests: Preprocessor (YUV→RGB/Normalize) mit synthetischen Daten.
 - [ ] Unit-Tests: NMS/BoundingBox-Mapper.
+- [ ] Manuelle Rotation/Lifecycle-Tests dokumentiert: Start, drehen (Portrait/Landscape), Home/Zurück, Start/Stop mehrfach, keine Black Screens.
 - [ ] Modell-Asset ablegen: `app/src/main/assets/models/efficientdet_lite2_int8.tflite` (COCO, EfficientDet-Lite2).

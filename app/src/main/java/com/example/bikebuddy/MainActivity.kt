@@ -46,6 +46,7 @@ import com.example.bikeassist.ml.Detection
 import com.example.bikeassist.pipeline.VisionPipelineModule
 import com.example.bikeassist.pipeline.VisionPipelineModule.create
 import com.example.bikeassist.ui.MainViewModel
+import com.example.bikeassist.util.AppLogger
 import com.example.bikebuddy.ui.theme.BikeBuddyTheme
 import kotlinx.coroutines.launch
 
@@ -54,21 +55,7 @@ class MainActivity : ComponentActivity() {
     private val cameraFrameSource by lazy { CameraFrameSource(this, this) }
     private val audioFeedbackEngine by lazy { AudioFeedbackEngine(this) }
 
-    private val viewModel: MainViewModel by viewModels {
-        object : ViewModelProvider.Factory {
-            override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                val handle = create(
-                    context = this@MainActivity,
-                    lifecycleOwner = this@MainActivity,
-                    scope = lifecycleScope,
-                    cameraFrameSource = cameraFrameSource,
-                    useFake = false
-                )
-                @Suppress("UNCHECKED_CAST")
-                return MainViewModel(handle.pipeline, handle.detectorInfo) as T
-            }
-        }
-    }
+    private val viewModel: MainViewModel by viewModels()
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -79,7 +66,9 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        AppLogger.d("Activity onCreate")
         enableEdgeToEdge()
+        bindPipeline()
         observeSceneState()
         setContent {
             BikeBuddyTheme {
@@ -109,12 +98,25 @@ class MainActivity : ComponentActivity() {
 
     override fun onStop() {
         super.onStop()
+        AppLogger.d("Activity onStop -> stop pipeline")
         viewModel.stop()
     }
 
     override fun onDestroy() {
+        AppLogger.d("Activity onDestroy")
         audioFeedbackEngine.close()
         super.onDestroy()
+    }
+
+    private fun bindPipeline() {
+        val handle = create(
+            context = this,
+            lifecycleOwner = this,
+            scope = lifecycleScope,
+            cameraFrameSource = cameraFrameSource,
+            useFake = false
+        )
+        viewModel.setPipeline(handle)
     }
 
     private fun ensureCameraPermissionAndStart() {

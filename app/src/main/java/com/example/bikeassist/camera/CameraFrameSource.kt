@@ -7,6 +7,7 @@ import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
+import com.example.bikeassist.util.AppLogger
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -28,6 +29,7 @@ class CameraFrameSource(
     private var pendingSurfaceProvider: Preview.SurfaceProvider? = null
 
     fun start(cameraSelector: CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA) {
+        AppLogger.d("CameraFrameSource start")
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener(
             {
@@ -67,6 +69,7 @@ class CameraFrameSource(
     }
 
     fun stop() {
+        AppLogger.d("CameraFrameSource stop")
         cameraProvider?.unbindAll()
         preview = null
         imageAnalysis = null
@@ -75,6 +78,7 @@ class CameraFrameSource(
     }
 
     fun bindPreviewSurface(surfaceProvider: Preview.SurfaceProvider) {
+        AppLogger.d("CameraFrameSource bindPreviewSurface")
         pendingSurfaceProvider = surfaceProvider
         preview?.setSurfaceProvider(surfaceProvider)
     }

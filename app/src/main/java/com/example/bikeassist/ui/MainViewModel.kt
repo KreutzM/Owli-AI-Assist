@@ -3,6 +3,7 @@ package com.example.bikeassist.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.bikeassist.domain.SceneState
+import com.example.bikeassist.pipeline.VisionPipelineHandle
 import com.example.bikeassist.pipeline.VisionPipeline
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -10,7 +11,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class MainViewModel(
-    private val visionPipeline: VisionPipeline,
     detectorInfo: String = ""
 ) : ViewModel() {
 
@@ -27,13 +27,27 @@ class MainViewModel(
     val status: StateFlow<String> = _status
 
     private var collectJob: Job? = null
+    private var pipeline: VisionPipeline? = null
+
+    fun setPipeline(handle: VisionPipelineHandle) {
+        // stop old pipeline if running
+        val wasRunning = _isRunning.value
+        stop()
+        pipeline?.close()
+        pipeline = handle.pipeline
+        _status.value = handle.detectorInfo
+        if (wasRunning) {
+            start()
+        }
+    }
 
     fun start() {
         if (_isRunning.value) return
-        runCatching { visionPipeline.start() }
+        val current = pipeline ?: return
+        runCatching { current.start() }
             .onSuccess {
                 collectJob = viewModelScope.launch {
-                    visionPipeline.sceneStates.collect { state ->
+                    current.sceneStates.collect { state ->
                         _sceneState.value = state
                     }
                 }
@@ -46,14 +60,14 @@ class MainViewModel(
         if (!_isRunning.value) return
         collectJob?.cancel()
         collectJob = null
-        runCatching { visionPipeline.stop() }
+        pipeline?.let { runCatching { it.stop() } }
         _sceneState.value = null
         _isRunning.value = false
     }
 
     override fun onCleared() {
         stop()
-        runCatching { visionPipeline.close() }
+        pipeline?.let { runCatching { it.close() } }
         super.onCleared()
     }
 }

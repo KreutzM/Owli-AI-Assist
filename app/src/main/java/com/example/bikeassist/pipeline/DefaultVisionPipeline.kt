@@ -7,6 +7,7 @@ import com.example.bikeassist.domain.SceneAnalyzer
 import com.example.bikeassist.domain.SceneState
 import com.example.bikeassist.ml.Detector
 import com.example.bikeassist.processing.Preprocessor
+import com.example.bikeassist.util.AppLogger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -58,6 +59,7 @@ class DefaultVisionPipeline(
 
     override fun start() {
         if (running) return
+        AppLogger.d("Pipeline start")
         runCatching { detector.warmup() }
             .onFailure { return }
         cameraFrameSource.frameListener = frameListener
@@ -66,6 +68,7 @@ class DefaultVisionPipeline(
     }
 
     override fun stop() {
+        AppLogger.d("Pipeline stop")
         cameraFrameSource.frameListener = null
         cameraFrameSource.stop()
         running = false
