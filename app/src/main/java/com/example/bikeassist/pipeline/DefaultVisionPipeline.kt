@@ -43,6 +43,7 @@ class DefaultVisionPipeline(
             }
             processing = true
             try {
+                cameraFrameSource.lastRotationDegrees = image.imageInfo.rotationDegrees
                 val bitmap = preprocessor.preprocess(image)
                 val detections = detector.detect(bitmap)
                 val sceneState = sceneAnalyzer.analyze(detections)

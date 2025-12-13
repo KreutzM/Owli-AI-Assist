@@ -18,6 +18,8 @@ class CameraFrameSource(
     private val lifecycleOwner: LifecycleOwner
 ) {
     var frameListener: FrameListener? = null
+    @Volatile
+    var lastRotationDegrees: Int = 0
 
     private var cameraProvider: ProcessCameraProvider? = null
     private var preview: Preview? = null

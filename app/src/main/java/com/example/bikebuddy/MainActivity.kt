@@ -44,6 +44,7 @@ import com.example.bikeassist.audio.AudioFeedbackEngine
 import com.example.bikeassist.camera.CameraFrameSource
 import com.example.bikeassist.ml.Detection
 import com.example.bikeassist.pipeline.VisionPipelineModule
+import com.example.bikeassist.pipeline.VisionPipelineModule.create
 import com.example.bikeassist.ui.MainViewModel
 import com.example.bikebuddy.ui.theme.BikeBuddyTheme
 import kotlinx.coroutines.launch
@@ -56,14 +57,15 @@ class MainActivity : ComponentActivity() {
     private val viewModel: MainViewModel by viewModels {
         object : ViewModelProvider.Factory {
             override fun <T : ViewModel> create(modelClass: Class<T>): T {
-                val pipeline = VisionPipelineModule.create(
+                val handle = create(
                     context = this@MainActivity,
                     lifecycleOwner = this@MainActivity,
                     scope = lifecycleScope,
-                    cameraFrameSource = cameraFrameSource
+                    cameraFrameSource = cameraFrameSource,
+                    useFake = false
                 )
                 @Suppress("UNCHECKED_CAST")
-                return MainViewModel(pipeline) as T
+                return MainViewModel(handle.pipeline, handle.detectorInfo) as T
             }
         }
     }
@@ -85,16 +87,19 @@ class MainActivity : ComponentActivity() {
                     val sceneState by viewModel.sceneState.collectAsState()
                     val isRunning by viewModel.isRunning.collectAsState()
                     val lastError by viewModel.lastError.collectAsState()
+                    val status by viewModel.status.collectAsState()
                     DemoScreen(
                         isRunning = isRunning,
                         sceneMessage = sceneState?.primaryMessage,
                         detections = sceneState?.detections.orEmpty(),
                         lastError = lastError,
+                        statusMessage = status,
                         detectionsCount = sceneState?.detections?.size ?: 0,
                         hazardLevel = sceneState?.overallHazardLevel?.name ?: "NONE",
                         onStart = { ensureCameraPermissionAndStart() },
                         onStop = { viewModel.stop() },
                         cameraFrameSource = cameraFrameSource,
+                        rotationDegrees = cameraFrameSource.lastRotationDegrees,
                         modifier = Modifier.padding(innerPadding)
                     )
                 }
@@ -136,11 +141,13 @@ fun DemoScreen(
     sceneMessage: String?,
     detections: List<Detection>,
     lastError: String?,
+    statusMessage: String,
     detectionsCount: Int,
     hazardLevel: String,
     onStart: () -> Unit,
     onStop: () -> Unit,
     cameraFrameSource: CameraFrameSource,
+    rotationDegrees: Int?,
     modifier: Modifier = Modifier
 ) {
     Column(
@@ -158,6 +165,7 @@ fun DemoScreen(
                 hazardLevel = hazardLevel,
                 detectionsCount = detectionsCount,
                 message = sceneMessage,
+                rotationText = rotationDegrees?.let { "${it}°" },
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(12.dp)
@@ -165,15 +173,16 @@ fun DemoScreen(
                     .padding(8.dp)
             )
         }
-        ControlPanel(
-            isRunning = isRunning,
-            sceneMessage = sceneMessage,
-            lastError = lastError,
-            onStart = onStart,
-            onStop = onStop,
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
+            ControlPanel(
+                isRunning = isRunning,
+                sceneMessage = sceneMessage,
+                lastError = lastError,
+                statusMessage = statusMessage,
+                onStart = onStart,
+                onStop = onStop,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
         )
     }
 }
@@ -201,11 +210,13 @@ fun SceneOverlay(
     hazardLevel: String,
     detectionsCount: Int,
     message: String?,
+    rotationText: String?,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
         Text(text = "Hazard: $hazardLevel", color = Color.White)
         Text(text = "Detections: $detectionsCount", color = Color.White)
+        rotationText?.let { Text(text = "Rot: $it", color = Color.White) }
         message?.let {
             Text(text = it, color = Color.White)
         }
@@ -240,6 +251,7 @@ fun ControlPanel(
     isRunning: Boolean,
     sceneMessage: String?,
     lastError: String?,
+    statusMessage: String,
     onStart: () -> Unit,
     onStop: () -> Unit,
     modifier: Modifier = Modifier
@@ -259,6 +271,7 @@ fun ControlPanel(
         }
         Spacer(modifier = Modifier.height(8.dp))
         Text(text = "Status: ${if (isRunning) "Läuft" else "Gestoppt"}")
+        Text(text = "Detector: $statusMessage")
         sceneMessage?.let { Text(text = "Letzte Meldung: $it") }
         lastError?.let { Text(text = "Fehler: $it", color = MaterialTheme.colorScheme.error) }
     }
@@ -272,6 +285,7 @@ fun PreviewControlPanel() {
             isRunning = true,
             sceneMessage = "Achtung, Person voraus",
             lastError = null,
+            statusMessage = "Preview (FakeDetector)",
             onStart = {},
             onStop = {}
         )
