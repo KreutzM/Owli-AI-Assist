@@ -10,7 +10,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 class MainViewModel(
-    private val visionPipeline: VisionPipeline
+    private val visionPipeline: VisionPipeline,
+    detectorInfo: String = ""
 ) : ViewModel() {
 
     private val _isRunning = MutableStateFlow(false)
@@ -21,6 +22,9 @@ class MainViewModel(
 
     private val _lastError = MutableStateFlow<String?>(null)
     val lastError: StateFlow<String?> = _lastError
+
+    private val _status = MutableStateFlow(detectorInfo)
+    val status: StateFlow<String> = _status
 
     private var collectJob: Job? = null
 
@@ -43,11 +47,13 @@ class MainViewModel(
         collectJob?.cancel()
         collectJob = null
         runCatching { visionPipeline.stop() }
+        _sceneState.value = null
         _isRunning.value = false
     }
 
     override fun onCleared() {
         stop()
+        runCatching { visionPipeline.close() }
         super.onCleared()
     }
 }

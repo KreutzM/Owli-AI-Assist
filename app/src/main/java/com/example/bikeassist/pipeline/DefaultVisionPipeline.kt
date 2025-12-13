@@ -38,16 +38,18 @@ class DefaultVisionPipeline(
         override fun onFrame(image: ImageProxy) {
             val now = System.currentTimeMillis()
             if (processing || now - lastProcessedAt < minProcessIntervalMs) {
+                image.close()
                 return
             }
             processing = true
             try {
-                val input = preprocessor.preprocess(image)
-                val detections = detector.detect(input)
+                val bitmap = preprocessor.preprocess(image)
+                val detections = detector.detect(bitmap)
                 val sceneState = sceneAnalyzer.analyze(detections)
                 _sceneStates.tryEmit(sceneState)
                 lastProcessedAt = now
             } finally {
+                image.close()
                 processing = false
             }
         }
@@ -65,8 +67,11 @@ class DefaultVisionPipeline(
     override fun stop() {
         cameraFrameSource.frameListener = null
         cameraFrameSource.stop()
-        detector.close()
         running = false
         processing = false
+    }
+
+    override fun close() {
+        runCatching { detector.close() }
     }
 }
