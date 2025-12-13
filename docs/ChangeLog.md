@@ -10,6 +10,14 @@ Format (angelehnt an Keep a Changelog / SemVer):
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+---
+
+## [0.1.1] – 2025-12-10
+
+### Added
 - CameraX-gestützte `CameraFrameSource` mit Preview- und ImageAnalysis-UseCases.
 - Skelett-Implementierungen für Vision-Pipeline, Processing, ML-Modelle, Domain-Hazard-Logik, Audio-Engine und Logging-Utility.
 - ToDo-Tracker unter `docs/ToDo.md` mit Meilenstein-Status.
@@ -18,7 +26,8 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - Android-TTS in `AudioFeedbackEngine` mit einfachem Cooldown.
 - `MainViewModel` mit StateFlows und Start/Stop-Steuerung der Pipeline.
 - Compose-Demo-UI in `MainActivity` (CameraPreview, Overlay-Text, ControlPanel).
- - TTS-Init robuster (pendingMessage, ttsReady-Flag, Logging) und UI-Running-Status-Update nach erfolgreichem Start.
+- TTS-Init robuster (pendingMessage, ttsReady-Flag, Logging) und UI-Running-Status-Update nach erfolgreichem Start.
+- Detection-Overlay zeichnet Bounding Boxes; CameraFrameSource bindet SurfaceProvider und Executor-Shutdown in stop().
 
 ### Changed
 - Version Catalog um CameraX-, Coroutines- und TFLite-Dependencies erweitert; `app/build.gradle.kts` entsprechend eingebunden.

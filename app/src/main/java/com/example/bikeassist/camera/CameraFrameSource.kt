@@ -22,7 +22,8 @@ class CameraFrameSource(
     private var cameraProvider: ProcessCameraProvider? = null
     private var preview: Preview? = null
     private var imageAnalysis: ImageAnalysis? = null
-    private val analysisExecutor: ExecutorService = Executors.newSingleThreadExecutor()
+    private var analysisExecutor: ExecutorService? = null
+    private var pendingSurfaceProvider: Preview.SurfaceProvider? = null
 
     fun start(cameraSelector: CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
@@ -30,18 +31,27 @@ class CameraFrameSource(
             {
                 val provider = cameraProviderFuture.get()
                 cameraProvider = provider
+                if (analysisExecutor == null || analysisExecutor?.isShutdown == true) {
+                    analysisExecutor = Executors.newSingleThreadExecutor()
+                }
 
                 preview = Preview.Builder().build()
+                pendingSurfaceProvider?.let { surfaceProvider ->
+                    preview?.setSurfaceProvider(surfaceProvider)
+                }
 
                 imageAnalysis = ImageAnalysis.Builder()
                     .setBackpressureStrategy(ImageAnalysis.STRATEGY_KEEP_ONLY_LATEST)
                     .build()
                     .apply {
-                        setAnalyzer(analysisExecutor) { image ->
-                            try {
-                                frameListener?.onFrame(image)
-                            } finally {
-                                image.close()
+                        val executor = analysisExecutor
+                        if (executor != null) {
+                            setAnalyzer(executor) { image ->
+                                try {
+                                    frameListener?.onFrame(image)
+                                } finally {
+                                    image.close()
+                                }
                             }
                         }
                     }
@@ -58,5 +68,12 @@ class CameraFrameSource(
         cameraProvider?.unbindAll()
         preview = null
         imageAnalysis = null
+        analysisExecutor?.shutdown()
+        analysisExecutor = null
+    }
+
+    fun bindPreviewSurface(surfaceProvider: Preview.SurfaceProvider) {
+        pendingSurfaceProvider = surfaceProvider
+        preview?.setSurfaceProvider(surfaceProvider)
     }
 }

@@ -4,7 +4,7 @@ Status: `[x]` erledigt, `[ ]` offen
 
 ## Setup & Infrastruktur
 - [x] Gradle-Basis + Compose/CameraX/Coroutines/TFLite-Dependencies ergänzen.
-- [ ] Manifest-Berechtigungen/Konfiguration für Kamera/Audio/Vibration ergänzen.
+- [x] Manifest-Berechtigungen/Konfiguration für Kamera/Audio/Vibration ergänzen.
 - [x] Basis-Paketstruktur unter `com.example.bikeassist.*` anlegen (camera, pipeline, processing, ml, domain, audio, util, ui placeholder).
 - [x] Logging-Utility `util/AppLogger`.
 - [ ] Dispatcher-Provider für testbares Threading.
@@ -35,16 +35,17 @@ Status: `[x]` erledigt, `[ ]` offen
 - [x] `domain/DefaultSceneAnalyzer` Stub.
 - [x] `audio/AudioFeedbackEngine` Stub (TTS-Cooldown TODO).
 - [ ] Audio-Cooldown-/Config-Klasse ergänzen.
+- [x] AudioFeedbackEngine robuster (ttsReady/pendingMessage Logging).
 
 ## UI & App-Orchestrierung
 - [ ] DI/Factory für VisionPipeline (z. B. `VisionPipelineModule`).
 - [ ] Test-Fakes (`FakeDetector`, `FakeCameraFrameSource`) im Test-Quellbaum.
-- [ ] `ui/MainViewModel` (start/stop, StateFlow).
-- [ ] UI-Komponenten: `SceneOverlay` (BBox/Status).
-- [ ] UI-Komponenten: `ControlPanel` (Start/Stop/Status).
-- [ ] `MainActivity`-Integration: CameraX-Preview + Pipeline + Audio-Hooks + Lifecycle.
-- [ ] Debug-BBox-Overlay mit optionalen Detections.
-- [ ] Lifecycle-Klarstellungen in Activity (start onResume/stop onPause/close onDestroy).
+- [x] `ui/MainViewModel` (start/stop, StateFlow).
+- [x] UI-Komponenten: `SceneOverlay` (BBox/Status).
+- [x] UI-Komponenten: `ControlPanel` (Start/Stop/Status).
+- [x] `MainActivity`-Integration: CameraX-Preview + Pipeline + Audio-Hooks + Lifecycle.
+- [x] Debug-BBox-Overlay mit Detections (gezeichnete BBoxen).
+- [x] Lifecycle-Klarstellungen in Activity (stop onStop, audio close onDestroy).
 
 ## Assets & Tests
 - [ ] Assets-Struktur für Modelle/Labels (`app/src/main/assets/models/...`).
