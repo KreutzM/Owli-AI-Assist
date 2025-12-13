@@ -10,8 +10,17 @@ Format (angelehnt an Keep a Changelog / SemVer):
 ## [Unreleased]
 
 ### Added
+- Assets-Struktur unter `app/src/main/assets/models/` mit Beispiel-Labels.
+- Unit-Test für `DefaultSceneAnalyzer` (Hazard/Messages).
+- TFLite Task Vision Detector (`TfliteTaskDetector`) mit EfficientDet-Lite2-Konfiguration und Fallback auf FakeDetector.
+- Bitmap-basierter Preprocessor für ImageProxy→Bitmap.
+- UI zeigt Detector-Status (Real/Fallback) an; Modell-Asset wird geprüft (`models/efficientdet_lite2_int8.tflite`), Fallback wird gemeldet.
+- Labels-Datei (`labels.txt`) im Modell-Asset-Pfad wiederhergestellt.
 
 ### Changed
+- Preprocessor/Detector-Interfaces angepasst auf Bitmap-Input, Pipeline nutzt echten Detector-Slot.
+- Gradle-Dependency: `tensorflow-lite-task-vision` ergänzt.
+- Pipeline schließt ImageProxy sicher, nutzt detect(bitmap).
 
 ---
 

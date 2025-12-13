@@ -26,7 +26,7 @@ Status: `[x]` erledigt, `[ ]` offen
 - [x] `ml/BoundingBox`, `ml/Detection`.
 - [x] `ml/ModelSpec`, `ml/DetectorConfig` inkl. Backend-Enum.
 - [x] `ml/Detector`, `ml/DetectorFactory` Interfaces.
-- [ ] `ml/tflite/YoloTfliteDetector` Skeleton mit Load/Infer/NMS-Hooks.
+- [x] `ml/tflite/TfliteTaskDetector` (EfficientDet-Lite2, Task API).
 - [ ] Fehler-/Result-Wrapping für Detector-Init/Inference.
 
 ## Domain & Audio
@@ -49,9 +49,10 @@ Status: `[x]` erledigt, `[ ]` offen
 - [x] Lifecycle-Klarstellungen in Activity (stop onStop, audio close onDestroy).
 
 ## Assets & Tests
-- [ ] Assets-Struktur für Modelle/Labels (`app/src/main/assets/models/...`).
+- [x] Assets-Struktur für Modelle/Labels (`app/src/main/assets/models/...`).
 - [ ] Initiale Test-Suite/Dependencies (JUnit/Compose test) konfigurieren.
-- [ ] Unit-Tests: SceneAnalyzer-Heuristiken.
+- [x] Unit-Tests: SceneAnalyzer-Heuristiken.
 - [ ] Unit-Tests: Pipeline mit Fakes (Frame→SceneState).
 - [ ] Unit-Tests: Preprocessor (YUV→RGB/Normalize) mit synthetischen Daten.
 - [ ] Unit-Tests: NMS/BoundingBox-Mapper.
+- [ ] Modell-Asset ablegen: `app/src/main/assets/models/efficientdet_lite2_int8.tflite` (COCO, EfficientDet-Lite2).
