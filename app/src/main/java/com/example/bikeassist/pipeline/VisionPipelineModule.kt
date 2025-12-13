@@ -9,6 +9,7 @@ import com.example.bikeassist.ml.FakeDetector
 import com.example.bikeassist.ml.TfliteDetectorOptions
 import com.example.bikeassist.ml.TfliteTaskDetector
 import com.example.bikeassist.processing.DefaultPreprocessor
+import com.example.bikeassist.processing.HsvTrafficLightPhaseClassifier
 import com.example.bikeassist.util.AppLogger
 import kotlinx.coroutines.CoroutineScope
 
@@ -27,6 +28,7 @@ object VisionPipelineModule {
         detectorOptions: TfliteDetectorOptions = TfliteDetectorOptions()
     ): VisionPipelineHandle {
         val preprocessor = DefaultPreprocessor()
+        val trafficLightClassifier = HsvTrafficLightPhaseClassifier()
         val (detector, info) = if (!useFake && modelExists(context.assets, detectorOptions.modelPath)) {
             runCatching {
                 TfliteTaskDetector(context, detectorOptions) to "RealDetector: ${detectorOptions.modelPath}"
@@ -44,6 +46,7 @@ object VisionPipelineModule {
             preprocessor = preprocessor,
             detector = detector,
             sceneAnalyzer = analyzer,
+            trafficLightClassifier = trafficLightClassifier,
             scope = scope
         )
         AppLogger.d("VisionPipelineModule created: $info")

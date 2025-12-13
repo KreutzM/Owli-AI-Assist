@@ -85,6 +85,7 @@ class MainActivity : ComponentActivity() {
                         statusMessage = status,
                         detectionsCount = sceneState?.detections?.size ?: 0,
                         hazardLevel = sceneState?.overallHazardLevel?.name ?: "NONE",
+                        trafficLights = sceneState?.trafficLights.orEmpty(),
                         onStart = { ensureCameraPermissionAndStart() },
                         onStop = { viewModel.stop() },
                         cameraFrameSource = cameraFrameSource,
@@ -146,6 +147,7 @@ fun DemoScreen(
     statusMessage: String,
     detectionsCount: Int,
     hazardLevel: String,
+    trafficLights: List<com.example.bikeassist.domain.TrafficLightObservation>,
     onStart: () -> Unit,
     onStop: () -> Unit,
     cameraFrameSource: CameraFrameSource,
@@ -168,6 +170,7 @@ fun DemoScreen(
                 detectionsCount = detectionsCount,
                 message = sceneMessage,
                 rotationText = rotationDegrees?.let { "${it}°" },
+                trafficLights = trafficLights,
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(12.dp)
@@ -213,12 +216,17 @@ fun SceneOverlay(
     detectionsCount: Int,
     message: String?,
     rotationText: String?,
+    trafficLights: List<com.example.bikeassist.domain.TrafficLightObservation>,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
         Text(text = "Hazard: $hazardLevel", color = Color.White)
         Text(text = "Detections: $detectionsCount", color = Color.White)
         rotationText?.let { Text(text = "Rot: $it", color = Color.White) }
+        val primaryTl = trafficLights.maxByOrNull { it.confidence }
+        primaryTl?.let {
+            Text(text = "TL: ${it.phase} (conf=${"%.2f".format(it.confidence)})", color = Color.White)
+        }
         message?.let {
             Text(text = it, color = Color.White)
         }

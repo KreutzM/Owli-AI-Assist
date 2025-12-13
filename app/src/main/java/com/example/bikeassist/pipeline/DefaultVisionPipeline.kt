@@ -7,6 +7,7 @@ import com.example.bikeassist.domain.SceneAnalyzer
 import com.example.bikeassist.domain.SceneState
 import com.example.bikeassist.ml.Detector
 import com.example.bikeassist.processing.Preprocessor
+import com.example.bikeassist.processing.TrafficLightPhaseClassifier
 import com.example.bikeassist.util.AppLogger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.Flow
@@ -21,6 +22,7 @@ class DefaultVisionPipeline(
     private val preprocessor: Preprocessor,
     private val detector: Detector,
     private val sceneAnalyzer: SceneAnalyzer,
+    private val trafficLightClassifier: TrafficLightPhaseClassifier,
     @Suppress("unused")
     private val scope: CoroutineScope
 ) : VisionPipeline {
@@ -47,7 +49,8 @@ class DefaultVisionPipeline(
                 cameraFrameSource.lastRotationDegrees = image.imageInfo.rotationDegrees
                 val bitmap = preprocessor.preprocess(image)
                 val detections = detector.detect(bitmap)
-                val sceneState = sceneAnalyzer.analyze(detections)
+                val trafficLights = trafficLightClassifier.classify(bitmap, detections)
+                val sceneState = sceneAnalyzer.analyze(detections, trafficLights)
                 _sceneStates.tryEmit(sceneState)
                 lastProcessedAt = now
             } finally {
