@@ -24,7 +24,8 @@ class DefaultVisionPipeline(
     private val sceneAnalyzer: SceneAnalyzer,
     private val trafficLightClassifier: TrafficLightPhaseClassifier,
     @Suppress("unused")
-    private val scope: CoroutineScope
+    private val scope: CoroutineScope,
+    private val minProcessIntervalMs: Long = 250L
 ) : VisionPipeline {
 
     private val _sceneStates = MutableSharedFlow<SceneState>(replay = 0, extraBufferCapacity = 1)
@@ -35,7 +36,6 @@ class DefaultVisionPipeline(
     @Volatile
     private var running = false
     private var lastProcessedAt: Long = 0L
-    private val minProcessIntervalMs: Long = 250L
 
     private val frameListener = object : FrameListener {
         override fun onFrame(image: ImageProxy) {

@@ -228,3 +228,9 @@ Sie dient Codex als Grundlage für nachvollziehbare, konsistente Implementierung
 - IoU-Tracker glattet BBox/Confidence (EMA), filtert Noise via minConfidenceTrack, minConsecutiveHits und Max-Age.
 - Announce-Planer gruppiert nach Label/Uhrzeit/Distanz und sortiert NEAR->MID->FAR, links->rechts.
 - TTS mit Cooldown/Hash-Anti-Spam; Speech-Rate konfigurierbar (Default 2.0).
+
+## Settings & Robustheit (aktuell)
+
+- Settings-Screen (DataStore) für Detector/Tracking/BlindView/TTS/Debug/Pipeline-Intervall, inkl. Reset auf Defaults.
+- Pipeline wird nach Rotation oder Settings-Änderungen automatisch neu aufgebaut, wenn zuvor aktiv (AutoStart-Flag).
+- Overlay/BlindView-Preview per Setting ein-/ausblendbar.

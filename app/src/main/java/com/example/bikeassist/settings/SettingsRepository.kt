@@ -1,0 +1,108 @@
+package com.example.bikeassist.settings
+
+import android.content.Context
+import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.edit
+import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.preferencesDataStore
+import androidx.datastore.preferences.core.Preferences
+import com.example.bikeassist.pipeline.AppMode
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
+
+private val Context.dataStore by preferencesDataStore(name = "app_settings")
+
+class SettingsRepository(private val context: Context) {
+
+    val settingsFlow: Flow<AppSettings> = context.dataStore.data.map { prefs -> prefs.toSettings() }
+
+    suspend fun update(transform: (AppSettings) -> AppSettings) {
+        context.dataStore.edit { prefs ->
+            val current = prefs.toSettings()
+            val updated = transform(current)
+            prefs[PrefKeys.appMode] = updated.appMode.name
+            prefs[PrefKeys.detectorMinConfidence] = updated.detectorMinConfidence
+            prefs[PrefKeys.detectorMaxResults] = updated.detectorMaxResults
+            prefs[PrefKeys.detectorNumThreads] = updated.detectorNumThreads
+            prefs[PrefKeys.detectorUseNnapi] = updated.detectorUseNnapi
+            prefs[PrefKeys.blindViewMinConfidence] = updated.blindViewMinConfidence
+            prefs[PrefKeys.minConfidenceTrack] = updated.minConfidenceTrack
+            prefs[PrefKeys.iouThreshold] = updated.iouThreshold
+            prefs[PrefKeys.bboxSmoothingAlpha] = updated.bboxSmoothingAlpha
+            prefs[PrefKeys.trackMaxAgeMs] = updated.trackMaxAgeMs
+            prefs[PrefKeys.minConsecutiveHits] = updated.minConsecutiveHits
+            prefs[PrefKeys.maxDetectionsPerFrameForTracking] = updated.maxDetectionsPerFrameForTracking
+            prefs[PrefKeys.minBboxAreaForTracking] = updated.minBboxAreaForTracking
+            prefs[PrefKeys.maxTracks] = updated.maxTracks
+            prefs[PrefKeys.nearThreshold] = updated.nearThreshold
+            prefs[PrefKeys.midThreshold] = updated.midThreshold
+            prefs[PrefKeys.maxItemsSpoken] = updated.maxItemsSpoken
+            prefs[PrefKeys.ttsSpeechRate] = updated.ttsSpeechRate
+            prefs[PrefKeys.showOverlay] = updated.showOverlay
+            prefs[PrefKeys.showBlindViewPreview] = updated.showBlindViewPreview
+            prefs[PrefKeys.analysisIntervalMs] = updated.analysisIntervalMs
+        }
+    }
+
+    suspend fun resetToDefaults() {
+        context.dataStore.edit { prefs ->
+            prefs.clear()
+        }
+    }
+
+}
+
+private object PrefKeys {
+    val appMode = stringKey("appMode")
+    val detectorMinConfidence = floatPreferencesKey("detectorMinConfidence")
+    val detectorMaxResults = intPreferencesKey("detectorMaxResults")
+    val detectorNumThreads = intPreferencesKey("detectorNumThreads")
+    val detectorUseNnapi = booleanPreferencesKey("detectorUseNnapi")
+    val blindViewMinConfidence = floatPreferencesKey("blindViewMinConfidence")
+    val minConfidenceTrack = floatPreferencesKey("minConfidenceTrack")
+    val iouThreshold = floatPreferencesKey("iouThreshold")
+    val bboxSmoothingAlpha = floatPreferencesKey("bboxSmoothingAlpha")
+    val trackMaxAgeMs = longPreferencesKey("trackMaxAgeMs")
+    val minConsecutiveHits = intPreferencesKey("minConsecutiveHits")
+    val maxDetectionsPerFrameForTracking = intPreferencesKey("maxDetectionsPerFrameForTracking")
+    val minBboxAreaForTracking = floatPreferencesKey("minBboxAreaForTracking")
+    val maxTracks = intPreferencesKey("maxTracks")
+    val nearThreshold = floatPreferencesKey("nearThreshold")
+    val midThreshold = floatPreferencesKey("midThreshold")
+    val maxItemsSpoken = intPreferencesKey("maxItemsSpoken")
+    val ttsSpeechRate = floatPreferencesKey("ttsSpeechRate")
+    val showOverlay = booleanPreferencesKey("showOverlay")
+    val showBlindViewPreview = booleanPreferencesKey("showBlindViewPreview")
+    val analysisIntervalMs = longPreferencesKey("analysisIntervalMs")
+
+    private fun stringKey(name: String) = androidx.datastore.preferences.core.stringPreferencesKey(name)
+}
+
+private fun Preferences.toSettings(): AppSettings {
+    return AppSettings(
+        appMode = AppMode.valueOf(this[PrefKeys.appMode] ?: AppSettingsDefaults.appMode.name),
+        detectorMinConfidence = this[PrefKeys.detectorMinConfidence] ?: AppSettingsDefaults.detectorMinConfidence,
+        detectorMaxResults = this[PrefKeys.detectorMaxResults] ?: AppSettingsDefaults.detectorMaxResults,
+        detectorNumThreads = this[PrefKeys.detectorNumThreads] ?: AppSettingsDefaults.detectorNumThreads,
+        detectorUseNnapi = this[PrefKeys.detectorUseNnapi] ?: AppSettingsDefaults.detectorUseNnapi,
+        blindViewMinConfidence = this[PrefKeys.blindViewMinConfidence] ?: AppSettingsDefaults.blindViewMinConfidence,
+        minConfidenceTrack = this[PrefKeys.minConfidenceTrack] ?: AppSettingsDefaults.minConfidenceTrack,
+        iouThreshold = this[PrefKeys.iouThreshold] ?: AppSettingsDefaults.iouThreshold,
+        bboxSmoothingAlpha = this[PrefKeys.bboxSmoothingAlpha] ?: AppSettingsDefaults.bboxSmoothingAlpha,
+        trackMaxAgeMs = this[PrefKeys.trackMaxAgeMs] ?: AppSettingsDefaults.trackMaxAgeMs,
+        minConsecutiveHits = this[PrefKeys.minConsecutiveHits] ?: AppSettingsDefaults.minConsecutiveHits,
+        maxDetectionsPerFrameForTracking = this[PrefKeys.maxDetectionsPerFrameForTracking]
+            ?: AppSettingsDefaults.maxDetectionsPerFrameForTracking,
+        minBboxAreaForTracking = this[PrefKeys.minBboxAreaForTracking] ?: AppSettingsDefaults.minBboxAreaForTracking,
+        maxTracks = this[PrefKeys.maxTracks] ?: AppSettingsDefaults.maxTracks,
+        nearThreshold = this[PrefKeys.nearThreshold] ?: AppSettingsDefaults.nearThreshold,
+        midThreshold = this[PrefKeys.midThreshold] ?: AppSettingsDefaults.midThreshold,
+        maxItemsSpoken = this[PrefKeys.maxItemsSpoken] ?: AppSettingsDefaults.maxItemsSpoken,
+        ttsSpeechRate = this[PrefKeys.ttsSpeechRate] ?: AppSettingsDefaults.ttsSpeechRate,
+        showOverlay = this[PrefKeys.showOverlay] ?: AppSettingsDefaults.showOverlay,
+        showBlindViewPreview = this[PrefKeys.showBlindViewPreview] ?: AppSettingsDefaults.showBlindViewPreview,
+        analysisIntervalMs = this[PrefKeys.analysisIntervalMs] ?: AppSettingsDefaults.analysisIntervalMs
+    )
+}

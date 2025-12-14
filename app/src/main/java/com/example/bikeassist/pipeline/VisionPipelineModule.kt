@@ -31,7 +31,8 @@ object VisionPipelineModule {
         useFake: Boolean = false,
         detectorOptions: TfliteDetectorOptions = TfliteDetectorOptions(),
         mode: AppMode = AppMode.BLINDVIEW,
-        blindViewConfig: BlindViewConfig = BlindViewConfig()
+        blindViewConfig: BlindViewConfig = BlindViewConfig(),
+        analysisIntervalMs: Long = 250L
     ): VisionPipelineHandle {
         val labels = LabelRepository().loadLabels(context)
         val translator = CocoLabelTranslator().also { it.validateAgainst(labels) }
@@ -58,7 +59,8 @@ object VisionPipelineModule {
             detector = detector,
             sceneAnalyzer = analyzer,
             trafficLightClassifier = trafficLightClassifier,
-            scope = scope
+            scope = scope,
+            minProcessIntervalMs = analysisIntervalMs
         )
         AppLogger.d("VisionPipelineModule created: $info mode=$mode")
         return VisionPipelineHandle(pipeline, info, mode)

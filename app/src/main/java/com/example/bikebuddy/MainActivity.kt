@@ -19,6 +19,8 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
@@ -27,6 +29,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -36,37 +40,41 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import com.example.bikeassist.blindview.BlindViewConfig
 import com.example.bikeassist.audio.AudioFeedbackEngine
 import com.example.bikeassist.camera.CameraFrameSource
 import com.example.bikeassist.domain.TrafficLightObservation
 import com.example.bikeassist.ml.Detection
-import com.example.bikeassist.pipeline.AppMode
 import com.example.bikeassist.pipeline.VisionPipelineModule
-import com.example.bikeassist.pipeline.VisionPipelineModule.create
+import com.example.bikeassist.settings.AppSettings
+import com.example.bikeassist.settings.SettingsRepository
+import com.example.bikeassist.settings.SettingsViewModel
 import com.example.bikeassist.ui.MainViewModel
 import com.example.bikeassist.util.AppLogger
 import com.example.bikebuddy.ui.theme.BikeBuddyTheme
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.debounce
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
-    private val appMode = AppMode.BLINDVIEW
-    private val blindViewConfig = BlindViewConfig()
     private val cameraFrameSource by lazy { CameraFrameSource(this, this) }
-    private val audioFeedbackEngine by lazy { AudioFeedbackEngine(this, mode = appMode, blindViewConfig = blindViewConfig) }
+    private val audioFeedbackEngine by lazy { AudioFeedbackEngine(this) }
 
-    private val viewModel: MainViewModel by viewModels()
+    private val mainViewModel: MainViewModel by viewModels()
+    private val settingsViewModel: SettingsViewModel by viewModels {
+        SettingsViewModel.Factory(SettingsRepository(applicationContext))
+    }
+    private var settingsCollectJob: Job? = null
+    private val showSettings = mutableStateOf(false)
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (isGranted) {
                 AppLogger.d("Permission granted -> autoStartIfNeeded")
-                viewModel.autoStartIfNeeded()
+                mainViewModel.autoStartIfNeeded()
             } else {
                 AppLogger.d("Permission denied -> no start")
             }
@@ -76,15 +84,18 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         AppLogger.d("Activity onCreate")
         enableEdgeToEdge()
-        bindPipeline()
         observeSceneState()
+        observeSettings()
         setContent {
             BikeBuddyTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    val sceneState by viewModel.sceneState.collectAsState()
-                    val isRunning by viewModel.isRunning.collectAsState()
-                    val lastError by viewModel.lastError.collectAsState()
-                    val status by viewModel.status.collectAsState()
+                    val sceneState by mainViewModel.sceneState.collectAsState()
+                    val isRunning by mainViewModel.isRunning.collectAsState()
+                    val lastError by mainViewModel.lastError.collectAsState()
+                    val status by mainViewModel.status.collectAsState()
+                    val settings by settingsViewModel.settings.collectAsState()
+                    val showSettingsState = remember { showSettings }
+
                     DemoScreen(
                         isRunning = isRunning,
                         sceneMessage = sceneState?.primaryMessage,
@@ -94,13 +105,24 @@ class MainActivity : ComponentActivity() {
                         detectionsCount = sceneState?.detections?.size ?: 0,
                         hazardLevel = sceneState?.overallHazardLevel?.name ?: "NONE",
                         trafficLights = sceneState?.trafficLights.orEmpty(),
-                        blindViewPreview = sceneState?.blindViewUtterancePreview,
+                        blindViewPreview = if (settings.showBlindViewPreview) sceneState?.blindViewUtterancePreview else null,
+                        showOverlay = settings.showOverlay,
                         onStart = { onUserStart() },
                         onStop = { onUserStop() },
+                        onOpenSettings = { showSettingsState.value = true },
                         cameraFrameSource = cameraFrameSource,
                         rotationDegrees = cameraFrameSource.lastRotationDegrees,
                         modifier = Modifier.padding(innerPadding)
                     )
+
+                    if (showSettingsState.value) {
+                        SettingsScreen(
+                            settings = settings,
+                            onUpdate = { update -> settingsViewModel.update { update(it) } },
+                            onClose = { showSettingsState.value = false },
+                            onReset = { settingsViewModel.reset() }
+                        )
+                    }
                 }
             }
         }
@@ -108,14 +130,14 @@ class MainActivity : ComponentActivity() {
 
     override fun onStart() {
         super.onStart()
-        AppLogger.d("Activity onStart, shouldAutoStart=${viewModel.shouldAutoStart.value}")
+        AppLogger.d("Activity onStart, shouldAutoStart=${mainViewModel.shouldAutoStart.value}")
         ensurePermissionAndAutoStart()
     }
 
     override fun onStop() {
         super.onStop()
         AppLogger.d("Activity onStop -> stop pipeline (lifecycle)")
-        viewModel.stopForLifecycle()
+        mainViewModel.stopForLifecycle()
     }
 
     override fun onDestroy() {
@@ -124,35 +146,22 @@ class MainActivity : ComponentActivity() {
         super.onDestroy()
     }
 
-    private fun bindPipeline() {
-        val handle = create(
-            context = this,
-            lifecycleOwner = this,
-            scope = lifecycleScope,
-            cameraFrameSource = cameraFrameSource,
-            useFake = false,
-            mode = appMode,
-            blindViewConfig = blindViewConfig
-        )
-        viewModel.setPipeline(handle)
-    }
-
     private fun onUserStart() {
         AppLogger.d("User requested start")
-        viewModel.requestStart()
+        mainViewModel.requestStart()
         ensurePermissionAndAutoStart()
     }
 
     private fun onUserStop() {
         AppLogger.d("User requested stop")
-        viewModel.stopUser()
+        mainViewModel.stopUser()
     }
 
     private fun ensurePermissionAndAutoStart() {
         when (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)) {
-            PackageManager.PERMISSION_GRANTED -> viewModel.autoStartIfNeeded()
+            PackageManager.PERMISSION_GRANTED -> mainViewModel.autoStartIfNeeded()
             else -> {
-                AppLogger.d("Requesting camera permission for autoStart=${viewModel.shouldAutoStart.value}")
+                AppLogger.d("Requesting camera permission for autoStart=${mainViewModel.shouldAutoStart.value}")
                 requestPermissionLauncher.launch(Manifest.permission.CAMERA)
             }
         }
@@ -161,11 +170,40 @@ class MainActivity : ComponentActivity() {
     private fun observeSceneState() {
         lifecycleScope.launch {
             repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
-                viewModel.sceneState.collect { state ->
+                mainViewModel.sceneState.collect { state ->
                     state?.let { audioFeedbackEngine.onSceneUpdated(it) }
                 }
             }
         }
+    }
+
+    private fun observeSettings() {
+        settingsCollectJob?.cancel()
+        settingsCollectJob = lifecycleScope.launch {
+            settingsViewModel.settings
+                .debounce(400)
+                .distinctUntilChanged()
+                .collect { settings ->
+                    applySettings(settings)
+                }
+        }
+    }
+
+    private fun applySettings(settings: AppSettings) {
+        audioFeedbackEngine.updateSpeechRate(settings.ttsSpeechRate)
+        val handle = VisionPipelineModule.create(
+            context = this,
+            lifecycleOwner = this,
+            scope = lifecycleScope,
+            cameraFrameSource = cameraFrameSource,
+            useFake = false,
+            detectorOptions = settings.toDetectorOptions(),
+            mode = settings.appMode,
+            blindViewConfig = settings.toBlindViewConfig(),
+            analysisIntervalMs = settings.analysisIntervalMs
+        )
+        mainViewModel.setPipeline(handle)
+        ensurePermissionAndAutoStart()
     }
 }
 
@@ -180,8 +218,10 @@ fun DemoScreen(
     hazardLevel: String,
     trafficLights: List<com.example.bikeassist.domain.TrafficLightObservation>,
     blindViewPreview: String?,
+    showOverlay: Boolean,
     onStart: () -> Unit,
     onStop: () -> Unit,
+    onOpenSettings: () -> Unit,
     cameraFrameSource: CameraFrameSource,
     rotationDegrees: Int?,
     modifier: Modifier = Modifier
@@ -192,36 +232,38 @@ fun DemoScreen(
     ) {
         Box(modifier = Modifier.weight(1f)) {
             CameraPreview(cameraFrameSource = cameraFrameSource, modifier = Modifier.fillMaxSize())
-            DetectionOverlay(
-                detections = detections,
-                modifier = Modifier
-                    .fillMaxSize()
-            )
-            SceneOverlay(
-                hazardLevel = hazardLevel,
-                detectionsCount = detectionsCount,
-                message = sceneMessage,
-                rotationText = rotationDegrees?.let { "${it}°" },
-                trafficLights = trafficLights,
-                blindViewPreview = blindViewPreview,
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(12.dp)
-                    .background(Color(0x66000000))
-                    .padding(8.dp)
-            )
+            if (showOverlay) {
+                DetectionOverlay(
+                    detections = detections,
+                    modifier = Modifier.fillMaxSize()
+                )
+                SceneOverlay(
+                    hazardLevel = hazardLevel,
+                    detectionsCount = detectionsCount,
+                    message = sceneMessage,
+                    rotationText = rotationDegrees?.let { "${it}°" },
+                    trafficLights = trafficLights,
+                    blindViewPreview = blindViewPreview,
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(12.dp)
+                        .background(Color(0x66000000))
+                        .padding(8.dp)
+                )
+            }
         }
-            ControlPanel(
-                isRunning = isRunning,
-                sceneMessage = sceneMessage,
-                lastError = lastError,
-                statusMessage = statusMessage,
-                onStart = onStart,
-                onStop = onStop,
-                blindViewPreview = blindViewPreview,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp)
+        ControlPanel(
+            isRunning = isRunning,
+            sceneMessage = sceneMessage,
+            lastError = lastError,
+            statusMessage = statusMessage,
+            onStart = onStart,
+            onStop = onStop,
+            blindViewPreview = blindViewPreview,
+            onOpenSettings = onOpenSettings,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
         )
     }
 }
@@ -303,6 +345,7 @@ fun ControlPanel(
     onStart: () -> Unit,
     onStop: () -> Unit,
     blindViewPreview: String?,
+    onOpenSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
@@ -316,6 +359,9 @@ fun ControlPanel(
             }
             Button(onClick = onStop, enabled = isRunning) {
                 Text(text = "Stop")
+            }
+            Button(onClick = onOpenSettings) {
+                Text(text = "Settings")
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -338,7 +384,200 @@ fun PreviewControlPanel() {
             statusMessage = "Preview (FakeDetector)",
             onStart = {},
             onStop = {},
-            blindViewPreview = "2 Personen, 11 Uhr."
+            blindViewPreview = "2 Personen, 11 Uhr.",
+            onOpenSettings = {}
         )
+    }
+}
+
+@Composable
+fun SettingsScreen(
+    settings: AppSettings,
+    onUpdate: (((AppSettings) -> AppSettings)) -> Unit,
+    onClose: () -> Unit,
+    onReset: () -> Unit
+) {
+    Scaffold(
+        topBar = {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Einstellungen", style = MaterialTheme.typography.titleMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    Button(onClick = onReset) { Text("Reset") }
+                    Button(onClick = onClose) { Text("Schliessen") }
+                }
+            }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(12.dp)
+                .fillMaxSize()
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            SettingSlider(
+                label = "Detector minConfidence",
+                value = settings.detectorMinConfidence,
+                valueRange = 0.05f..0.95f,
+                steps = 9,
+                onValueChange = { v -> onUpdate { it.copy(detectorMinConfidence = v) } },
+                helper = "Score-Threshold"
+            )
+            SettingIntSlider(
+                label = "Detector maxResults",
+                value = settings.detectorMaxResults,
+                valueRange = 1..10,
+                onValueChange = { v -> onUpdate { it.copy(detectorMaxResults = v) } },
+                helper = "Top-N Ergebnisse"
+            )
+            SettingIntSlider(
+                label = "Threads",
+                value = settings.detectorNumThreads,
+                valueRange = 1..4,
+                onValueChange = { v -> onUpdate { it.copy(detectorNumThreads = v) } },
+                helper = "Interpreter Threads"
+            )
+            SettingSwitch(
+                label = "NNAPI",
+                checked = settings.detectorUseNnapi,
+                onCheckedChange = { v -> onUpdate { it.copy(detectorUseNnapi = v) } },
+                helper = "Beschleuniger (wenn verfügbar)"
+            )
+            SettingSlider(
+                label = "Track minConfidence",
+                value = settings.minConfidenceTrack,
+                valueRange = 0.1f..0.95f,
+                steps = 8,
+                onValueChange = { v -> onUpdate { it.copy(minConfidenceTrack = v) } },
+                helper = "Filter gegen False Positives"
+            )
+            SettingSlider(
+                label = "IoU Threshold",
+                value = settings.iouThreshold,
+                valueRange = 0.1f..0.9f,
+                steps = 8,
+                onValueChange = { v -> onUpdate { it.copy(iouThreshold = v) } },
+                helper = "Matching-Schwelle Tracker"
+            )
+            SettingIntSlider(
+                label = "Min Hits",
+                value = settings.minConsecutiveHits,
+                valueRange = 1..5,
+                onValueChange = { v -> onUpdate { it.copy(minConsecutiveHits = v) } },
+                helper = "Stabilität Tracker"
+            )
+            SettingSlider(
+                label = "BBox Glättung",
+                value = settings.bboxSmoothingAlpha,
+                valueRange = 0f..1f,
+                steps = 9,
+                onValueChange = { v -> onUpdate { it.copy(bboxSmoothingAlpha = v) } },
+                helper = "EMA-Anteil (höher = glatter)"
+            )
+            SettingIntSlider(
+                label = "BlindView max Items",
+                value = settings.maxItemsSpoken,
+                valueRange = 1..12,
+                onValueChange = { v -> onUpdate { it.copy(maxItemsSpoken = v) } },
+                helper = "Anzahl Objekte pro Ansage"
+            )
+            SettingSlider(
+                label = "TTS Speech Rate",
+                value = settings.ttsSpeechRate,
+                valueRange = 0.5f..3.0f,
+                steps = 10,
+                onValueChange = { v -> onUpdate { it.copy(ttsSpeechRate = v) } },
+                helper = "Sprechgeschwindigkeit"
+            )
+            SettingIntSlider(
+                label = "Analysis Interval (ms)",
+                value = settings.analysisIntervalMs.toInt(),
+                valueRange = 150..1000,
+                onValueChange = { v -> onUpdate { it.copy(analysisIntervalMs = v.toLong()) } },
+                helper = "Min Abstand zwischen Frames"
+            )
+            SettingSwitch(
+                label = "Overlay anzeigen",
+                checked = settings.showOverlay,
+                onCheckedChange = { v -> onUpdate { it.copy(showOverlay = v) } }
+            )
+            SettingSwitch(
+                label = "BlindView Preview",
+                checked = settings.showBlindViewPreview,
+                onCheckedChange = { v -> onUpdate { it.copy(showBlindViewPreview = v) } }
+            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.End
+            ) {
+                Button(onClick = onReset) { Text("Reset Defaults") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SettingSlider(
+    label: String,
+    value: Float,
+    valueRange: ClosedFloatingPointRange<Float>,
+    steps: Int,
+    onValueChange: (Float) -> Unit,
+    helper: String? = null
+) {
+    Column {
+        Text(text = "$label: ${"%.2f".format(value)}")
+        androidx.compose.material3.Slider(
+            value = value,
+            onValueChange = onValueChange,
+            valueRange = valueRange,
+            steps = steps
+        )
+        helper?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+    }
+}
+
+@Composable
+private fun SettingIntSlider(
+    label: String,
+    value: Int,
+    valueRange: IntRange,
+    onValueChange: (Int) -> Unit,
+    helper: String? = null
+) {
+    SettingSlider(
+        label = label,
+        value = value.toFloat(),
+        valueRange = valueRange.first.toFloat()..valueRange.last.toFloat(),
+        steps = (valueRange.last - valueRange.first),
+        onValueChange = { onValueChange(it.toInt()) },
+        helper = helper
+    )
+}
+
+@Composable
+private fun SettingSwitch(
+    label: String,
+    checked: Boolean,
+    onCheckedChange: (Boolean) -> Unit,
+    helper: String? = null
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column {
+            Text(label)
+            helper?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
+        }
+        androidx.compose.material3.Switch(checked = checked, onCheckedChange = onCheckedChange)
     }
 }

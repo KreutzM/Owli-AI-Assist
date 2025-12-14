@@ -32,7 +32,7 @@ class AudioFeedbackEngine(
     private var ttsState: TtsState = TtsState.INITIALIZING
     private var lastNotReadyLog: Long = 0L
     private val notReadyLogInterval = 1_000L
-    private val desiredSpeechRate: Float =
+    private var desiredSpeechRate: Float =
         blindViewConfig.ttsSpeechRate.coerceIn(MIN_SPEECH_RATE, MAX_SPEECH_RATE)
 
     init {
@@ -115,6 +115,13 @@ class AudioFeedbackEngine(
         }
         val result = tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "scene-state") ?: TextToSpeech.ERROR
         Log.d(TAG, "speak result=$result, text=$text")
+    }
+
+    fun updateSpeechRate(rate: Float) {
+        val clamped = rate.coerceIn(MIN_SPEECH_RATE, MAX_SPEECH_RATE)
+        desiredSpeechRate = clamped
+        tts?.setSpeechRate(clamped)
+        Log.d(TAG, "updateSpeechRate to $clamped")
     }
 
     private fun maxHazard(a: HazardLevel, b: HazardLevel): HazardLevel {

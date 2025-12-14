@@ -54,7 +54,7 @@ Bitte bei Code-Generierung diese Struktur verwenden (oder konsistent erweitern).
 2. **VisionPipeline** nimmt Frames entgegen, begrenzt die Framerate (z.B. 1–5 FPS) und verarbeitet Frames sequentiell.
 3. **Preprocessor** konvertiert `ImageProxy` in Modell-Input (`FloatArray` oder `ByteBuffer`).
 4. **Detector** führt das ML-Modell aus und gibt eine Liste von `Detection`-Objekten zurück.
-5. **SceneAnalyzer** interpretiert `Detection`-Listen und erzeugt eine domänenspezifische `SceneState`-Repräsentation (z.B. Hazard-Level, Warntext).
+5. **SceneAnalyzer** interpretiert `Detection`-Listen und erzeugt eine domänenspezifische `SceneState`-Repräsentation (z.B. Hazard-Level, Warntext, BlindView-Items).
 6. **UI** beobachtet `SceneState` und zeigt Debug-Infos (Overlays) an.
 7. **AudioFeedbackEngine** beobachtet `SceneState` und erzeugt gesprochene Warnungen/Töne.
 
@@ -326,7 +326,7 @@ Audio-Schicht sollte **nicht** direkt von ML oder Kamera abhängen, sondern nur 
 
 ---
 
-## 10. UI-Schicht (`ui`)
+## 10. UI-Schicht (`ui` + Settings)
 
 Die UI-Schicht ist **Konsument** von `SceneState` und orchestriert Start/Stop der Pipeline.
 
@@ -352,18 +352,19 @@ class MainViewModel(
 * Verantwortlich für:
 
   * Setup von CameraX (via `CameraFrameSource`).
-  * Erzeugen der `VisionPipeline`-Instanz (oder via Dependency Injection erhalten).
+  * Erzeugen der `VisionPipeline`-Instanz (oder via Dependency Injection erhalten), basierend auf aktuellen Settings.
   * Instanziieren von `AudioFeedbackEngine` und Registrierung als Beobachter von `sceneState`.
   * Compose-UI:
 
     * Kamerapreview (z.B. `AndroidView` mit `PreviewView`).
     * Overlay-Layer für Bounding Boxes (Debug).
     * Textanzeige für `primaryMessage` / Status.
+    * Settings-Screen für Detector/BlindView/TTS/Debug/Pipeline-Parameter (DataStore-basiert, Reset möglich).
 
 Lifecycle-Regeln:
 
 * `onResume()` → Pipeline & Kamera starten.
-* `onPause()` → Pipeline & Kamera stoppen.
+* `onPause()` → Pipeline & Kamera stoppen (oder Auto-Restart-Flag merken).
 * `onDestroy()` → TTS/Audio und ggf. Detector/Pipeline sauber schließen.
 
 ---

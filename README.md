@@ -9,7 +9,7 @@ BikeBuddy ist eine Android-Demo-App fuer ein Fahrrad-Assistenzsystem mit On-Devi
 - Hazard-Auswertung (Basis): Personen/Fahrzeuge -> Warnung; Ampeln -> Info/Phase
 - Ampelphasen-Erkennung (rot/gruen) per HSV-Heuristik (stabilisierte Phase im Overlay)
 - TTS-Ausgabe mit Cooldown/Spam-Schutz, konfigurierbarer Sprechgeschwindigkeit; Status-Anzeige (RealDetector/Fallback)
-- Start/Stop der Pipeline; Decay-Logik fuer Hazards
+- Start/Stop der Pipeline; Decay-Logik fuer Hazards; Auto-Restart nach Rotation/Settings-Aenderung
 
 ## Architektur (kurz)
 - `camera`: CameraFrameSource (CameraX Preview + ImageAnalysis)
@@ -19,7 +19,8 @@ BikeBuddy ist eine Android-Demo-App fuer ein Fahrrad-Assistenzsystem mit On-Devi
 - `domain`: DefaultSceneAnalyzer (BlindView-Planung, Hazard-Mapping, Decay)
 - `pipeline`: DefaultVisionPipeline (Frame->Bitmap->Detect->Analyze), VisionPipelineModule (DI + Real/Fake Auswahl, AppMode)
 - `audio`: AudioFeedbackEngine (TTS, Cooldown, SpeechRate, pendingMessage)
-- `ui`: MainActivity (Compose: PreviewView + Overlay + ControlPanel + BlindView-Preview), MainViewModel (Flows, Start/Stop/Status)
+- `ui`: MainActivity (Compose: PreviewView + Overlay + ControlPanel + BlindView-Preview + Settings), MainViewModel (Flows, Start/Stop/Status)
+- `settings`: DataStore-basierte Settings (Detector/Tracking/BlindView/TTS/Debug/Pipeline) mit SettingsViewModel
 
 ## Voraussetzungen
 - Android Studio (AGP 8.x), Kotlin 2.0.x, Compose aktiviert
@@ -35,16 +36,16 @@ BikeBuddy ist eine Android-Demo-App fuer ein Fahrrad-Assistenzsystem mit On-Devi
 
 ## Bedienung
 1. App starten, Kamera-Permission erlauben.
-2. Start-Button druecken -> Pipeline startet, Preview erscheint.
+2. Start-Button druecken -> Pipeline startet, Preview erscheint (nach Rotation auto-restart).
 3. Status-Anzeige zeigt, ob RealDetector aktiv ist oder Fallback (FakeDetector).
 4. Bounding-Box-Overlay zeigt erkannte Objekte; BlindView-Preview zeigt die aktuelle Ansage (Debug).
 5. Stop-Button -> Pipeline stoppt, Overlay/State wird zurueckgesetzt.
 
 ## Konfiguration
-- Detector: `TfliteDetectorOptions` (Threads, NNAPI), Pfad: `models/efficientdet_lite2_int8.tflite`
-- BlindView: `BlindViewConfig` (minConfidence, minConfidenceTrack, IoU-Threshold, bboxSmoothingAlpha, minConsecutiveHits, maxDetectionsPerFrame, maxTracks, Speak-Intervalle, TTS-Speech-Rate, Decay)
+- Detector: `TfliteDetectorOptions` (Threads, NNAPI), Pfad: `models/efficientdet_lite2_int8.tflite` (aus Settings steuerbar)
+- BlindView: `BlindViewConfig` (minConfidence, minConfidenceTrack, IoU-Threshold, bboxSmoothingAlpha, minConsecutiveHits, maxDetectionsPerFrame, maxTracks, Speak-Intervalle, TTS-Speech-Rate, Decay) via Settings anpassbar
 - Hazard (Basis): DefaultSceneAnalyzer `confidenceThreshold = 0.4`, Decay 800 ms. Mapping: Person -> Personenwarnung, Fahrzeugklassen -> Fahrzeugwarnung, Ampel -> Info.
-- TTS: Cooldown 2500 ms, Speech-Rate konfigurierbar (Default 2.0); BlindView nutzt Hash/Cooldown fuer Anti-Spam.
+- TTS: Cooldown 2500 ms, Speech-Rate konfigurierbar (Default 2.0, via Settings); BlindView nutzt Hash/Cooldown fuer Anti-Spam.
 - Preprocessing: YUV_420_888 -> ARGB_8888 (ohne JPEG-Roundtrip), Rotation wird angewendet, optional Downscale.
 - Ampel: TrafficLightPhaseClassifier (ROI-Inset, Zonenanalyse rot/oben, gruen/unten, Hysterese mit stabiler Phase).
 
