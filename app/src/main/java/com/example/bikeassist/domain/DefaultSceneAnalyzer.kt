@@ -11,6 +11,7 @@ class DefaultSceneAnalyzer : SceneAnalyzer {
     private var lastRelevantDetectionAt: Long = 0L
     private val decayMillis: Long = 800L
     private val confidenceThreshold: Float = 0.4f
+    private var lastStableTrafficLight: TrafficLightPhase = TrafficLightPhase.UNKNOWN
 
     override fun analyze(detections: List<Detection>, trafficLights: List<TrafficLightObservation>): SceneState {
         val now = System.currentTimeMillis()
@@ -19,7 +20,7 @@ class DefaultSceneAnalyzer : SceneAnalyzer {
             .filter { it.confidence >= confidenceThreshold }
             .mapNotNull { mapDetectionToHazard(it) }
 
-        val tlPrimary = trafficLights.maxByOrNull { it.confidence }
+        val tlPrimary = trafficLights.firstOrNull()
         val tlHazard = tlPrimary?.let {
             when (it.phase) {
                 TrafficLightPhase.RED -> HazardEvent(
@@ -70,11 +71,25 @@ class DefaultSceneAnalyzer : SceneAnalyzer {
         val overallLevel = combinedHazards.maxOfOrNull { it.urgency } ?: HazardLevel.NONE
         val primary = hazardCandidates.maxByOrNull { it.third }
 
-        val primaryMessage = when {
-            tlPrimary?.phase == TrafficLightPhase.RED -> "Ampel rot"
-            tlPrimary?.phase == TrafficLightPhase.GREEN -> primary?.second ?: "Ampel grün"
-            else -> primary?.second
-        }
+        val primaryMessage = buildString {
+            when (tlPrimary?.phase) {
+                TrafficLightPhase.RED -> {
+                    append("Ampel rot")
+                    lastStableTrafficLight = TrafficLightPhase.RED
+                }
+                TrafficLightPhase.GREEN -> {
+                    if (lastStableTrafficLight == TrafficLightPhase.RED) {
+                        append("Ampel grün")
+                    }
+                    lastStableTrafficLight = TrafficLightPhase.GREEN
+                }
+                TrafficLightPhase.UNKNOWN, null -> {
+                    if (primary != null && primary.second != null) {
+                        append(primary.second)
+                    }
+                }
+            }
+        }.ifEmpty { primary?.second }
 
         return SceneState(
             timestamp = now,

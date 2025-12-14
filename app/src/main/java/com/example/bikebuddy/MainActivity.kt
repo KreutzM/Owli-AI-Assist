@@ -42,6 +42,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.bikeassist.audio.AudioFeedbackEngine
 import com.example.bikeassist.camera.CameraFrameSource
+import com.example.bikeassist.domain.TrafficLightObservation
 import com.example.bikeassist.ml.Detection
 import com.example.bikeassist.pipeline.VisionPipelineModule
 import com.example.bikeassist.pipeline.VisionPipelineModule.create
@@ -216,7 +217,7 @@ fun SceneOverlay(
     detectionsCount: Int,
     message: String?,
     rotationText: String?,
-    trafficLights: List<com.example.bikeassist.domain.TrafficLightObservation>,
+    trafficLights: List<TrafficLightObservation>,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
