@@ -15,6 +15,22 @@ Format (angelehnt an Keep a Changelog / SemVer):
 
 ---
 
+## [0.2.1] – 2025-12-13
+
+### Added
+- Hazard-Richtung/Zone-Heuristik (LEFT/CENTER/RIGHT, FAR/MID/NEAR).
+- Audio-Signatur mit Richtung/Zone, abgestufte Cooldowns (Anti-Spam).
+- Ampel-Erkennung stabilisiert (Primary-Box, Inner-ROI, Zonen, Hysterese), Overlay zeigt TL-Phase/Confidence.
+- Grundlegende Hindernis-Erkennung (COCO-Obstacles) in Hazard-Mapping aufgenommen.
+
+### Changed
+- SceneAnalyzer priorisiert Primary Hazard nach Level/Zone/Confidence; Ampel rot hat Vorrang.
+- SceneState trägt primaryHazard und primaryTrafficLight; UI zeigt Primary-Message und TL-Status.
+- TrafficLightPhaseClassifier: Zonenanalyse (rot oben, grün unten), Inner-ROI, Hysterese.
+- AudioFeedbackEngine: spricht nur bei Signatur-/Level-Wechsel, Cooldown nach Level.
+
+---
+
 ## [0.2.0] – 2025-12-13
 
 ### Added
