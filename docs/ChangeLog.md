@@ -10,12 +10,27 @@ Format (angelehnt an Keep a Changelog / SemVer):
 ## [Unreleased]
 
 ### Added
-- BlindView-Ansagepfad mit AnnouncePlanner, SpeechPlanner und Utterance-Formatter (Uhrzeit/Distanz, DE-Labels).
-- BlindView-Konfiguration erweitert (maxItemsSpoken, TTS-Speed, Confidence/Distance-Thresholds).
+- (none)
 
 ### Changed
-- BlindView-Preview entkoppelt von TTS-Cooldowns (formatierend, ohne Hash/Timing).
-- AudioFeedbackEngine erhöht TTS-Sprechgeschwindigkeit (konfigurierbar, Spam-Protection bleibt erhalten).
+- (none)
+
+---
+
+## [0.3.0] – 2025-12-14
+
+### Added
+- BlindView-Ansagepfad mit AnnouncePlanner, SpeechPlanner und Utterance-Formatter (Uhrzeit/Distanz, DE-Labels).
+- IoU-Tracker erweitert (minConfidenceTrack, consecutiveHits, maxTracks) zur Stabilisierung von Position/Confidence.
+- Bounding-Box-Overlay zeigt optional Labels + Confidence (Toggle in Settings).
+- DataStore-basiertes Settings-Menü (Detector/Tracking/BlindView/TTS/Debug/Pipeline) mit Reset-to-Defaults.
+- Diagnostics-Screen mit Live-Metriken (Pipeline/FPS/Detector/TTS/Tracking) und Copy-to-Clipboard Debug-Report.
+
+### Changed
+- BlindView-Preview entkoppelt von TTS-Cooldowns (nur Formatter, kein Hash/Gating).
+- AudioFeedbackEngine setzt/aktualisiert Speech-Rate (konfigurierbar, Spam-Protection bleibt erhalten).
+- Pipeline/Lifecycle: Auto-Restart nach Rotation oder Settings-Änderungen, wenn vorher aktiv.
+- Tracking-Filter gegen False Positives (Confidence-EMA, Decay, BBox-Smoothing, Max-Age).
 
 ---
 

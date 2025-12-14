@@ -13,6 +13,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -36,10 +37,14 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -48,6 +53,8 @@ import com.example.bikeassist.camera.CameraFrameSource
 import com.example.bikeassist.domain.TrafficLightObservation
 import com.example.bikeassist.ml.Detection
 import com.example.bikeassist.pipeline.VisionPipelineModule
+import com.example.bikeassist.diagnostics.DiagnosticsCollector
+import com.example.bikeassist.diagnostics.DiagnosticsReportBuilder
 import com.example.bikeassist.settings.AppSettings
 import com.example.bikeassist.settings.SettingsRepository
 import com.example.bikeassist.settings.SettingsViewModel
@@ -70,6 +77,7 @@ class MainActivity : ComponentActivity() {
     }
     private var settingsCollectJob: Job? = null
     private val showSettings = mutableStateOf(false)
+    private val showDiagnostics = mutableStateOf(false)
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -112,6 +120,7 @@ class MainActivity : ComponentActivity() {
                         onStart = { onUserStart() },
                         onStop = { onUserStop() },
                         onOpenSettings = { showSettingsState.value = true },
+                        onOpenDiagnostics = { showDiagnostics.value = true },
                         cameraFrameSource = cameraFrameSource,
                         rotationDegrees = cameraFrameSource.lastRotationDegrees,
                         modifier = Modifier.padding(innerPadding)
@@ -123,6 +132,12 @@ class MainActivity : ComponentActivity() {
                             onUpdate = { update -> settingsViewModel.update { update(it) } },
                             onClose = { showSettingsState.value = false },
                             onReset = { settingsViewModel.reset() }
+                        )
+                    }
+                    if (showDiagnostics.value) {
+                        DiagnosticsScreen(
+                            settings = settings,
+                            onClose = { showDiagnostics.value = false }
                         )
                     }
                 }
@@ -193,6 +208,12 @@ class MainActivity : ComponentActivity() {
 
     private fun applySettings(settings: AppSettings) {
         audioFeedbackEngine.updateSpeechRate(settings.ttsSpeechRate)
+        com.example.bikeassist.diagnostics.DiagnosticsCollector.updateSettings(settings)
+        com.example.bikeassist.diagnostics.DiagnosticsCollector.updatePipelineStatus(
+            isRunning = mainViewModel.isRunning.value,
+            detectorInfo = mainViewModel.status.value,
+            analysisIntervalMs = settings.analysisIntervalMs
+        )
         val handle = VisionPipelineModule.create(
             context = this,
             lifecycleOwner = this,
@@ -225,6 +246,7 @@ fun DemoScreen(
     onStart: () -> Unit,
     onStop: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenDiagnostics: () -> Unit,
     cameraFrameSource: CameraFrameSource,
     rotationDegrees: Int?,
     modifier: Modifier = Modifier
@@ -265,6 +287,7 @@ fun DemoScreen(
             onStop = onStop,
             blindViewPreview = blindViewPreview,
             onOpenSettings = onOpenSettings,
+            onOpenDiagnostics = onOpenDiagnostics,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
@@ -406,6 +429,7 @@ fun ControlPanel(
     onStop: () -> Unit,
     blindViewPreview: String?,
     onOpenSettings: () -> Unit,
+    onOpenDiagnostics: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
@@ -422,6 +446,9 @@ fun ControlPanel(
             }
             Button(onClick = onOpenSettings) {
                 Text(text = "Settings")
+            }
+            Button(onClick = onOpenDiagnostics) {
+                Text(text = "Diag")
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -445,7 +472,8 @@ fun PreviewControlPanel() {
             onStart = {},
             onStop = {},
             blindViewPreview = "2 Personen, 11 Uhr.",
-            onOpenSettings = {}
+            onOpenSettings = {},
+            onOpenDiagnostics = {}
         )
     }
 }
@@ -645,5 +673,87 @@ private fun SettingSwitch(
             helper?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         }
         androidx.compose.material3.Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
+@Composable
+fun DiagnosticsScreen(
+    settings: AppSettings,
+    onClose: () -> Unit
+) {
+    val context = LocalContext.current
+    val clipboard = LocalClipboardManager.current
+    val diagState by DiagnosticsCollector.state.collectAsState()
+    Scaffold(
+        topBar = {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("Diagnostics", style = MaterialTheme.typography.titleMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = {
+                        val report = DiagnosticsReportBuilder.build(diagState, settings)
+                        clipboard.setText(AnnotatedString(report))
+                        Toast.makeText(context, "Debug Report kopiert", Toast.LENGTH_SHORT).show()
+                    }) { Text("Copy") }
+                    Button(onClick = onClose) { Text("Schließen") }
+                }
+            }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(12.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            SectionCard(title = "App") {
+                Text("Version: ${diagState.versionName} (${diagState.versionCode}) build=${diagState.buildType}")
+                Text("Device: ${diagState.deviceModel} Android ${diagState.androidVersion}")
+            }
+            SectionCard(title = "Pipeline") {
+                Text("Running: ${diagState.isRunning} fps=${"%.2f".format(diagState.fps)} intervalMs=${"%.1f".format(diagState.frameIntervalMs)}")
+                Text("DetectorInfo: ${diagState.detectorInfo}")
+                Text("AnalysisIntervalMs: ${diagState.analysisIntervalMs}")
+            }
+            SectionCard(title = "Detector") {
+                Text("Threads=${diagState.detectorNumThreads} Score>=${diagState.detectorScoreThreshold} MaxResults=${diagState.detectorMaxResults}")
+            }
+            SectionCard(title = "BlindView/TTS") {
+                Text("ttsReady=${diagState.ttsReady} speechRate=${"%.2f".format(diagState.ttsSpeechRate)}")
+                Text("speakInterval=${diagState.minSpeakIntervalMs} repeatInterval=${diagState.repeatSamePlanIntervalMs} maxItems=${diagState.maxItemsSpoken}")
+            }
+            SectionCard(title = "Tracking") {
+                Text("iou=${diagState.iouThreshold} trackMaxAgeMs=${diagState.trackMaxAgeMs} minHits=${diagState.minConsecutiveHits}")
+                Text("overlay=${diagState.showOverlay} labels=${diagState.showOverlayLabels} preview=${diagState.showBlindViewPreview}")
+            }
+            SectionCard(title = "Scene Snapshot") {
+                Text("detectionsRaw=${diagState.detectionsCountRaw} detectionsStable=${diagState.detectionsCountStable}")
+                Text("topLabels=${diagState.topLabels.joinToString()}")
+                Text("lastPreview=${diagState.lastUtterancePreview ?: "-"}")
+            }
+        }
+    }
+}
+
+@Composable
+private fun SectionCard(
+    title: String,
+    content: @Composable ColumnScope.() -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(Color(0x11FFFFFF), RoundedCornerShape(8.dp))
+            .padding(12.dp)
+    ) {
+        Text(title, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+        Spacer(modifier = Modifier.height(6.dp))
+        content()
     }
 }

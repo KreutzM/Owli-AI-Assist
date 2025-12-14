@@ -4,11 +4,14 @@ BikeBuddy ist eine Android-Demo-App fuer ein Fahrrad-Assistenzsystem mit On-Devi
 
 ## Funktionsumfang
 - Live-Kamera-Preview (CameraX) mit Bounding-Box-Overlay
+- Optionales Labeling der BBoxen (Klasse + Confidence) per Toggle
 - Objekt-Erkennung (EfficientDet-Lite2, COCO 80 Klassen)
 - BlindView-Modus: sagt alle erkannten Objekte auf Deutsch mit Uhrzeit-Position an; IoU-Tracker glaettet BBox/Position, filtert Kurzzeit-Noise (Consecutive Hits, Confidence-EMA)
 - Hazard-Auswertung (Basis): Personen/Fahrzeuge -> Warnung; Ampeln -> Info/Phase
 - Ampelphasen-Erkennung (rot/gruen) per HSV-Heuristik (stabilisierte Phase im Overlay)
 - TTS-Ausgabe mit Cooldown/Spam-Schutz, konfigurierbarer Sprechgeschwindigkeit; Status-Anzeige (RealDetector/Fallback)
+- DataStore-basiertes Settings-Menue (Detector/Tracking/BlindView/TTS/Debug/Pipeline) inkl. Reset-to-Defaults
+- Diagnostics-Screen mit Live-Metriken und Copy-to-Clipboard Debug-Report
 - Start/Stop der Pipeline; Decay-Logik fuer Hazards; Auto-Restart nach Rotation/Settings-Aenderung
 
 ## Architektur (kurz)
@@ -38,10 +41,14 @@ BikeBuddy ist eine Android-Demo-App fuer ein Fahrrad-Assistenzsystem mit On-Devi
 1. App starten, Kamera-Permission erlauben.
 2. Start-Button druecken -> Pipeline startet, Preview erscheint (nach Rotation auto-restart).
 3. Status-Anzeige zeigt, ob RealDetector aktiv ist oder Fallback (FakeDetector).
-4. Bounding-Box-Overlay zeigt erkannte Objekte; BlindView-Preview zeigt die aktuelle Ansage (Debug).
-5. Stop-Button -> Pipeline stoppt, Overlay/State wird zurueckgesetzt.
+4. Bounding-Box-Overlay zeigt erkannte Objekte; optional Labels/Confidence via Toggle (Settings).
+5. BlindView-Preview zeigt die aktuelle Ansage (Debug).
+6. Settings (Button) oeffnen -> Parameter anpassen; Reset setzt Defaults.
+7. Diagnostics (Button) oeffnen -> Status ansehen, Report kopieren.
+8. Stop-Button -> Pipeline stoppt, Overlay/State wird zurueckgesetzt.
 
 ## Konfiguration
+- Settings via DataStore (persistiert): Detector/Tracking/BlindView/TTS/Debug/Pipeline-Intervall; Reset im Settings-Screen
 - Detector: `TfliteDetectorOptions` (Threads, NNAPI), Pfad: `models/efficientdet_lite2_int8.tflite` (aus Settings steuerbar)
 - BlindView: `BlindViewConfig` (minConfidence, minConfidenceTrack, IoU-Threshold, bboxSmoothingAlpha, minConsecutiveHits, maxDetectionsPerFrame, maxTracks, Speak-Intervalle, TTS-Speech-Rate, Decay) via Settings anpassbar
 - Hazard (Basis): DefaultSceneAnalyzer `confidenceThreshold = 0.4`, Decay 800 ms. Mapping: Person -> Personenwarnung, Fahrzeugklassen -> Fahrzeugwarnung, Ampel -> Info.
@@ -54,6 +61,7 @@ BikeBuddy ist eine Android-Demo-App fuer ein Fahrrad-Assistenzsystem mit On-Devi
 - TTS braucht ggf. Sekunden bis READY; pendingMessage wird erst bei Ready gesprochen.
 - Kurz aufblitzende Objekte (1 Frame) werden durch minConsecutiveHits + minConfidenceTrack nicht angesagt.
 - Rotation: Overlay zeigt `Rot: <deg>`, Pipeline setzt Rotation pro Frame; Lifecycle-robust fuer Drehen/Stop/Start.
+- Diagnostics: Report enthaelt keine persoenlichen Daten; Clipboard muss erlaubt sein.
 
 ## Lizenz / Nutzung
 Interner Demo-/Prototyp-Status; keine Produktionsfreigabe, keine Gewaehrleistung. Modelle/Assets nur verwenden, wenn lizenzrechtlich geklaert.

@@ -51,6 +51,7 @@ class DefaultVisionPipeline(
                 val detections = detector.detect(bitmap)
                 val trafficLights = trafficLightClassifier.classify(bitmap, detections)
                 val sceneState = sceneAnalyzer.analyze(detections, trafficLights)
+                com.example.bikeassist.diagnostics.DiagnosticsCollector.updateFrameProcessed(now)
                 _sceneStates.tryEmit(sceneState)
                 lastProcessedAt = now
             } finally {

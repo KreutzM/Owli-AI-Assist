@@ -429,3 +429,9 @@ Diese Architektur dient als Zielbild. Codex soll alle Implementierungen möglich
 * BlindView nutzt einen IoU-basierten Lightweight-Tracker pro Label (EMA-BBox/Confidence, Max-Age, minConsecutiveHits), um Position/Uhrzeit pro Objekt zu stabilisieren.
 * Announce-Planer aggregiert Objekte nach Label/Uhrzeit/Distanz, sortiert NEAR->MID->FAR und links->rechts; Speech-Planer/Cooldown verhindert Spam.
 * TTS-Sprechrate ist konfigurierbar (z.B. 2.0) und unabhaengig von den Speak-Intervallen/Cooldowns.
+
+## 15. Settings, Debug & Diagnostics (aktuell)
+
+* Persistente Settings per DataStore (Detector/Tracking/BlindView/TTS/Debug/Pipeline-Intervall) mit Reset-to-Defaults.
+* UI-Toggles: Overlay, Overlay-Labels (BBox + Confidence), BlindView-Preview.
+* Diagnostics-Screen zeigt Pipeline/Detector/Tracking/TTS-Status (FPS, Intervall, Thresholds, AutoStart) und kann einen Debug-Report ins Clipboard kopieren.

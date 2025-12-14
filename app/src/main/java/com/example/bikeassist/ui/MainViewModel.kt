@@ -31,6 +31,7 @@ class MainViewModel(
 
     private var collectJob: Job? = null
     private var pipeline: VisionPipeline? = null
+    private var detectorInfo: String = detectorInfo
 
     fun setPipeline(handle: VisionPipelineHandle) {
         // stop old pipeline if running
@@ -38,7 +39,13 @@ class MainViewModel(
         stopInternal(resetAutoStart = false)
         pipeline?.close()
         pipeline = handle.pipeline
+        detectorInfo = handle.detectorInfo
         _status.value = handle.detectorInfo
+        com.example.bikeassist.diagnostics.DiagnosticsCollector.updatePipelineStatus(
+            isRunning = _isRunning.value,
+            detectorInfo = handle.detectorInfo,
+            analysisIntervalMs = 0L
+        )
         if (wasRunning) {
             start()
         }
@@ -62,9 +69,19 @@ class MainViewModel(
                 collectJob = viewModelScope.launch {
                     current.sceneStates.collect { state ->
                         _sceneState.value = state
+                        com.example.bikeassist.diagnostics.DiagnosticsCollector.updateSceneSnapshot(
+                            detections = state.detections.size,
+                            topLabels = state.detections.groupBy { it.label }.entries.sortedByDescending { it.value.size }.map { it.key },
+                            preview = state.blindViewUtterancePreview
+                        )
                     }
                 }
                 _isRunning.value = true
+                com.example.bikeassist.diagnostics.DiagnosticsCollector.updatePipelineStatus(
+                    isRunning = true,
+                    detectorInfo = detectorInfo,
+                    analysisIntervalMs = 0L
+                )
             }
             .onFailure { _lastError.value = it.message }
     }
@@ -88,6 +105,11 @@ class MainViewModel(
         pipeline?.let { runCatching { it.stop() } }
         _sceneState.value = null
         _isRunning.value = false
+        com.example.bikeassist.diagnostics.DiagnosticsCollector.updatePipelineStatus(
+            isRunning = false,
+            detectorInfo = detectorInfo,
+            analysisIntervalMs = 0L
+        )
     }
 
     override fun onCleared() {

@@ -22,6 +22,8 @@ data class AppSettings(
     val nearThreshold: Float = AppSettingsDefaults.nearThreshold,
     val midThreshold: Float = AppSettingsDefaults.midThreshold,
     val maxItemsSpoken: Int = AppSettingsDefaults.maxItemsSpoken,
+    val minSpeakIntervalMs: Long = AppSettingsDefaults.minSpeakIntervalMs,
+    val repeatSamePlanIntervalMs: Long = AppSettingsDefaults.repeatSamePlanIntervalMs,
     val ttsSpeechRate: Float = AppSettingsDefaults.ttsSpeechRate,
     val showOverlay: Boolean = AppSettingsDefaults.showOverlay,
     val showBlindViewPreview: Boolean = AppSettingsDefaults.showBlindViewPreview,
@@ -45,6 +47,8 @@ data class AppSettings(
             midThreshold = midThreshold,
             maxItemsSpoken = maxItemsSpoken.coerceIn(1, 12),
             ttsSpeechRate = ttsSpeechRate.coerceIn(0.5f, 3.0f),
+            minSpeakIntervalMs = minSpeakIntervalMs,
+            repeatSamePlanIntervalMs = repeatSamePlanIntervalMs,
             iouThreshold = iouThreshold.coerceIn(0.1f, 0.9f),
             bboxSmoothingAlpha = bboxSmoothingAlpha.coerceIn(0f, 1f),
             trackMaxAgeMs = trackMaxAgeMs,
@@ -78,6 +82,8 @@ object AppSettingsDefaults {
     const val nearThreshold: Float = 0.12f
     const val midThreshold: Float = 0.04f
     const val maxItemsSpoken: Int = 8
+    const val minSpeakIntervalMs: Long = 2_500L
+    const val repeatSamePlanIntervalMs: Long = 8_000L
     const val ttsSpeechRate: Float = 2.0f
     const val showOverlay: Boolean = true
     const val showBlindViewPreview: Boolean = true

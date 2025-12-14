@@ -156,5 +156,12 @@ class AudioFeedbackEngine(
         private const val MAX_SPEECH_RATE = 3.0f
     }
 
+    fun diagnostics(): com.example.bikeassist.diagnostics.TtsDiagnostics {
+        return com.example.bikeassist.diagnostics.TtsDiagnostics(
+            ready = ttsReady,
+            speechRate = desiredSpeechRate
+        )
+    }
+
     private enum class TtsState { INITIALIZING, READY, ERROR }
 }

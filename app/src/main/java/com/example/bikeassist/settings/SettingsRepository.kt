@@ -6,8 +6,8 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.longPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
-import androidx.datastore.preferences.core.Preferences
 import com.example.bikeassist.pipeline.AppMode
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -39,6 +39,8 @@ class SettingsRepository(private val context: Context) {
             prefs[PrefKeys.nearThreshold] = updated.nearThreshold
             prefs[PrefKeys.midThreshold] = updated.midThreshold
             prefs[PrefKeys.maxItemsSpoken] = updated.maxItemsSpoken
+            prefs[PrefKeys.minSpeakIntervalMs] = updated.minSpeakIntervalMs
+            prefs[PrefKeys.repeatSamePlanIntervalMs] = updated.repeatSamePlanIntervalMs
             prefs[PrefKeys.ttsSpeechRate] = updated.ttsSpeechRate
             prefs[PrefKeys.showOverlay] = updated.showOverlay
             prefs[PrefKeys.showBlindViewPreview] = updated.showBlindViewPreview
@@ -52,11 +54,10 @@ class SettingsRepository(private val context: Context) {
             prefs.clear()
         }
     }
-
 }
 
 private object PrefKeys {
-    val appMode = stringKey("appMode")
+    val appMode = stringPreferencesKey("appMode")
     val detectorMinConfidence = floatPreferencesKey("detectorMinConfidence")
     val detectorMaxResults = intPreferencesKey("detectorMaxResults")
     val detectorNumThreads = intPreferencesKey("detectorNumThreads")
@@ -73,16 +74,16 @@ private object PrefKeys {
     val nearThreshold = floatPreferencesKey("nearThreshold")
     val midThreshold = floatPreferencesKey("midThreshold")
     val maxItemsSpoken = intPreferencesKey("maxItemsSpoken")
+    val minSpeakIntervalMs = longPreferencesKey("minSpeakIntervalMs")
+    val repeatSamePlanIntervalMs = longPreferencesKey("repeatSamePlanIntervalMs")
     val ttsSpeechRate = floatPreferencesKey("ttsSpeechRate")
     val showOverlay = booleanPreferencesKey("showOverlay")
     val showBlindViewPreview = booleanPreferencesKey("showBlindViewPreview")
     val showOverlayLabels = booleanPreferencesKey("showOverlayLabels")
     val analysisIntervalMs = longPreferencesKey("analysisIntervalMs")
-
-    private fun stringKey(name: String) = androidx.datastore.preferences.core.stringPreferencesKey(name)
 }
 
-private fun Preferences.toSettings(): AppSettings {
+private fun androidx.datastore.preferences.core.Preferences.toSettings(): AppSettings {
     return AppSettings(
         appMode = AppMode.valueOf(this[PrefKeys.appMode] ?: AppSettingsDefaults.appMode.name),
         detectorMinConfidence = this[PrefKeys.detectorMinConfidence] ?: AppSettingsDefaults.detectorMinConfidence,
@@ -102,6 +103,8 @@ private fun Preferences.toSettings(): AppSettings {
         nearThreshold = this[PrefKeys.nearThreshold] ?: AppSettingsDefaults.nearThreshold,
         midThreshold = this[PrefKeys.midThreshold] ?: AppSettingsDefaults.midThreshold,
         maxItemsSpoken = this[PrefKeys.maxItemsSpoken] ?: AppSettingsDefaults.maxItemsSpoken,
+        minSpeakIntervalMs = this[PrefKeys.minSpeakIntervalMs] ?: AppSettingsDefaults.minSpeakIntervalMs,
+        repeatSamePlanIntervalMs = this[PrefKeys.repeatSamePlanIntervalMs] ?: AppSettingsDefaults.repeatSamePlanIntervalMs,
         ttsSpeechRate = this[PrefKeys.ttsSpeechRate] ?: AppSettingsDefaults.ttsSpeechRate,
         showOverlay = this[PrefKeys.showOverlay] ?: AppSettingsDefaults.showOverlay,
         showBlindViewPreview = this[PrefKeys.showBlindViewPreview] ?: AppSettingsDefaults.showBlindViewPreview,
