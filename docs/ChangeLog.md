@@ -15,6 +15,19 @@ Format (angelehnt an Keep a Changelog / SemVer):
 
 ---
 
+## [0.2.2] – 2025-12-13
+
+### Added
+- Pole/Pfosten-Heuristik (Aspect-Ratio + Höhe) für Ampelhindernisse; Obstacle-Proxy-Labels zentral (hydrant, parking meter, stop sign, bench, chair, plant).
+- HazardEvent trägt zone/confidence/poleLike/aspectRatio.
+- Hazard-Heuristiken (Richtung/Zone) und Hazard-Priorisierung im SceneAnalyzer.
+
+### Changed
+- Audio-Signatur mit Richtung/Zone, abgestufte Cooldowns (Anti-Spam).
+- SceneOverlay zeigt Primary-Message/TL-Status/Rotation.
+
+---
+
 ## [0.2.1] – 2025-12-13
 
 ### Added
