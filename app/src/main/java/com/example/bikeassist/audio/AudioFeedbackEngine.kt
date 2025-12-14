@@ -3,7 +3,10 @@ package com.example.bikeassist.audio
 import android.content.Context
 import android.speech.tts.TextToSpeech
 import android.util.Log
+import com.example.bikeassist.domain.Direction
+import com.example.bikeassist.domain.HazardEvent
 import com.example.bikeassist.domain.HazardLevel
+import com.example.bikeassist.domain.ProximityZone
 import com.example.bikeassist.domain.SceneState
 import java.io.Closeable
 import java.util.Locale
@@ -20,6 +23,7 @@ class AudioFeedbackEngine(
     private var lastSpokenAt: Long = 0L
     private var lastMessage: String? = null
     private var lastLevel: HazardLevel = HazardLevel.NONE
+    private var lastSignature: SpokenSignature? = null
     private var pendingMessage: String? = null
     private var pendingLevel: HazardLevel = HazardLevel.NONE
     private var ttsReady: Boolean = false
@@ -44,20 +48,24 @@ class AudioFeedbackEngine(
     }
 
     fun onSceneUpdated(state: SceneState) {
-        val message = state.primaryMessage ?: run {
-            // Reset, damit bei erneuter Warnung wieder gesprochen wird.
+        val message = state.primaryMessage
+        val now = System.currentTimeMillis()
+
+        val signature = buildSignature(state)
+        val cooldown = cooldownForLevel(signature?.level ?: HazardLevel.NONE)
+        val levelIncreased = signature != null && lastSignature?.level?.ordinal?.let { signature.level.ordinal > it } == true
+        val signatureChanged = signature != null && signature != lastSignature
+        val cooldownPassed = now - lastSpokenAt >= cooldown
+
+        if (message == null || signature == null) {
             lastMessage = null
             lastLevel = state.overallHazardLevel
             return
         }
-        val now = System.currentTimeMillis()
-        val levelIncreased = state.overallHazardLevel.ordinal > lastLevel.ordinal
-        val messageChanged = message != lastMessage
-        val cooldownPassed = now - lastSpokenAt >= cooldownMillis
 
         if (!ttsReady) {
             pendingMessage = message
-            pendingLevel = state.overallHazardLevel
+            pendingLevel = signature.level
             if (now - lastNotReadyLog >= notReadyLogInterval) {
                 Log.d(TAG, "TTS not ready (state=$ttsState), pendingMessage=$pendingMessage")
                 lastNotReadyLog = now
@@ -65,13 +73,21 @@ class AudioFeedbackEngine(
             return
         }
 
-        if ((levelIncreased || messageChanged) && cooldownPassed) {
+        if (signature.level == HazardLevel.NONE) {
+            lastSignature = signature
+            lastMessage = message
+            lastLevel = signature.level
+            return
+        }
+
+        if ((signatureChanged || levelIncreased) && cooldownPassed) {
             speak(message)
             lastMessage = message
-            lastLevel = state.overallHazardLevel
+            lastLevel = signature.level
+            lastSignature = signature
             lastSpokenAt = now
         } else {
-            lastLevel = maxHazard(lastLevel, state.overallHazardLevel)
+            lastLevel = maxHazard(lastLevel, signature.level)
         }
     }
 
@@ -115,4 +131,38 @@ class AudioFeedbackEngine(
     }
 
     private enum class TtsState { INITIALIZING, READY, ERROR }
+
+    private data class SpokenSignature(
+        val kind: String,
+        val level: HazardLevel,
+        val direction: Direction?,
+        val zone: ProximityZone?
+    )
+
+    private fun buildSignature(state: SceneState): SpokenSignature? {
+        state.primaryTrafficLight?.let {
+            return when (it) {
+                com.example.bikeassist.domain.TrafficLightPhase.RED -> SpokenSignature("TL_RED", HazardLevel.WARNING, null, null)
+                com.example.bikeassist.domain.TrafficLightPhase.GREEN -> SpokenSignature("TL_GREEN", HazardLevel.NONE, null, null)
+                com.example.bikeassist.domain.TrafficLightPhase.UNKNOWN -> null
+            }
+        }
+        val hazard = state.primaryHazard ?: return null
+        if (hazard.urgency == HazardLevel.NONE) return null
+        val kind = when (hazard.type) {
+            com.example.bikeassist.domain.HazardType.PERSON_AHEAD -> "PERSON"
+            com.example.bikeassist.domain.HazardType.VEHICLE_AHEAD -> "VEHICLE"
+            com.example.bikeassist.domain.HazardType.OBSTACLE_AHEAD -> "OBSTACLE"
+            else -> "OTHER"
+        }
+        return SpokenSignature(kind, hazard.urgency, hazard.direction, hazard.zone)
+    }
+
+    private fun cooldownForLevel(level: HazardLevel): Long {
+        return when (level) {
+            HazardLevel.DANGER -> 1500L
+            HazardLevel.WARNING -> 2500L
+            HazardLevel.NONE -> Long.MAX_VALUE
+        }
+    }
 }

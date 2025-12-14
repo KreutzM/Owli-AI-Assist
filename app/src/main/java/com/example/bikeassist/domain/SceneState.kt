@@ -8,6 +8,7 @@ data class SceneState(
     val hazards: List<HazardEvent>,
     val primaryMessage: String?,
     val overallHazardLevel: HazardLevel,
+    val primaryHazard: HazardEvent? = null,
     val trafficLights: List<TrafficLightObservation> = emptyList(),
     val primaryTrafficLight: TrafficLightPhase? = null
 )

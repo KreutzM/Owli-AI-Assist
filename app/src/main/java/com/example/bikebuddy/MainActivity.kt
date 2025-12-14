@@ -172,6 +172,7 @@ fun DemoScreen(
                 message = sceneMessage,
                 rotationText = rotationDegrees?.let { "${it}°" },
                 trafficLights = trafficLights,
+                primaryMessage = sceneMessage,
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(12.dp)
@@ -218,6 +219,7 @@ fun SceneOverlay(
     message: String?,
     rotationText: String?,
     trafficLights: List<TrafficLightObservation>,
+    primaryMessage: String? = null,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
@@ -228,9 +230,8 @@ fun SceneOverlay(
         primaryTl?.let {
             Text(text = "TL: ${it.phase} (conf=${"%.2f".format(it.confidence)})", color = Color.White)
         }
-        message?.let {
-            Text(text = it, color = Color.White)
-        }
+        primaryMessage?.let { Text(text = it, color = Color.White, fontWeight = FontWeight.SemiBold) }
+        message?.let { Text(text = it, color = Color.White) }
     }
 }
 

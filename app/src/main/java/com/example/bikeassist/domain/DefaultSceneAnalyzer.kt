@@ -1,17 +1,18 @@
 package com.example.bikeassist.domain
 
 import com.example.bikeassist.ml.Detection
-import com.example.bikeassist.domain.TrafficLightObservation
-import com.example.bikeassist.domain.TrafficLightPhase
+import kotlin.math.max
 
 /**
- * Platzhalter-Heuristik. Liefert einen leeren SceneState, bis echte Logik implementiert ist.
+ * Heuristiken für Hazards inkl. Richtung/Zone und Ampel-Integration.
  */
 class DefaultSceneAnalyzer : SceneAnalyzer {
     private var lastRelevantDetectionAt: Long = 0L
     private val decayMillis: Long = 800L
     private val confidenceThreshold: Float = 0.4f
     private var lastStableTrafficLight: TrafficLightPhase = TrafficLightPhase.UNKNOWN
+    private var lastPoleLike: Boolean = false
+    private var lastAspectRatio: Float = 0f
 
     override fun analyze(detections: List<Detection>, trafficLights: List<TrafficLightObservation>): SceneState {
         val now = System.currentTimeMillis()
@@ -20,41 +21,37 @@ class DefaultSceneAnalyzer : SceneAnalyzer {
             .filter { it.confidence >= confidenceThreshold }
             .mapNotNull { mapDetectionToHazard(it) }
 
-        val tlPrimary = trafficLights.firstOrNull()
-        val tlHazard = tlPrimary?.let {
+        val primaryTl = trafficLights.firstOrNull()
+        val tlHazard = primaryTl?.let {
             when (it.phase) {
                 TrafficLightPhase.RED -> HazardEvent(
                     type = HazardType.TRAFFIC_LIGHT_RED,
                     direction = Direction.CENTER,
-                    urgency = HazardLevel.WARNING
+                    urgency = HazardLevel.WARNING,
+                    zone = ProximityZone.MID,
+                    confidence = it.confidence
                 )
                 TrafficLightPhase.GREEN -> HazardEvent(
                     type = HazardType.TRAFFIC_LIGHT_GREEN,
                     direction = Direction.CENTER,
-                    urgency = HazardLevel.NONE
+                    urgency = HazardLevel.NONE,
+                    zone = ProximityZone.MID,
+                    confidence = it.confidence
                 )
                 else -> null
             }
         }
 
         val combinedHazards = buildList {
-            addAll(hazardCandidates.map { it.first })
+            addAll(hazardCandidates)
             tlHazard?.let { add(it) }
         }
 
+        val primaryHazard = selectPrimaryHazard(combinedHazards)
+
         if (combinedHazards.isEmpty()) {
-            // Decay nach Timeout: zurück auf NONE
             if (lastRelevantDetectionAt != 0L && now - lastRelevantDetectionAt > decayMillis) {
                 lastRelevantDetectionAt = 0L
-                return SceneState(
-                    timestamp = now,
-                    detections = detections,
-                    hazards = emptyList(),
-                    primaryMessage = null,
-                    overallHazardLevel = HazardLevel.NONE,
-                    trafficLights = trafficLights,
-                    primaryTrafficLight = tlPrimary?.phase
-                )
             }
             return SceneState(
                 timestamp = now,
@@ -63,16 +60,16 @@ class DefaultSceneAnalyzer : SceneAnalyzer {
                 primaryMessage = null,
                 overallHazardLevel = HazardLevel.NONE,
                 trafficLights = trafficLights,
-                primaryTrafficLight = tlPrimary?.phase
+                primaryTrafficLight = primaryTl?.phase,
+                primaryHazard = primaryHazard
             )
         }
 
         lastRelevantDetectionAt = now
-        val overallLevel = combinedHazards.maxOfOrNull { it.urgency } ?: HazardLevel.NONE
-        val primary = hazardCandidates.maxByOrNull { it.third }
+        val overallLevel = primaryHazard?.urgency ?: HazardLevel.NONE
 
         val primaryMessage = buildString {
-            when (tlPrimary?.phase) {
+            when (primaryTl?.phase) {
                 TrafficLightPhase.RED -> {
                     append("Ampel rot")
                     lastStableTrafficLight = TrafficLightPhase.RED
@@ -83,13 +80,13 @@ class DefaultSceneAnalyzer : SceneAnalyzer {
                     }
                     lastStableTrafficLight = TrafficLightPhase.GREEN
                 }
-                TrafficLightPhase.UNKNOWN, null -> {
-                    if (primary != null && primary.second != null) {
-                        append(primary.second)
+                else -> {
+                    if (primaryHazard != null) {
+                        append(hazardMessage(primaryHazard))
                     }
                 }
             }
-        }.ifEmpty { primary?.second }
+        }.ifEmpty { null }
 
         return SceneState(
             timestamp = now,
@@ -98,41 +95,86 @@ class DefaultSceneAnalyzer : SceneAnalyzer {
             primaryMessage = primaryMessage,
             overallHazardLevel = overallLevel,
             trafficLights = trafficLights,
-            primaryTrafficLight = tlPrimary?.phase
+            primaryTrafficLight = primaryTl?.phase,
+            primaryHazard = primaryHazard
         )
     }
 
-    private fun mapDetectionToHazard(detection: Detection): Triple<HazardEvent, String?, Float>? {
+    private fun mapDetectionToHazard(detection: Detection): HazardEvent? {
         val label = detection.label.lowercase()
-        return when (label) {
-            "person" -> Triple(
-                HazardEvent(
-                    type = HazardType.PERSON_AHEAD,
-                    direction = Direction.CENTER,
-                    urgency = HazardLevel.WARNING
-                ),
-                "Achtung, Person voraus",
-                detection.confidence
-            )
-            "car", "truck", "bus", "motorcycle", "bicycle" -> Triple(
-                HazardEvent(
-                    type = HazardType.VEHICLE_AHEAD,
-                    direction = Direction.CENTER,
-                    urgency = HazardLevel.WARNING
-                ),
-                "Achtung, Fahrzeug voraus",
-                detection.confidence
-            )
-            "traffic light", "traffic_light", "trafficlight" -> Triple(
-                HazardEvent(
-                    type = HazardType.TRAFFIC_LIGHT_RED,
-                    direction = Direction.CENTER,
-                    urgency = HazardLevel.NONE
-                ),
-                null,
-                detection.confidence
-            )
+        val type = when (label) {
+            "person" -> HazardType.PERSON_AHEAD
+            "car", "truck", "bus", "motorcycle", "bicycle" -> HazardType.VEHICLE_AHEAD
+            in OBSTACLE_PROXY_LABELS -> HazardType.OBSTACLE_AHEAD
             else -> null
+        } ?: return null
+        val dir = directionFromBox(detection.bbox)
+        val zone = zoneFromBox(detection.bbox)
+        val (poleLike, aspectRatio) = poleLikeHeuristic(label, detection.bbox)
+        val urgency = hazardLevelWithPole(zone, detection.confidence, poleLike)
+        return HazardEvent(
+            type = type,
+            direction = dir,
+            urgency = urgency,
+            zone = zone,
+            confidence = detection.confidence,
+            poleLike = poleLike,
+            aspectRatio = aspectRatio
+        )
+    }
+
+    private fun selectPrimaryHazard(hazards: List<HazardEvent>): HazardEvent? {
+        return hazards.sortedWith(
+            compareByDescending<HazardEvent> { it.urgency }
+                .thenByDescending { zoneScore(it.zone) }
+                .thenByDescending { if (it.poleLike) 1 else 0 }
+                .thenByDescending { it.confidence }
+        ).firstOrNull()
+    }
+
+    private fun zoneScore(zone: ProximityZone): Int = when (zone) {
+        ProximityZone.NEAR -> 3
+        ProximityZone.MID -> 2
+        ProximityZone.FAR -> 1
+    }
+
+    private fun hazardMessage(event: HazardEvent): String {
+        val dirText = when (event.direction) {
+            Direction.LEFT -> "links"
+            Direction.RIGHT -> "rechts"
+            Direction.CENTER, null -> "voraus"
+        }
+        return when (event.type) {
+            HazardType.PERSON_AHEAD -> "Achtung, Person $dirText"
+            HazardType.VEHICLE_AHEAD -> "Achtung, Fahrzeug $dirText"
+            HazardType.OBSTACLE_AHEAD -> "Hindernis $dirText"
+            HazardType.TRAFFIC_LIGHT_RED -> "Ampel rot"
+            HazardType.TRAFFIC_LIGHT_GREEN -> "Ampel grün"
+            HazardType.UNKNOWN -> "Warnung"
+        }
+    }
+
+    private fun poleLikeHeuristic(label: String, bbox: com.example.bikeassist.ml.BoundingBox): Pair<Boolean, Float> {
+        val width = (bbox.xMax - bbox.xMin).coerceAtLeast(1e-6f)
+        val height = (bbox.yMax - bbox.yMin).coerceAtLeast(1e-6f)
+        val ar = height / width
+        val isPoleLabel = label in STRONG_OBSTACLE_LABELS
+        val tall = ar >= 2.5f && height >= 0.20f
+        val poleLike = isPoleLabel && tall
+        return poleLike to ar
+    }
+
+    private fun hazardLevelWithPole(zone: ProximityZone, conf: Float, poleLike: Boolean): HazardLevel {
+        val base = when (zone) {
+            ProximityZone.NEAR -> if (conf > 0.6f) HazardLevel.DANGER else HazardLevel.WARNING
+            ProximityZone.MID -> HazardLevel.WARNING
+            ProximityZone.FAR -> HazardLevel.NONE
+        }
+        if (!poleLike) return base
+        return when (base) {
+            HazardLevel.DANGER -> HazardLevel.DANGER
+            HazardLevel.WARNING -> HazardLevel.DANGER
+            HazardLevel.NONE -> HazardLevel.WARNING
         }
     }
 }

@@ -13,8 +13,14 @@ enum class HazardType {
 
 enum class Direction { LEFT, RIGHT, CENTER }
 
+enum class ProximityZone { FAR, MID, NEAR }
+
 data class HazardEvent(
     val type: HazardType,
     val direction: Direction? = null,
-    val urgency: HazardLevel = HazardLevel.NONE
+    val urgency: HazardLevel = HazardLevel.NONE,
+    val zone: ProximityZone = ProximityZone.FAR,
+    val confidence: Float = 0f,
+    val poleLike: Boolean = false,
+    val aspectRatio: Float? = null
 )
