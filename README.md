@@ -8,6 +8,7 @@ BikeBuddy ist eine Android-Demo-App für ein Fahrrad-Assistenzsystem mit On-Devi
 - Hazard-Auswertung: Personen/Fahrzeuge → Warnung; Ampeln → Info (derzeit ohne Status)
 - TTS-Ausgabe mit Cooldown und Status-Anzeige (RealDetector/Fallback)
 - Start/Stop der Pipeline; Decay-Logik für Hazards
+- Ampelphasen-Erkennung (rot/grün) per HSV-Heuristik (stabilisiert), Status im Overlay
 
 ## Architektur (kurz)
 - `camera`: CameraFrameSource (CameraX Preview + ImageAnalysis)
@@ -17,6 +18,7 @@ BikeBuddy ist eine Android-Demo-App für ein Fahrrad-Assistenzsystem mit On-Devi
 - `pipeline`: DefaultVisionPipeline (Frame→Bitmap→Detect→Analyze), VisionPipelineModule (DI + Real/Fake Auswahl)
 - `audio`: AudioFeedbackEngine (TTS, Cooldown, pendingMessage)
 - `ui`: MainActivity (Compose: PreviewView + Overlay + ControlPanel), MainViewModel (Flows, Start/Stop/Status)
+- `processing` Ampel: TrafficLightPhaseClassifier (HSV, Zonen, Hysterese), SceneState trägt TrafficLights
 
 ## Voraussetzungen
 - Android Studio (AGP 8.x), Kotlin 2.0.x, Compose aktiviert
@@ -42,6 +44,7 @@ BikeBuddy ist eine Android-Demo-App für ein Fahrrad-Assistenzsystem mit On-Devi
 - Hazard-Schwelle: DefaultSceneAnalyzer nutzt `confidenceThreshold = 0.4`, Decay 800 ms. Mapping: Person → Personenwarnung, Fahrzeugklassen → Fahrzeugwarnung, Ampel → Info.
 - TTS-Cooldown: 2500 ms, spricht bei Message-Wechsel oder Hazard-Level-Anstieg; Reset, wenn keine Meldung vorliegt.
 - Preprocessing: YUV_420_888 → ARGB_8888 ohne JPEG-Roundtrip, Rotation wird angewendet (`rotationDegrees`), optional Downscale.
+- Ampel: TrafficLightPhaseClassifier (ROI-Inset, Zonenanalyse rot/oben, grün/unten, Hysterese mit stabiler Phase).
 
 ## Fehlerquellen / Hinweise
 - Fehlt das Modell-Asset, wird automatisch der FakeDetector verwendet (Status-Anzeige).

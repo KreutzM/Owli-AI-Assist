@@ -10,17 +10,22 @@ Format (angelehnt an Keep a Changelog / SemVer):
 ## [Unreleased]
 
 ### Added
-- Assets-Struktur unter `app/src/main/assets/models/` mit Beispiel-Labels.
-- Unit-Test für `DefaultSceneAnalyzer` (Hazard/Messages).
-- TFLite Task Vision Detector (`TfliteTaskDetector`) mit EfficientDet-Lite2-Konfiguration und Fallback auf FakeDetector.
-- Bitmap-basierter Preprocessor für ImageProxy→Bitmap.
-- UI zeigt Detector-Status (Real/Fallback) an; Modell-Asset wird geprüft (`models/efficientdet_lite2_int8.tflite`), Fallback wird gemeldet.
-- Labels-Datei (`labels.txt`) im Modell-Asset-Pfad wiederhergestellt.
 
 ### Changed
-- Preprocessor/Detector-Interfaces angepasst auf Bitmap-Input, Pipeline nutzt echten Detector-Slot.
-- Gradle-Dependency: `tensorflow-lite-task-vision` ergänzt.
-- Pipeline schließt ImageProxy sicher, nutzt detect(bitmap).
+
+---
+
+## [0.2.0] – 2025-12-13
+
+### Added
+- Ampelphasen-Erkennung (HSV, ROI-Inset, Zonenanalyse, Hysterese) mit Phase-Ausgabe im Overlay und Audio.
+- UI-Overlay: Traffic-Light-Phase/Confidence, Rotationstext.
+- README aktualisiert (Ampel, Preprocessing, Hazard/TTS).
+
+### Changed
+- Preprocessing: direkter YUV_420_888→ARGB_8888, Rotation, optional Downscale; Logging entdrosselt.
+- Pipeline/Lifecycle robuster (ImageProxy close, Rotation-Tracking, Pipeline-Neuaufbau pro Activity).
+- SceneAnalyzer: label-basiertes Hazard-Mapping, Decay, Ampel-Message (Grün nur nach Rot).
 
 ---
 
