@@ -65,7 +65,10 @@ class MainActivity : ComponentActivity() {
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (isGranted) {
-                viewModel.start()
+                AppLogger.d("Permission granted -> autoStartIfNeeded")
+                viewModel.autoStartIfNeeded()
+            } else {
+                AppLogger.d("Permission denied -> no start")
             }
         }
 
@@ -92,8 +95,8 @@ class MainActivity : ComponentActivity() {
                         hazardLevel = sceneState?.overallHazardLevel?.name ?: "NONE",
                         trafficLights = sceneState?.trafficLights.orEmpty(),
                         blindViewPreview = sceneState?.blindViewUtterancePreview,
-                        onStart = { ensureCameraPermissionAndStart() },
-                        onStop = { viewModel.stop() },
+                        onStart = { onUserStart() },
+                        onStop = { onUserStop() },
                         cameraFrameSource = cameraFrameSource,
                         rotationDegrees = cameraFrameSource.lastRotationDegrees,
                         modifier = Modifier.padding(innerPadding)
@@ -103,10 +106,16 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        AppLogger.d("Activity onStart, shouldAutoStart=${viewModel.shouldAutoStart.value}")
+        ensurePermissionAndAutoStart()
+    }
+
     override fun onStop() {
         super.onStop()
-        AppLogger.d("Activity onStop -> stop pipeline")
-        viewModel.stop()
+        AppLogger.d("Activity onStop -> stop pipeline (lifecycle)")
+        viewModel.stopForLifecycle()
     }
 
     override fun onDestroy() {
@@ -128,10 +137,24 @@ class MainActivity : ComponentActivity() {
         viewModel.setPipeline(handle)
     }
 
-    private fun ensureCameraPermissionAndStart() {
+    private fun onUserStart() {
+        AppLogger.d("User requested start")
+        viewModel.requestStart()
+        ensurePermissionAndAutoStart()
+    }
+
+    private fun onUserStop() {
+        AppLogger.d("User requested stop")
+        viewModel.stopUser()
+    }
+
+    private fun ensurePermissionAndAutoStart() {
         when (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)) {
-            PackageManager.PERMISSION_GRANTED -> viewModel.start()
-            else -> requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+            PackageManager.PERMISSION_GRANTED -> viewModel.autoStartIfNeeded()
+            else -> {
+                AppLogger.d("Requesting camera permission for autoStart=${viewModel.shouldAutoStart.value}")
+                requestPermissionLauncher.launch(Manifest.permission.CAMERA)
+            }
         }
     }
 

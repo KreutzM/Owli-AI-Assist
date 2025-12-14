@@ -17,6 +17,9 @@ class MainViewModel(
     private val _isRunning = MutableStateFlow(false)
     val isRunning: StateFlow<Boolean> = _isRunning
 
+    private val _shouldAutoStart = MutableStateFlow(false)
+    val shouldAutoStart: StateFlow<Boolean> = _shouldAutoStart
+
     private val _sceneState = MutableStateFlow<SceneState?>(null)
     val sceneState: StateFlow<SceneState?> = _sceneState
 
@@ -32,11 +35,21 @@ class MainViewModel(
     fun setPipeline(handle: VisionPipelineHandle) {
         // stop old pipeline if running
         val wasRunning = _isRunning.value
-        stop()
+        stopInternal(resetAutoStart = false)
         pipeline?.close()
         pipeline = handle.pipeline
         _status.value = handle.detectorInfo
         if (wasRunning) {
+            start()
+        }
+    }
+
+    fun requestStart() {
+        _shouldAutoStart.value = true
+    }
+
+    fun autoStartIfNeeded() {
+        if (_shouldAutoStart.value) {
             start()
         }
     }
@@ -56,7 +69,19 @@ class MainViewModel(
             .onFailure { _lastError.value = it.message }
     }
 
-    fun stop() {
+    fun stopUser() {
+        _shouldAutoStart.value = false
+        stopInternal(resetAutoStart = false)
+    }
+
+    fun stopForLifecycle() {
+        stopInternal(resetAutoStart = false)
+    }
+
+    private fun stopInternal(resetAutoStart: Boolean = true) {
+        if (resetAutoStart) {
+            _shouldAutoStart.value = false
+        }
         if (!_isRunning.value) return
         collectJob?.cancel()
         collectJob = null
@@ -66,7 +91,7 @@ class MainViewModel(
     }
 
     override fun onCleared() {
-        stop()
+        stopInternal(resetAutoStart = false)
         pipeline?.let { runCatching { it.close() } }
         super.onCleared()
     }
