@@ -70,7 +70,7 @@ class DefaultVisionPipeline(
         running = true
     }
 
-    override fun stop() {
+    override fun stop() {   
         AppLogger.d("Pipeline stop")
         cameraFrameSource.frameListener = null
         cameraFrameSource.stop()

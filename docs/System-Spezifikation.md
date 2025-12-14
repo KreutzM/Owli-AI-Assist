@@ -219,3 +219,12 @@ Diese System-Spezifikation legt fest:
 
 Sie dient Codex als Grundlage für nachvollziehbare, konsistente Implementierungsvorschläge.
 
+
+---
+
+## BlindView-Modus (aktuell)
+
+- Ansage aller erkannten COCO-Objekte auf Deutsch mit Uhrzeit-Position.
+- IoU-Tracker glattet BBox/Confidence (EMA), filtert Noise via minConfidenceTrack, minConsecutiveHits und Max-Age.
+- Announce-Planer gruppiert nach Label/Uhrzeit/Distanz und sortiert NEAR->MID->FAR, links->rechts.
+- TTS mit Cooldown/Hash-Anti-Spam; Speech-Rate konfigurierbar (Default 2.0).

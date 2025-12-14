@@ -4,6 +4,7 @@ import com.example.bikeassist.blindview.BlindViewAnnouncePlanner
 import com.example.bikeassist.blindview.BlindViewConfig
 import com.example.bikeassist.blindview.BlindViewUtteranceFormatter
 import com.example.bikeassist.blindview.CocoLabelTranslator
+import com.example.bikeassist.blindview.IouObjectTracker
 import com.example.bikeassist.ml.Detection
 import com.example.bikeassist.domain.TrafficLightObservation
 import com.example.bikeassist.domain.TrafficLightPhase
@@ -23,10 +24,12 @@ class DefaultSceneAnalyzer(
         config = blindViewConfig,
         translator = translator
     )
+    private val tracker = IouObjectTracker(blindViewConfig)
 
     override fun analyze(detections: List<Detection>, trafficLights: List<TrafficLightObservation>): SceneState {
         val now = System.currentTimeMillis()
-        val blindViewItems = announcePlanner.plan(detections)
+        val stableDetections = tracker.update(detections, now)
+        val blindViewItems = announcePlanner.plan(stableDetections)
         val blindViewUtterance = BlindViewUtteranceFormatter.format(
             blindViewItems,
             blindViewConfig.maxItemsSpoken

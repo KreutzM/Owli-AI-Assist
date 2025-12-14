@@ -420,3 +420,11 @@ Die Architektur soll es Codex ermöglichen, neue Features relativ einfach einzuf
   * Bei Generierung von Beispielcode bitte sinnvolle Default-Werte, Kommentare in Deutsch und Threading-Hinweise ergänzen.
 
 Diese Architektur dient als Zielbild. Codex soll alle Implementierungen möglichst eng an dieses Design anlehnen.
+
+---
+
+## 14. BlindView-Hinweise
+
+* BlindView nutzt einen IoU-basierten Lightweight-Tracker pro Label (EMA-BBox/Confidence, Max-Age, minConsecutiveHits), um Position/Uhrzeit pro Objekt zu stabilisieren.
+* Announce-Planer aggregiert Objekte nach Label/Uhrzeit/Distanz, sortiert NEAR->MID->FAR und links->rechts; Speech-Planer/Cooldown verhindert Spam.
+* TTS-Sprechrate ist konfigurierbar (z.B. 2.0) und unabhaengig von den Speak-Intervallen/Cooldowns.
