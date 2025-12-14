@@ -5,6 +5,9 @@ import android.speech.tts.TextToSpeech
 import android.util.Log
 import com.example.bikeassist.domain.HazardLevel
 import com.example.bikeassist.domain.SceneState
+import com.example.bikeassist.blindview.BlindViewConfig
+import com.example.bikeassist.blindview.BlindViewSpeechPlanner
+import com.example.bikeassist.pipeline.AppMode
 import java.io.Closeable
 import java.util.Locale
 
@@ -13,7 +16,10 @@ import java.util.Locale
  */
 class AudioFeedbackEngine(
     private val context: Context,
-    private val cooldownMillis: Long = 2500L
+    private val mode: AppMode = AppMode.BLINDVIEW,
+    private val blindViewConfig: BlindViewConfig = BlindViewConfig(),
+    private val cooldownMillis: Long = blindViewConfig.minSpeakIntervalMs,
+    private val speechPlanner: BlindViewSpeechPlanner = BlindViewSpeechPlanner(blindViewConfig)
 ) : Closeable {
 
     private var tts: TextToSpeech? = null
@@ -26,14 +32,20 @@ class AudioFeedbackEngine(
     private var ttsState: TtsState = TtsState.INITIALIZING
     private var lastNotReadyLog: Long = 0L
     private val notReadyLogInterval = 1_000L
+    private val desiredSpeechRate: Float =
+        blindViewConfig.ttsSpeechRate.coerceIn(MIN_SPEECH_RATE, MAX_SPEECH_RATE)
 
     init {
         tts = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 val result = tts?.setLanguage(Locale.getDefault()) ?: TextToSpeech.LANG_NOT_SUPPORTED
+                val rateResult = tts?.setSpeechRate(desiredSpeechRate)
                 ttsReady = result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED
                 ttsState = if (ttsReady) TtsState.READY else TtsState.ERROR
-                Log.d(TAG, "TTS init success, languageResult=$result, ready=$ttsReady, pendingMessage=$pendingMessage")
+                Log.d(
+                    TAG,
+                    "TTS init success, languageResult=$result, ready=$ttsReady, speechRate=$desiredSpeechRate setResult=$rateResult, pendingMessage=$pendingMessage"
+                )
                 speakPendingIfPossible()
             } else {
                 ttsReady = false
@@ -44,6 +56,27 @@ class AudioFeedbackEngine(
     }
 
     fun onSceneUpdated(state: SceneState) {
+        if (mode == AppMode.BLINDVIEW) {
+            val now = System.currentTimeMillis()
+            val utterance = speechPlanner.nextUtterance(state.blindViewItems, now)
+            if (utterance == null) {
+                return
+            }
+            if (!ttsReady) {
+                pendingMessage = utterance
+                pendingLevel = state.overallHazardLevel
+                if (now - lastNotReadyLog >= notReadyLogInterval) {
+                    Log.d(TAG, "TTS not ready (state=$ttsState), pendingMessage=$pendingMessage")
+                    lastNotReadyLog = now
+                }
+                return
+            }
+            speak(utterance)
+            lastMessage = utterance
+            lastLevel = state.overallHazardLevel
+            lastSpokenAt = now
+            return
+        }
         val message = state.primaryMessage ?: run {
             // Reset, damit bei erneuter Warnung wieder gesprochen wird.
             lastMessage = null
@@ -112,6 +145,8 @@ class AudioFeedbackEngine(
 
     companion object {
         private const val TAG = "AudioFeedbackEngine"
+        private const val MIN_SPEECH_RATE = 0.5f
+        private const val MAX_SPEECH_RATE = 3.0f
     }
 
     private enum class TtsState { INITIALIZING, READY, ERROR }

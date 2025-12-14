@@ -40,10 +40,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import com.example.bikeassist.blindview.BlindViewConfig
 import com.example.bikeassist.audio.AudioFeedbackEngine
 import com.example.bikeassist.camera.CameraFrameSource
 import com.example.bikeassist.domain.TrafficLightObservation
 import com.example.bikeassist.ml.Detection
+import com.example.bikeassist.pipeline.AppMode
 import com.example.bikeassist.pipeline.VisionPipelineModule
 import com.example.bikeassist.pipeline.VisionPipelineModule.create
 import com.example.bikeassist.ui.MainViewModel
@@ -53,8 +55,10 @@ import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
 
+    private val appMode = AppMode.BLINDVIEW
+    private val blindViewConfig = BlindViewConfig()
     private val cameraFrameSource by lazy { CameraFrameSource(this, this) }
-    private val audioFeedbackEngine by lazy { AudioFeedbackEngine(this) }
+    private val audioFeedbackEngine by lazy { AudioFeedbackEngine(this, mode = appMode, blindViewConfig = blindViewConfig) }
 
     private val viewModel: MainViewModel by viewModels()
 
@@ -87,6 +91,7 @@ class MainActivity : ComponentActivity() {
                         detectionsCount = sceneState?.detections?.size ?: 0,
                         hazardLevel = sceneState?.overallHazardLevel?.name ?: "NONE",
                         trafficLights = sceneState?.trafficLights.orEmpty(),
+                        blindViewPreview = sceneState?.blindViewUtterancePreview,
                         onStart = { ensureCameraPermissionAndStart() },
                         onStop = { viewModel.stop() },
                         cameraFrameSource = cameraFrameSource,
@@ -116,7 +121,9 @@ class MainActivity : ComponentActivity() {
             lifecycleOwner = this,
             scope = lifecycleScope,
             cameraFrameSource = cameraFrameSource,
-            useFake = false
+            useFake = false,
+            mode = appMode,
+            blindViewConfig = blindViewConfig
         )
         viewModel.setPipeline(handle)
     }
@@ -149,6 +156,7 @@ fun DemoScreen(
     detectionsCount: Int,
     hazardLevel: String,
     trafficLights: List<com.example.bikeassist.domain.TrafficLightObservation>,
+    blindViewPreview: String?,
     onStart: () -> Unit,
     onStop: () -> Unit,
     cameraFrameSource: CameraFrameSource,
@@ -172,6 +180,7 @@ fun DemoScreen(
                 message = sceneMessage,
                 rotationText = rotationDegrees?.let { "${it}°" },
                 trafficLights = trafficLights,
+                blindViewPreview = blindViewPreview,
                 modifier = Modifier
                     .align(Alignment.TopStart)
                     .padding(12.dp)
@@ -186,6 +195,7 @@ fun DemoScreen(
                 statusMessage = statusMessage,
                 onStart = onStart,
                 onStop = onStop,
+                blindViewPreview = blindViewPreview,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(16.dp)
@@ -218,6 +228,7 @@ fun SceneOverlay(
     message: String?,
     rotationText: String?,
     trafficLights: List<TrafficLightObservation>,
+    blindViewPreview: String?,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
@@ -230,6 +241,9 @@ fun SceneOverlay(
         }
         message?.let {
             Text(text = it, color = Color.White)
+        }
+        blindViewPreview?.let {
+            Text(text = "BV: $it", color = Color.White)
         }
     }
 }
@@ -265,6 +279,7 @@ fun ControlPanel(
     statusMessage: String,
     onStart: () -> Unit,
     onStop: () -> Unit,
+    blindViewPreview: String?,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
@@ -285,6 +300,7 @@ fun ControlPanel(
         Text(text = "Detector: $statusMessage")
         sceneMessage?.let { Text(text = "Letzte Meldung: $it") }
         lastError?.let { Text(text = "Fehler: $it", color = MaterialTheme.colorScheme.error) }
+        blindViewPreview?.let { Text(text = "BlindView: $it") }
     }
 }
 
@@ -298,7 +314,8 @@ fun PreviewControlPanel() {
             lastError = null,
             statusMessage = "Preview (FakeDetector)",
             onStart = {},
-            onStop = {}
+            onStop = {},
+            blindViewPreview = "2 Personen, 11 Uhr."
         )
     }
 }

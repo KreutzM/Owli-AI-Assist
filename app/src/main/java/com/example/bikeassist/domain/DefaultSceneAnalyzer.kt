@@ -1,5 +1,9 @@
 package com.example.bikeassist.domain
 
+import com.example.bikeassist.blindview.BlindViewAnnouncePlanner
+import com.example.bikeassist.blindview.BlindViewConfig
+import com.example.bikeassist.blindview.BlindViewUtteranceFormatter
+import com.example.bikeassist.blindview.CocoLabelTranslator
 import com.example.bikeassist.ml.Detection
 import com.example.bikeassist.domain.TrafficLightObservation
 import com.example.bikeassist.domain.TrafficLightPhase
@@ -7,14 +11,26 @@ import com.example.bikeassist.domain.TrafficLightPhase
 /**
  * Platzhalter-Heuristik. Liefert einen leeren SceneState, bis echte Logik implementiert ist.
  */
-class DefaultSceneAnalyzer : SceneAnalyzer {
+class DefaultSceneAnalyzer(
+    private val blindViewConfig: BlindViewConfig = BlindViewConfig(),
+    translator: CocoLabelTranslator = CocoLabelTranslator()
+) : SceneAnalyzer {
     private var lastRelevantDetectionAt: Long = 0L
     private val decayMillis: Long = 800L
     private val confidenceThreshold: Float = 0.4f
     private var lastStableTrafficLight: TrafficLightPhase = TrafficLightPhase.UNKNOWN
+    private val announcePlanner = BlindViewAnnouncePlanner(
+        config = blindViewConfig,
+        translator = translator
+    )
 
     override fun analyze(detections: List<Detection>, trafficLights: List<TrafficLightObservation>): SceneState {
         val now = System.currentTimeMillis()
+        val blindViewItems = announcePlanner.plan(detections)
+        val blindViewUtterance = BlindViewUtteranceFormatter.format(
+            blindViewItems,
+            blindViewConfig.maxItemsSpoken
+        )
 
         val hazardCandidates = detections
             .filter { it.confidence >= confidenceThreshold }
@@ -53,7 +69,9 @@ class DefaultSceneAnalyzer : SceneAnalyzer {
                     primaryMessage = null,
                     overallHazardLevel = HazardLevel.NONE,
                     trafficLights = trafficLights,
-                    primaryTrafficLight = tlPrimary?.phase
+                    primaryTrafficLight = tlPrimary?.phase,
+                    blindViewItems = blindViewItems,
+                    blindViewUtterancePreview = blindViewUtterance
                 )
             }
             return SceneState(
@@ -63,7 +81,9 @@ class DefaultSceneAnalyzer : SceneAnalyzer {
                 primaryMessage = null,
                 overallHazardLevel = HazardLevel.NONE,
                 trafficLights = trafficLights,
-                primaryTrafficLight = tlPrimary?.phase
+                primaryTrafficLight = tlPrimary?.phase,
+                blindViewItems = blindViewItems,
+                blindViewUtterancePreview = blindViewUtterance
             )
         }
 
@@ -98,7 +118,9 @@ class DefaultSceneAnalyzer : SceneAnalyzer {
             primaryMessage = primaryMessage,
             overallHazardLevel = overallLevel,
             trafficLights = trafficLights,
-            primaryTrafficLight = tlPrimary?.phase
+            primaryTrafficLight = tlPrimary?.phase,
+            blindViewItems = blindViewItems,
+            blindViewUtterancePreview = blindViewUtterance
         )
     }
 

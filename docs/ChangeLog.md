@@ -10,8 +10,12 @@ Format (angelehnt an Keep a Changelog / SemVer):
 ## [Unreleased]
 
 ### Added
+- BlindView-Ansagepfad mit AnnouncePlanner, SpeechPlanner und Utterance-Formatter (Uhrzeit/Distanz, DE-Labels).
+- BlindView-Konfiguration erweitert (maxItemsSpoken, TTS-Speed, Confidence/Distance-Thresholds).
 
 ### Changed
+- BlindView-Preview entkoppelt von TTS-Cooldowns (formatierend, ohne Hash/Timing).
+- AudioFeedbackEngine erhöht TTS-Sprechgeschwindigkeit (konfigurierbar, Spam-Protection bleibt erhalten).
 
 ---
 

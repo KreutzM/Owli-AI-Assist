@@ -3,6 +3,9 @@ package com.example.bikeassist.pipeline
 import android.content.Context
 import android.content.res.AssetManager
 import androidx.lifecycle.LifecycleOwner
+import com.example.bikeassist.blindview.BlindViewConfig
+import com.example.bikeassist.blindview.CocoLabelTranslator
+import com.example.bikeassist.blindview.LabelRepository
 import com.example.bikeassist.camera.CameraFrameSource
 import com.example.bikeassist.domain.DefaultSceneAnalyzer
 import com.example.bikeassist.ml.FakeDetector
@@ -15,7 +18,8 @@ import kotlinx.coroutines.CoroutineScope
 
 data class VisionPipelineHandle(
     val pipeline: VisionPipeline,
-    val detectorInfo: String
+    val detectorInfo: String,
+    val mode: AppMode
 )
 
 object VisionPipelineModule {
@@ -25,8 +29,12 @@ object VisionPipelineModule {
         scope: CoroutineScope,
         cameraFrameSource: CameraFrameSource = CameraFrameSource(context, lifecycleOwner),
         useFake: Boolean = false,
-        detectorOptions: TfliteDetectorOptions = TfliteDetectorOptions()
+        detectorOptions: TfliteDetectorOptions = TfliteDetectorOptions(),
+        mode: AppMode = AppMode.BLINDVIEW,
+        blindViewConfig: BlindViewConfig = BlindViewConfig()
     ): VisionPipelineHandle {
+        val labels = LabelRepository().loadLabels(context)
+        val translator = CocoLabelTranslator().also { it.validateAgainst(labels) }
         val preprocessor = DefaultPreprocessor()
         val trafficLightClassifier = HsvTrafficLightPhaseClassifier()
         val (detector, info) = if (!useFake && modelExists(context.assets, detectorOptions.modelPath)) {
@@ -40,7 +48,10 @@ object VisionPipelineModule {
             val reason = if (useFake) "Forced fake" else "Model missing: ${detectorOptions.modelPath}"
             FakeDetector() to "Fallback: FakeDetector ($reason)"
         }
-        val analyzer = DefaultSceneAnalyzer()
+        val analyzer = DefaultSceneAnalyzer(
+            blindViewConfig = blindViewConfig,
+            translator = translator
+        )
         val pipeline = DefaultVisionPipeline(
             cameraFrameSource = cameraFrameSource,
             preprocessor = preprocessor,
@@ -49,8 +60,8 @@ object VisionPipelineModule {
             trafficLightClassifier = trafficLightClassifier,
             scope = scope
         )
-        AppLogger.d("VisionPipelineModule created: $info")
-        return VisionPipelineHandle(pipeline, info)
+        AppLogger.d("VisionPipelineModule created: $info mode=$mode")
+        return VisionPipelineHandle(pipeline, info, mode)
     }
 
     private fun modelExists(assets: AssetManager, path: String): Boolean {
