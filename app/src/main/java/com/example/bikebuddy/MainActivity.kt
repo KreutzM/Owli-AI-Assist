@@ -35,6 +35,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -107,6 +108,7 @@ class MainActivity : ComponentActivity() {
                         trafficLights = sceneState?.trafficLights.orEmpty(),
                         blindViewPreview = if (settings.showBlindViewPreview) sceneState?.blindViewUtterancePreview else null,
                         showOverlay = settings.showOverlay,
+                        showLabels = settings.showOverlayLabels,
                         onStart = { onUserStart() },
                         onStop = { onUserStop() },
                         onOpenSettings = { showSettingsState.value = true },
@@ -219,6 +221,7 @@ fun DemoScreen(
     trafficLights: List<com.example.bikeassist.domain.TrafficLightObservation>,
     blindViewPreview: String?,
     showOverlay: Boolean,
+    showLabels: Boolean,
     onStart: () -> Unit,
     onStop: () -> Unit,
     onOpenSettings: () -> Unit,
@@ -235,6 +238,7 @@ fun DemoScreen(
             if (showOverlay) {
                 DetectionOverlay(
                     detections = detections,
+                    showLabels = showLabels,
                     modifier = Modifier.fillMaxSize()
                 )
                 SceneOverlay(
@@ -316,12 +320,35 @@ fun SceneOverlay(
 @Composable
 fun DetectionOverlay(
     detections: List<Detection>,
+    showLabels: Boolean,
     modifier: Modifier = Modifier
 ) {
+    val maxLabels = 10
+    val minLabelConfidence = 0.30f
+    val labelPaint = remember {
+        android.graphics.Paint().apply {
+            isAntiAlias = true
+            color = android.graphics.Color.WHITE
+            textSize = 40f
+            style = android.graphics.Paint.Style.FILL
+        }
+    }
+    val bgPaint = remember {
+        android.graphics.Paint().apply {
+            isAntiAlias = true
+            color = android.graphics.Color.argb(160, 0, 0, 0)
+            style = android.graphics.Paint.Style.FILL
+        }
+    }
+    val sorted = remember(detections) {
+        detections.filter { it.confidence >= minLabelConfidence }
+            .sortedByDescending { it.confidence }
+            .take(maxLabels)
+    }
     androidx.compose.foundation.Canvas(
         modifier = modifier
     ) {
-        detections.forEach { detection ->
+        sorted.forEach { detection ->
             val left = detection.bbox.xMin * size.width
             val top = detection.bbox.yMin * size.height
             val right = detection.bbox.xMax * size.width
@@ -332,6 +359,39 @@ fun DetectionOverlay(
                 size = androidx.compose.ui.geometry.Size(right - left, bottom - top),
                 style = Stroke(width = 3f)
             )
+            if (showLabels) {
+                val text = "${detection.label} ${"%.2f".format(detection.confidence)}"
+                val fm = labelPaint.fontMetrics
+                val textWidth = labelPaint.measureText(text)
+                val textHeight = fm.bottom - fm.top
+                val padding = 8f
+                var textLeft = left
+                var textTop = top - padding
+                if (textTop < padding) {
+                    textTop = top + padding
+                }
+                if (textLeft + textWidth + padding > size.width) {
+                    textLeft = size.width - textWidth - padding
+                }
+                val rectLeft = textLeft - padding
+                val rectTop = textTop - padding
+                val rectRight = textLeft + textWidth + padding
+                val rectBottom = textTop + textHeight + padding
+                drawContext.canvas.nativeCanvas.drawRect(
+                    rectLeft,
+                    rectTop,
+                    rectRight,
+                    rectBottom,
+                    bgPaint
+                )
+                val textBaseline = textTop - fm.top
+                drawContext.canvas.nativeCanvas.drawText(
+                    text,
+                    textLeft,
+                    textBaseline,
+                    labelPaint
+                )
+            }
         }
     }
 }
@@ -507,6 +567,12 @@ fun SettingsScreen(
                 label = "Overlay anzeigen",
                 checked = settings.showOverlay,
                 onCheckedChange = { v -> onUpdate { it.copy(showOverlay = v) } }
+            )
+            SettingSwitch(
+                label = "Overlay Labels",
+                checked = settings.showOverlayLabels,
+                onCheckedChange = { v -> onUpdate { it.copy(showOverlayLabels = v) } },
+                helper = "BBox-Beschriftung (Label + Confidence)"
             )
             SettingSwitch(
                 label = "BlindView Preview",

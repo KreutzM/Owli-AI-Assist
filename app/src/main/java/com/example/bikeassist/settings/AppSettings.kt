@@ -25,6 +25,7 @@ data class AppSettings(
     val ttsSpeechRate: Float = AppSettingsDefaults.ttsSpeechRate,
     val showOverlay: Boolean = AppSettingsDefaults.showOverlay,
     val showBlindViewPreview: Boolean = AppSettingsDefaults.showBlindViewPreview,
+    val showOverlayLabels: Boolean = AppSettingsDefaults.showOverlayLabels,
     val analysisIntervalMs: Long = AppSettingsDefaults.analysisIntervalMs
 ) {
     fun toDetectorOptions(): TfliteDetectorOptions {
@@ -80,6 +81,7 @@ object AppSettingsDefaults {
     const val ttsSpeechRate: Float = 2.0f
     const val showOverlay: Boolean = true
     const val showBlindViewPreview: Boolean = true
+    const val showOverlayLabels: Boolean = true
     const val analysisIntervalMs: Long = 250L
     const val confidenceDecayPerSecond: Float = 0.15f
 }
