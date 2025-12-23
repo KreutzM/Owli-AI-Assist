@@ -12,6 +12,7 @@ import java.net.URL
 
 class OpenRouterVlmClient(
     private val config: VlmConfig,
+    private var profile: VlmProfile,
     private val apiKey: String = BuildConfig.OPENROUTER_API_KEY,
     private val endpoint: String = "https://openrouter.ai/api/v1/chat/completions"
 ) : VlmClient {
@@ -26,15 +27,17 @@ class OpenRouterVlmClient(
         if (!isConfigured) {
             throw IllegalStateException("OPENROUTER_API_KEY fehlt.")
         }
-        val resolvedMaxTokens = if (maxTokens > 0) maxTokens else config.maxTokens
-        val resolvedTemperature = if (temperature >= 0.0) temperature else config.temperature
+        val resolvedModel = profile.model.ifBlank { config.model }
+        val profileMaxTokens = profile.maxTokens.takeIf { it > 0 } ?: config.maxTokens
+        val profileTemperature = if (!profile.temperature.isNaN()) profile.temperature else config.temperature
+        val resolvedMaxTokens = if (maxTokens > 0) maxTokens else profileMaxTokens
+        val resolvedTemperature = if (temperature >= 0.0) temperature else profileTemperature
         val payload = JSONObject()
-            .put("model", config.model)
+            .put("model", resolvedModel)
             .put("messages", buildMessagesJson(messages))
             .put("temperature", resolvedTemperature)
             .put("max_tokens", resolvedMaxTokens)
             .put("stream", false)
-            .put("response_format", JSONObject().put("type", "json_object"))
 
         val connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"
@@ -127,5 +130,9 @@ class OpenRouterVlmClient(
         return runCatching { JSONObject(body).optString("id", "") }
             .getOrNull()
             ?.ifEmpty { null }
+    }
+
+    fun updateProfile(newProfile: VlmProfile) {
+        profile = newProfile
     }
 }

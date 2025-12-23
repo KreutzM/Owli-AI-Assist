@@ -15,6 +15,8 @@ import com.example.bikeassist.vlm.VlmSceneDescription
 import com.example.bikeassist.vlm.VlmSession
 import com.example.bikeassist.vlm.VlmUiState
 import com.example.bikeassist.vlm.VlmClient
+import com.example.bikeassist.vlm.VlmProfile
+import com.example.bikeassist.vlm.DEFAULT_VLM_PROFILES
 import com.example.bikebuddy.BuildConfig
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
@@ -25,7 +27,10 @@ import kotlinx.coroutines.withContext
 
 class MainViewModel(
     detectorInfo: String = "",
-    private val vlmClient: VlmClient = OpenRouterVlmClient(VlmConfig.defaults())
+    private val vlmClient: VlmClient = OpenRouterVlmClient(
+        VlmConfig.defaults(),
+        DEFAULT_VLM_PROFILES.first()
+    )
 ) : ViewModel() {
 
     private val _isRunning = MutableStateFlow(false)
@@ -54,6 +59,7 @@ class MainViewModel(
     private var lastVlmDescription: VlmSceneDescription? = null
     private var vlmSystemPrompt: String = VlmConfig.DEFAULT_SYSTEM_PROMPT
     private var vlmOverviewPrompt: String = VlmConfig.DEFAULT_OVERVIEW_PROMPT
+    private var vlmProfile: VlmProfile = DEFAULT_VLM_PROFILES.first()
 
     fun setPipeline(handle: VisionPipelineHandle) {
         // stop old pipeline if running
@@ -165,16 +171,13 @@ class MainViewModel(
                 val result = withContext(Dispatchers.IO) {
                     vlmClient.chat(messages)
                 }
-                val parsed = VlmSceneDescription.parse(result.assistantContent).getOrElse {
-                    throw IllegalStateException("Antwort konnte nicht als JSON gelesen werden.")
-                }
-                val safe = enforceSafety(parsed)
-                lastVlmDescription = safe
+                val raw = result.assistantContent.trim()
+                lastVlmDescription = null
                 session.messageHistory.add(
                     VlmChatMessage(role = "assistant", content = listOf(VlmContentPart.Text(result.assistantContent)))
                 )
                 vlmSession = session
-                _vlmUiState.value = VlmUiState.OverviewReady(safe, System.currentTimeMillis())
+                _vlmUiState.value = VlmUiState.OverviewReadyRaw(raw, System.currentTimeMillis())
             } catch (ex: Exception) {
                 _vlmUiState.value = VlmUiState.Error(ex.message ?: "Unbekannter VLM-Fehler")
             }
@@ -198,18 +201,15 @@ class MainViewModel(
                 val result = withContext(Dispatchers.IO) {
                     vlmClient.chat(messages)
                 }
-                val parsed = VlmSceneDescription.parse(result.assistantContent).getOrElse {
-                    throw IllegalStateException("Antwort konnte nicht als JSON gelesen werden.")
-                }
-                val safe = enforceSafety(parsed)
+                val raw = result.assistantContent.trim()
                 session.messageHistory.add(
                     VlmChatMessage(role = "user", content = listOf(VlmContentPart.Text(questionText)))
                 )
                 session.messageHistory.add(
                     VlmChatMessage(role = "assistant", content = listOf(VlmContentPart.Text(result.assistantContent)))
                 )
-                lastVlmDescription = safe
-                _vlmUiState.value = VlmUiState.OverviewReady(safe, System.currentTimeMillis())
+                lastVlmDescription = null
+                _vlmUiState.value = VlmUiState.OverviewReadyRaw(raw, System.currentTimeMillis())
             } catch (ex: Exception) {
                 _vlmUiState.value = VlmUiState.Error(ex.message ?: "Unbekannter VLM-Fehler")
             }
@@ -225,6 +225,11 @@ class MainViewModel(
     fun applyVlmConfig(config: VlmConfig) {
         vlmSystemPrompt = config.systemPrompt.ifBlank { VlmConfig.DEFAULT_SYSTEM_PROMPT }
         vlmOverviewPrompt = config.overviewPrompt.ifBlank { VlmConfig.DEFAULT_OVERVIEW_PROMPT }
+    }
+
+    fun applyVlmProfile(profile: VlmProfile) {
+        vlmProfile = profile
+        (vlmClient as? OpenRouterVlmClient)?.updateProfile(profile)
     }
 
     private fun buildOverviewMessages(session: VlmSession): List<VlmChatMessage> {

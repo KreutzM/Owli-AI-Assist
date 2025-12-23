@@ -23,6 +23,7 @@ class SettingsRepository(private val context: Context) {
             val current = prefs.toSettings()
             val updated = transform(current)
             prefs[PrefKeys.appMode] = updated.appMode.name
+            prefs[PrefKeys.vlmProfileId] = updated.vlmProfileId
             prefs[PrefKeys.detectorMinConfidence] = updated.detectorMinConfidence
             prefs[PrefKeys.detectorMaxResults] = updated.detectorMaxResults
             prefs[PrefKeys.detectorNumThreads] = updated.detectorNumThreads
@@ -58,6 +59,7 @@ class SettingsRepository(private val context: Context) {
 
 private object PrefKeys {
     val appMode = stringPreferencesKey("appMode")
+    val vlmProfileId = stringPreferencesKey("vlmProfileId")
     val detectorMinConfidence = floatPreferencesKey("detectorMinConfidence")
     val detectorMaxResults = intPreferencesKey("detectorMaxResults")
     val detectorNumThreads = intPreferencesKey("detectorNumThreads")
@@ -86,6 +88,7 @@ private object PrefKeys {
 private fun androidx.datastore.preferences.core.Preferences.toSettings(): AppSettings {
     return AppSettings(
         appMode = AppMode.valueOf(this[PrefKeys.appMode] ?: AppSettingsDefaults.appMode.name),
+        vlmProfileId = this[PrefKeys.vlmProfileId] ?: AppSettingsDefaults.vlmProfileId,
         detectorMinConfidence = this[PrefKeys.detectorMinConfidence] ?: AppSettingsDefaults.detectorMinConfidence,
         detectorMaxResults = this[PrefKeys.detectorMaxResults] ?: AppSettingsDefaults.detectorMaxResults,
         detectorNumThreads = this[PrefKeys.detectorNumThreads] ?: AppSettingsDefaults.detectorNumThreads,

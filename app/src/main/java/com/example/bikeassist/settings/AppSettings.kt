@@ -6,6 +6,7 @@ import com.example.bikeassist.ml.TfliteDetectorOptions
 
 data class AppSettings(
     val appMode: AppMode = AppSettingsDefaults.appMode,
+    val vlmProfileId: String = AppSettingsDefaults.vlmProfileId,
     val detectorMinConfidence: Float = AppSettingsDefaults.detectorMinConfidence,
     val detectorMaxResults: Int = AppSettingsDefaults.detectorMaxResults,
     val detectorNumThreads: Int = AppSettingsDefaults.detectorNumThreads,
@@ -66,6 +67,7 @@ data class AppSettings(
 
 object AppSettingsDefaults {
     val appMode = AppMode.BLINDVIEW
+    const val vlmProfileId: String = "safe"
     const val detectorMinConfidence: Float = 0.3f
     const val detectorMaxResults: Int = 3
     const val detectorNumThreads: Int = 2

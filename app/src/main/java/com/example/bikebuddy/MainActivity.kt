@@ -10,6 +10,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -27,6 +28,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -66,6 +68,8 @@ import com.example.bikeassist.util.AppLogger
 import com.example.bikeassist.vlm.OpenRouterVlmClient
 import com.example.bikeassist.vlm.VlmConfigLoader
 import com.example.bikeassist.vlm.VlmUiState
+import com.example.bikeassist.vlm.DEFAULT_VLM_PROFILES
+import com.example.bikeassist.vlm.findVlmProfile
 import com.example.bikebuddy.ui.theme.BikeBuddyTheme
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.debounce
@@ -78,7 +82,7 @@ class MainActivity : ComponentActivity() {
     private val audioFeedbackEngine by lazy { AudioFeedbackEngine(this) }
 
     private val vlmConfig by lazy { VlmConfigLoader.load(applicationContext) }
-    private val vlmClient by lazy { OpenRouterVlmClient(vlmConfig) }
+    private val vlmClient by lazy { OpenRouterVlmClient(vlmConfig, DEFAULT_VLM_PROFILES.first()) }
     private val mainViewModel: MainViewModel by viewModels {
         MainViewModel.Factory(vlmClient)
     }
@@ -228,11 +232,8 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
                 mainViewModel.vlmUiState.collect { state ->
-                    if (state is VlmUiState.OverviewReady) {
-                        audioFeedbackEngine.speakVlmResponse(
-                            state.description.ttsOneLiner,
-                            state.description.actionSuggestion
-                        )
+                    if (state is VlmUiState.OverviewReadyRaw) {
+                        return@collect
                     }
                 }
             }
@@ -271,6 +272,7 @@ class MainActivity : ComponentActivity() {
             analysisIntervalMs = settings.analysisIntervalMs
         )
         mainViewModel.setPipeline(handle)
+        mainViewModel.applyVlmProfile(findVlmProfile(settings.vlmProfileId))
         ensurePermissionAndAutoStart()
     }
 }
@@ -636,6 +638,29 @@ fun SettingsScreen(
                 onValueChange = { v -> onUpdate { it.copy(ttsSpeechRate = v) } },
                 helper = "Sprechgeschwindigkeit"
             )
+            Text("VLM Profil", style = MaterialTheme.typography.titleSmall)
+            DEFAULT_VLM_PROFILES.forEach { profile ->
+                val selected = settings.vlmProfileId == profile.id
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onUpdate { it.copy(vlmProfileId = profile.id) } }
+                        .padding(vertical = 4.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    RadioButton(
+                        selected = selected,
+                        onClick = { onUpdate { it.copy(vlmProfileId = profile.id) } }
+                    )
+                    Column {
+                        Text(profile.label)
+                        Text(
+                            text = "Model: ${profile.model}, temp=${"%.2f".format(profile.temperature)}, max=${profile.maxTokens}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+            }
             SettingIntSlider(
                 label = "Analysis Interval (ms)",
                 value = settings.analysisIntervalMs.toInt(),
@@ -846,6 +871,10 @@ fun VlmOverlay(
                 }
                 is VlmUiState.Error -> {
                     Text(text = "Fehler: ${state.message}", color = MaterialTheme.colorScheme.error)
+                }
+                is VlmUiState.OverviewReadyRaw -> {
+                    Text(text = "Antwort:")
+                    Text(text = state.rawText)
                 }
                 is VlmUiState.OverviewReady -> {
                     val desc = state.description

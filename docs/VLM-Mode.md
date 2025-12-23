@@ -32,3 +32,11 @@ Optional:
 - API-Key kommt aus `local.properties` via `OPENROUTER_API_KEY` (BuildConfig).
 - Modell-ID und Prompts werden aus `app/src/main/assets/vlm-config.json` geladen.
 - Fehlerfaelle (Timeout, Parse-Fehler, kein Snapshot) muessen UI-seitig angezeigt werden.
+- Aktuell laeuft der VLM im Raw-Debug-Mode: Antwort wird als Freitext angezeigt, JSON-Parsing ist voruebergehend deaktiviert.
+
+## VLM-Profile
+- Profile definieren Modell, Temperatur und Token-Limit.
+- Standardprofile:
+  - "safe": konservativ (niedrige Temperatur, mehr Tokens).
+  - "fast": schneller/guenstiger (hoeherer Temperaturwert, weniger Tokens).
+- Die Auswahl erfolgt im Settings-Screen und wird in den App-Settings gespeichert.
