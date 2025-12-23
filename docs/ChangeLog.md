@@ -17,6 +17,21 @@ Format (angelehnt an Keep a Changelog / SemVer):
 
 ---
 
+## [0.4.0] – 2025-12-23
+
+### Added
+- VLM-On-Demand-Mode mit Snapshot, OpenRouter-Request, JSON-Parsing und UI-Overlay inkl. "VLM" Button.
+- VLM-Follow-up-Fragen ueber Session-History (Text-Input).
+- SnapshotProvider fuer den letzten preprocessierten Frame (JPEG) in der Pipeline.
+- VLM-Konfiguration via `app/src/main/assets/vlm-config.json` + Loader (Model/Prompts/Token/Temperatur).
+- Audio-Ausgabe fuer VLM-Antworten (Kurzsatz + Handlungsempfehlung).
+- Dokumentation `docs/VLM-Mode.md` zu Ablauf, Schema und Safety-Regeln.
+
+### Changed
+- BuildConfig-API-Key-Handling fuer OpenRouter (local.properties) und Manifest um INTERNET-Permission erweitert.
+
+---
+
 ## [0.3.0] – 2025-12-14
 
 ### Added

@@ -32,6 +32,8 @@ class AudioFeedbackEngine(
     private var ttsState: TtsState = TtsState.INITIALIZING
     private var lastNotReadyLog: Long = 0L
     private val notReadyLogInterval = 1_000L
+    private var lastVlmMessage: String? = null
+    private var lastVlmSpokenAt: Long = 0L
     private var desiredSpeechRate: Float =
         blindViewConfig.ttsSpeechRate.coerceIn(MIN_SPEECH_RATE, MAX_SPEECH_RATE)
 
@@ -117,6 +119,29 @@ class AudioFeedbackEngine(
         Log.d(TAG, "speak result=$result, text=$text")
     }
 
+    fun speakVlmResponse(ttsOneLiner: String?, actionSuggestion: String?) {
+        val combined = listOfNotNull(ttsOneLiner?.trim(), actionSuggestion?.trim())
+            .filter { it.isNotEmpty() }
+            .joinToString(". ")
+        if (combined.isBlank()) return
+        val now = System.currentTimeMillis()
+        val recentlySpoken = combined == lastVlmMessage && now - lastVlmSpokenAt < VLM_REPEAT_SUPPRESS_MS
+        if (recentlySpoken) return
+        if (!ttsReady) {
+            pendingMessage = combined
+            pendingLevel = HazardLevel.NONE
+            if (now - lastNotReadyLog >= notReadyLogInterval) {
+                Log.d(TAG, "TTS not ready (state=$ttsState), pendingMessage=$pendingMessage")
+                lastNotReadyLog = now
+            }
+            return
+        }
+        val result = tts?.speak(combined, TextToSpeech.QUEUE_FLUSH, null, "vlm") ?: TextToSpeech.ERROR
+        Log.d(TAG, "speak VLM result=$result, text=$combined")
+        lastVlmMessage = combined
+        lastVlmSpokenAt = now
+    }
+
     fun updateSpeechRate(rate: Float) {
         val clamped = rate.coerceIn(MIN_SPEECH_RATE, MAX_SPEECH_RATE)
         desiredSpeechRate = clamped
@@ -154,6 +179,7 @@ class AudioFeedbackEngine(
         private const val TAG = "AudioFeedbackEngine"
         private const val MIN_SPEECH_RATE = 0.5f
         private const val MAX_SPEECH_RATE = 3.0f
+        private const val VLM_REPEAT_SUPPRESS_MS = 8_000L
     }
 
     fun diagnostics(): com.example.bikeassist.diagnostics.TtsDiagnostics {

@@ -24,7 +24,9 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -32,6 +34,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -60,6 +63,9 @@ import com.example.bikeassist.settings.SettingsRepository
 import com.example.bikeassist.settings.SettingsViewModel
 import com.example.bikeassist.ui.MainViewModel
 import com.example.bikeassist.util.AppLogger
+import com.example.bikeassist.vlm.OpenRouterVlmClient
+import com.example.bikeassist.vlm.VlmConfigLoader
+import com.example.bikeassist.vlm.VlmUiState
 import com.example.bikebuddy.ui.theme.BikeBuddyTheme
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.debounce
@@ -71,13 +77,18 @@ class MainActivity : ComponentActivity() {
     private val cameraFrameSource by lazy { CameraFrameSource(this, this) }
     private val audioFeedbackEngine by lazy { AudioFeedbackEngine(this) }
 
-    private val mainViewModel: MainViewModel by viewModels()
+    private val vlmConfig by lazy { VlmConfigLoader.load(applicationContext) }
+    private val vlmClient by lazy { OpenRouterVlmClient(vlmConfig) }
+    private val mainViewModel: MainViewModel by viewModels {
+        MainViewModel.Factory(vlmClient)
+    }
     private val settingsViewModel: SettingsViewModel by viewModels {
         SettingsViewModel.Factory(SettingsRepository(applicationContext))
     }
     private var settingsCollectJob: Job? = null
     private val showSettings = mutableStateOf(false)
     private val showDiagnostics = mutableStateOf(false)
+    private val showVlm = mutableStateOf(false)
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -92,8 +103,10 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AppLogger.d("Activity onCreate")
+        mainViewModel.applyVlmConfig(vlmConfig)
         enableEdgeToEdge()
         observeSceneState()
+        observeVlmState()
         observeSettings()
         setContent {
             BikeBuddyTheme {
@@ -103,7 +116,9 @@ class MainActivity : ComponentActivity() {
                     val lastError by mainViewModel.lastError.collectAsState()
                     val status by mainViewModel.status.collectAsState()
                     val settings by settingsViewModel.settings.collectAsState()
+                    val vlmState by mainViewModel.vlmUiState.collectAsState()
                     val showSettingsState = remember { showSettings }
+                    val showVlmState = remember { showVlm }
 
                     DemoScreen(
                         isRunning = isRunning,
@@ -121,6 +136,10 @@ class MainActivity : ComponentActivity() {
                         onStop = { onUserStop() },
                         onOpenSettings = { showSettingsState.value = true },
                         onOpenDiagnostics = { showDiagnostics.value = true },
+                        onOpenVlm = {
+                            showVlmState.value = true
+                            mainViewModel.enterVlmMode()
+                        },
                         cameraFrameSource = cameraFrameSource,
                         rotationDegrees = cameraFrameSource.lastRotationDegrees,
                         modifier = Modifier.padding(innerPadding)
@@ -138,6 +157,17 @@ class MainActivity : ComponentActivity() {
                         DiagnosticsScreen(
                             settings = settings,
                             onClose = { showDiagnostics.value = false }
+                        )
+                    }
+                    if (showVlmState.value) {
+                        VlmOverlay(
+                            state = vlmState,
+                            onNewScene = { mainViewModel.enterVlmMode() },
+                            onAsk = { question -> mainViewModel.askVlm(question) },
+                            onClose = {
+                                showVlmState.value = false
+                                mainViewModel.closeVlm()
+                            }
                         )
                     }
                 }
@@ -189,6 +219,21 @@ class MainActivity : ComponentActivity() {
             repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
                 mainViewModel.sceneState.collect { state ->
                     state?.let { audioFeedbackEngine.onSceneUpdated(it) }
+                }
+            }
+        }
+    }
+
+    private fun observeVlmState() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
+                mainViewModel.vlmUiState.collect { state ->
+                    if (state is VlmUiState.OverviewReady) {
+                        audioFeedbackEngine.speakVlmResponse(
+                            state.description.ttsOneLiner,
+                            state.description.actionSuggestion
+                        )
+                    }
                 }
             }
         }
@@ -247,6 +292,7 @@ fun DemoScreen(
     onStop: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenDiagnostics: () -> Unit,
+    onOpenVlm: () -> Unit,
     cameraFrameSource: CameraFrameSource,
     rotationDegrees: Int?,
     modifier: Modifier = Modifier
@@ -288,6 +334,7 @@ fun DemoScreen(
             blindViewPreview = blindViewPreview,
             onOpenSettings = onOpenSettings,
             onOpenDiagnostics = onOpenDiagnostics,
+            onOpenVlm = onOpenVlm,
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
@@ -430,6 +477,7 @@ fun ControlPanel(
     blindViewPreview: String?,
     onOpenSettings: () -> Unit,
     onOpenDiagnostics: () -> Unit,
+    onOpenVlm: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
@@ -449,6 +497,9 @@ fun ControlPanel(
             }
             Button(onClick = onOpenDiagnostics) {
                 Text(text = "Diag")
+            }
+            Button(onClick = onOpenVlm) {
+                Text(text = "VLM")
             }
         }
         Spacer(modifier = Modifier.height(8.dp))
@@ -473,7 +524,8 @@ fun PreviewControlPanel() {
             onStop = {},
             blindViewPreview = "2 Personen, 11 Uhr.",
             onOpenSettings = {},
-            onOpenDiagnostics = {}
+            onOpenDiagnostics = {},
+            onOpenVlm = {}
         )
     }
 }
@@ -736,6 +788,96 @@ fun DiagnosticsScreen(
                 Text("detectionsRaw=${diagState.detectionsCountRaw} detectionsStable=${diagState.detectionsCountStable}")
                 Text("topLabels=${diagState.topLabels.joinToString()}")
                 Text("lastPreview=${diagState.lastUtterancePreview ?: "-"}")
+            }
+        }
+    }
+}
+
+@Composable
+fun VlmOverlay(
+    state: VlmUiState,
+    onNewScene: () -> Unit,
+    onAsk: (String) -> Unit,
+    onClose: () -> Unit
+) {
+    val scrollState = rememberScrollState()
+    val isBusy = state is VlmUiState.LoadingOverview || state is VlmUiState.Asking
+    var question by remember { mutableStateOf("") }
+    Scaffold(
+        topBar = {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("VLM", style = MaterialTheme.typography.titleMedium)
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(onClick = onNewScene, enabled = !isBusy) { Text("Neue Szene") }
+                    Button(onClick = onClose) { Text("Schliessen") }
+                }
+            }
+        }
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(12.dp)
+                .fillMaxSize()
+                .verticalScroll(scrollState),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            when (state) {
+                is VlmUiState.Inactive -> {
+                    Text("Bereit. Tippe auf 'Neue Szene'.")
+                }
+                is VlmUiState.LoadingOverview -> {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        CircularProgressIndicator()
+                        Text(state.message ?: "Lade VLM...")
+                    }
+                }
+                is VlmUiState.Asking -> {
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                        CircularProgressIndicator()
+                        Text("Sende Frage...")
+                    }
+                }
+                is VlmUiState.Error -> {
+                    Text(text = "Fehler: ${state.message}", color = MaterialTheme.colorScheme.error)
+                }
+                is VlmUiState.OverviewReady -> {
+                    val desc = state.description
+                    val obstaclesText = if (desc.obstacles.isEmpty()) "keine" else desc.obstacles.joinToString()
+                    val landmarksText = if (desc.landmarks.isEmpty()) "keine" else desc.landmarks.joinToString()
+                    Text(text = "Kurz: ${desc.ttsOneLiner}")
+                    Text(text = "Empfehlung: ${desc.actionSuggestion}")
+                    Text(text = "Hindernisse: $obstaclesText")
+                    Text(text = "Landmarken: $landmarksText")
+                    Text(text = "Details: ${desc.readableText}")
+                    desc.overallConfidence?.let { Text(text = "Confidence: $it") }
+                }
+            }
+
+            OutlinedTextField(
+                value = question,
+                onValueChange = { question = it },
+                label = { Text("Frage stellen") },
+                modifier = Modifier.fillMaxWidth(),
+                enabled = !isBusy
+            )
+            Button(
+                onClick = {
+                    val text = question.trim()
+                    if (text.isNotEmpty()) {
+                        onAsk(text)
+                        question = ""
+                    }
+                },
+                enabled = !isBusy && question.isNotBlank()
+            ) {
+                Text("Senden")
             }
         }
     }

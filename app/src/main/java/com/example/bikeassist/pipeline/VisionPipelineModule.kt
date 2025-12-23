@@ -19,7 +19,8 @@ import kotlinx.coroutines.CoroutineScope
 data class VisionPipelineHandle(
     val pipeline: VisionPipeline,
     val detectorInfo: String,
-    val mode: AppMode
+    val mode: AppMode,
+    val snapshotProvider: SnapshotProvider? = null
 )
 
 object VisionPipelineModule {
@@ -63,7 +64,7 @@ object VisionPipelineModule {
             minProcessIntervalMs = analysisIntervalMs
         )
         AppLogger.d("VisionPipelineModule created: $info mode=$mode")
-        return VisionPipelineHandle(pipeline, info, mode)
+        return VisionPipelineHandle(pipeline, info, mode, pipeline as? SnapshotProvider)
     }
 
     private fun modelExists(assets: AssetManager, path: String): Boolean {

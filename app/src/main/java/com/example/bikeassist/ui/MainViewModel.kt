@@ -1,17 +1,31 @@
 package com.example.bikeassist.ui
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import com.example.bikeassist.domain.SceneState
-import com.example.bikeassist.pipeline.VisionPipelineHandle
+import com.example.bikeassist.pipeline.SnapshotProvider
 import com.example.bikeassist.pipeline.VisionPipeline
+import com.example.bikeassist.pipeline.VisionPipelineHandle
+import com.example.bikeassist.vlm.OpenRouterVlmClient
+import com.example.bikeassist.vlm.VlmChatMessage
+import com.example.bikeassist.vlm.VlmContentPart
+import com.example.bikeassist.vlm.VlmConfig
+import com.example.bikeassist.vlm.VlmSceneDescription
+import com.example.bikeassist.vlm.VlmSession
+import com.example.bikeassist.vlm.VlmUiState
+import com.example.bikeassist.vlm.VlmClient
+import com.example.bikebuddy.BuildConfig
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainViewModel(
-    detectorInfo: String = ""
+    detectorInfo: String = "",
+    private val vlmClient: VlmClient = OpenRouterVlmClient(VlmConfig.defaults())
 ) : ViewModel() {
 
     private val _isRunning = MutableStateFlow(false)
@@ -29,9 +43,17 @@ class MainViewModel(
     private val _status = MutableStateFlow(detectorInfo)
     val status: StateFlow<String> = _status
 
+    private val _vlmUiState = MutableStateFlow<VlmUiState>(VlmUiState.Inactive)
+    val vlmUiState: StateFlow<VlmUiState> = _vlmUiState
+
     private var collectJob: Job? = null
     private var pipeline: VisionPipeline? = null
+    private var snapshotProvider: SnapshotProvider? = null
     private var detectorInfo: String = detectorInfo
+    private var vlmSession: VlmSession? = null
+    private var lastVlmDescription: VlmSceneDescription? = null
+    private var vlmSystemPrompt: String = VlmConfig.DEFAULT_SYSTEM_PROMPT
+    private var vlmOverviewPrompt: String = VlmConfig.DEFAULT_OVERVIEW_PROMPT
 
     fun setPipeline(handle: VisionPipelineHandle) {
         // stop old pipeline if running
@@ -39,6 +61,7 @@ class MainViewModel(
         stopInternal(resetAutoStart = false)
         pipeline?.close()
         pipeline = handle.pipeline
+        snapshotProvider = handle.snapshotProvider
         detectorInfo = handle.detectorInfo
         _status.value = handle.detectorInfo
         com.example.bikeassist.diagnostics.DiagnosticsCollector.updatePipelineStatus(
@@ -117,4 +140,171 @@ class MainViewModel(
         pipeline?.let { runCatching { it.close() } }
         super.onCleared()
     }
+
+    fun enterVlmMode() {
+        if (!vlmClient.isConfigured || BuildConfig.OPENROUTER_API_KEY.isBlank()) {
+            _vlmUiState.value = VlmUiState.Error("OpenRouter API-Key fehlt. Bitte OPENROUTER_API_KEY in local.properties setzen.")
+            return
+        }
+        val provider = snapshotProvider ?: run {
+            _vlmUiState.value = VlmUiState.Error("Snapshot ist nicht verfuegbar. Pipeline noch nicht aktiv?")
+            return
+        }
+        _vlmUiState.value = VlmUiState.LoadingOverview("Snapshot vorbereiten...")
+        viewModelScope.launch {
+            val jpeg = withContext(Dispatchers.Default) {
+                provider.getLatestJpegSnapshot(maxSidePx = 1024, quality = 80)
+            }
+            if (jpeg == null) {
+                _vlmUiState.value = VlmUiState.Error("Kein Kamerabild verfuegbar.")
+                return@launch
+            }
+            val session = VlmSession(snapshotBytes = jpeg, messageHistory = mutableListOf())
+            val messages = buildOverviewMessages(session)
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    vlmClient.chat(messages)
+                }
+                val parsed = VlmSceneDescription.parse(result.assistantContent).getOrElse {
+                    throw IllegalStateException("Antwort konnte nicht als JSON gelesen werden.")
+                }
+                val safe = enforceSafety(parsed)
+                lastVlmDescription = safe
+                session.messageHistory.add(
+                    VlmChatMessage(role = "assistant", content = listOf(VlmContentPart.Text(result.assistantContent)))
+                )
+                vlmSession = session
+                _vlmUiState.value = VlmUiState.OverviewReady(safe, System.currentTimeMillis())
+            } catch (ex: Exception) {
+                _vlmUiState.value = VlmUiState.Error(ex.message ?: "Unbekannter VLM-Fehler")
+            }
+        }
+    }
+
+    fun askVlm(questionText: String) {
+        if (!vlmClient.isConfigured || BuildConfig.OPENROUTER_API_KEY.isBlank()) {
+            _vlmUiState.value = VlmUiState.Error("OpenRouter API-Key fehlt. Bitte OPENROUTER_API_KEY in local.properties setzen.")
+            return
+        }
+        val session = vlmSession ?: run {
+            _vlmUiState.value = VlmUiState.Error("Keine aktive VLM-Session. Bitte zuerst 'Neue Szene' ausfuehren.")
+            return
+        }
+        if (questionText.isBlank()) return
+        _vlmUiState.value = VlmUiState.Asking(lastVlmDescription, questionText)
+        viewModelScope.launch {
+            val messages = buildFollowUpMessages(session, questionText)
+            try {
+                val result = withContext(Dispatchers.IO) {
+                    vlmClient.chat(messages)
+                }
+                val parsed = VlmSceneDescription.parse(result.assistantContent).getOrElse {
+                    throw IllegalStateException("Antwort konnte nicht als JSON gelesen werden.")
+                }
+                val safe = enforceSafety(parsed)
+                session.messageHistory.add(
+                    VlmChatMessage(role = "user", content = listOf(VlmContentPart.Text(questionText)))
+                )
+                session.messageHistory.add(
+                    VlmChatMessage(role = "assistant", content = listOf(VlmContentPart.Text(result.assistantContent)))
+                )
+                lastVlmDescription = safe
+                _vlmUiState.value = VlmUiState.OverviewReady(safe, System.currentTimeMillis())
+            } catch (ex: Exception) {
+                _vlmUiState.value = VlmUiState.Error(ex.message ?: "Unbekannter VLM-Fehler")
+            }
+        }
+    }
+
+    fun closeVlm() {
+        _vlmUiState.value = VlmUiState.Inactive
+        vlmSession = null
+        lastVlmDescription = null
+    }
+
+    fun applyVlmConfig(config: VlmConfig) {
+        vlmSystemPrompt = config.systemPrompt.ifBlank { VlmConfig.DEFAULT_SYSTEM_PROMPT }
+        vlmOverviewPrompt = config.overviewPrompt.ifBlank { VlmConfig.DEFAULT_OVERVIEW_PROMPT }
+    }
+
+    private fun buildOverviewMessages(session: VlmSession): List<VlmChatMessage> {
+        val system = VlmChatMessage(
+            role = "system",
+            content = listOf(VlmContentPart.Text(vlmSystemPrompt))
+        )
+        val user = VlmChatMessage(
+            role = "user",
+            content = listOf(
+                VlmContentPart.Text(vlmOverviewPrompt),
+                VlmContentPart.ImageUrl(jpegToDataUrl(session.snapshotBytes))
+            )
+        )
+        return listOf(system, user)
+    }
+
+    private fun buildFollowUpMessages(session: VlmSession, questionText: String): List<VlmChatMessage> {
+        val messages = mutableListOf<VlmChatMessage>()
+        messages += VlmChatMessage(
+            role = "system",
+            content = listOf(VlmContentPart.Text(vlmSystemPrompt))
+        )
+        messages += VlmChatMessage(
+            role = "user",
+            content = listOf(
+                VlmContentPart.Text(vlmOverviewPrompt),
+                VlmContentPart.ImageUrl(jpegToDataUrl(session.snapshotBytes))
+            )
+        )
+        messages += session.messageHistory
+        messages += VlmChatMessage(
+            role = "user",
+            content = listOf(VlmContentPart.Text(questionText))
+        )
+        return messages
+    }
+
+    private fun jpegToDataUrl(bytes: ByteArray): String {
+        val base64 = android.util.Base64.encodeToString(bytes, android.util.Base64.NO_WRAP)
+        return "data:image/jpeg;base64,$base64"
+    }
+
+    private fun enforceSafety(desc: VlmSceneDescription): VlmSceneDescription {
+        val obstaclesNotEmpty = desc.obstacles.isNotEmpty()
+        val confidenceHigh = desc.overallConfidence?.equals("high", ignoreCase = true) == true
+        if (!obstaclesNotEmpty && confidenceHigh) {
+            return desc
+        }
+        val safeOneLiner = sanitizeAllClear(desc.ttsOneLiner)
+        val safeAction = sanitizeAllClear(desc.actionSuggestion)
+        val safeReadable = sanitizeAllClear(desc.readableText)
+        return desc.copy(
+            ttsOneLiner = safeOneLiner,
+            actionSuggestion = safeAction,
+            readableText = safeReadable
+        )
+    }
+
+    private fun sanitizeAllClear(text: String): String {
+        if (text.isBlank()) return text
+        val lowered = text.lowercase()
+        val hasAllClear = lowered.contains("weg frei") || lowered.contains("freie fahrt") || lowered.contains("alles frei")
+        return if (hasAllClear) {
+            "Keine Freigabe. Bitte vorsichtig fahren."
+        } else {
+            text
+        }
+    }
+
+    class Factory(
+        private val vlmClient: VlmClient
+    ) : ViewModelProvider.Factory {
+        @Suppress("UNCHECKED_CAST")
+        override fun <T : ViewModel> create(modelClass: Class<T>): T {
+            if (modelClass.isAssignableFrom(MainViewModel::class.java)) {
+                return MainViewModel(vlmClient = vlmClient) as T
+            }
+            throw IllegalArgumentException("Unknown ViewModel class")
+        }
+    }
+
 }
