@@ -16,7 +16,7 @@ import com.example.bikeassist.vlm.VlmSession
 import com.example.bikeassist.vlm.VlmUiState
 import com.example.bikeassist.vlm.VlmClient
 import com.example.bikeassist.vlm.VlmProfile
-import com.example.bikeassist.vlm.DEFAULT_VLM_PROFILES
+import com.example.bikeassist.vlm.VlmProfileLoader
 import com.example.bikebuddy.BuildConfig
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
@@ -29,7 +29,7 @@ class MainViewModel(
     detectorInfo: String = "",
     private val vlmClient: VlmClient = OpenRouterVlmClient(
         VlmConfig.defaults(),
-        DEFAULT_VLM_PROFILES.first()
+        VlmProfileLoader.fallbackProfiles().first()
     )
 ) : ViewModel() {
 
@@ -59,7 +59,7 @@ class MainViewModel(
     private var lastVlmDescription: VlmSceneDescription? = null
     private var vlmSystemPrompt: String = VlmConfig.DEFAULT_SYSTEM_PROMPT
     private var vlmOverviewPrompt: String = VlmConfig.DEFAULT_OVERVIEW_PROMPT
-    private var vlmProfile: VlmProfile = DEFAULT_VLM_PROFILES.first()
+    private var vlmProfile: VlmProfile = VlmProfileLoader.fallbackProfiles().first()
 
     fun setPipeline(handle: VisionPipelineHandle) {
         // stop old pipeline if running
@@ -229,6 +229,8 @@ class MainViewModel(
 
     fun applyVlmProfile(profile: VlmProfile) {
         vlmProfile = profile
+        vlmSystemPrompt = profile.systemPrompt.ifBlank { VlmConfig.DEFAULT_SYSTEM_PROMPT }
+        vlmOverviewPrompt = profile.overviewPrompt.ifBlank { VlmConfig.DEFAULT_OVERVIEW_PROMPT }
         (vlmClient as? OpenRouterVlmClient)?.updateProfile(profile)
     }
 

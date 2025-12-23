@@ -38,6 +38,9 @@ class OpenRouterVlmClient(
             .put("temperature", resolvedTemperature)
             .put("max_tokens", resolvedMaxTokens)
             .put("stream", false)
+        if (profile.thinkingEnabled && profile.thinkingBudgetTokens != null) {
+            // TODO: "thinking" payload format in OpenRouter klären, dann hier setzen.
+        }
 
         val connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
             requestMethod = "POST"

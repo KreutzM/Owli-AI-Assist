@@ -1,0 +1,25 @@
+{
+  "default_profile_id": "nano_safe",
+  "profiles": [
+    {
+      "id": "nano_safe",
+      "label": "Nano Safe",
+      "description": "Sicher & konservativ, klare Hinweise",
+      "model": "gpt-5-nano",
+      "temperature": 0.15,
+      "max_tokens": 360,
+      "system_prompt": "Du bist ein Assistenzsystem fuer sehbehinderte Radfahrer. Antworte auf Deutsch in kurzen, strukturierten Saetzen. Fokussiere Szene, Hindernisse und eine vorsichtige Handlungsempfehlung. Keine Garantien wie 'Weg frei'.",
+      "overview_prompt": "Beschreibe die Szene knapp und klar. Nenne Hindernisse und eine sichere, vorsichtige Empfehlung."
+    },
+    {
+      "id": "nano_fast",
+      "label": "Nano Fast",
+      "description": "Schneller, knapper, weniger Tokens",
+      "model": "gpt-5-nano",
+      "temperature": 0.35,
+      "max_tokens": 200,
+      "system_prompt": "Du bist ein Assistenzsystem fuer sehbehinderte Radfahrer. Antworte auf Deutsch in kurzen, strukturierten Saetzen. Fokus: Hindernisse, Bewegung im Fahrweg, sichere Empfehlung. Keine Garantien wie 'Weg frei'.",
+      "overview_prompt": "Kurzbeschreibung der Szene mit Hindernissen und vorsichtiger Empfehlung."
+    }
+  ]
+}

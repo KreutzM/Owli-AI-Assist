@@ -15,6 +15,8 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -28,7 +30,6 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -67,9 +68,9 @@ import com.example.bikeassist.ui.MainViewModel
 import com.example.bikeassist.util.AppLogger
 import com.example.bikeassist.vlm.OpenRouterVlmClient
 import com.example.bikeassist.vlm.VlmConfigLoader
+import com.example.bikeassist.vlm.VlmProfile
+import com.example.bikeassist.vlm.VlmProfileLoader
 import com.example.bikeassist.vlm.VlmUiState
-import com.example.bikeassist.vlm.DEFAULT_VLM_PROFILES
-import com.example.bikeassist.vlm.findVlmProfile
 import com.example.bikebuddy.ui.theme.BikeBuddyTheme
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.debounce
@@ -81,8 +82,11 @@ class MainActivity : ComponentActivity() {
     private val cameraFrameSource by lazy { CameraFrameSource(this, this) }
     private val audioFeedbackEngine by lazy { AudioFeedbackEngine(this) }
 
+    private val vlmProfilesConfig by lazy { VlmProfileLoader.load(applicationContext) }
     private val vlmConfig by lazy { VlmConfigLoader.load(applicationContext) }
-    private val vlmClient by lazy { OpenRouterVlmClient(vlmConfig, DEFAULT_VLM_PROFILES.first()) }
+    private val vlmClient by lazy {
+        OpenRouterVlmClient(vlmConfig, vlmProfilesConfig.resolve(vlmProfilesConfig.defaultProfileId))
+    }
     private val mainViewModel: MainViewModel by viewModels {
         MainViewModel.Factory(vlmClient)
     }
@@ -93,6 +97,7 @@ class MainActivity : ComponentActivity() {
     private val showSettings = mutableStateOf(false)
     private val showDiagnostics = mutableStateOf(false)
     private val showVlm = mutableStateOf(false)
+    private val showVlmProfiles = mutableStateOf(false)
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -107,7 +112,7 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AppLogger.d("Activity onCreate")
-        mainViewModel.applyVlmConfig(vlmConfig)
+        mainViewModel.applyVlmProfile(vlmProfilesConfig.resolve(vlmProfilesConfig.defaultProfileId))
         enableEdgeToEdge()
         observeSceneState()
         observeVlmState()
@@ -121,8 +126,10 @@ class MainActivity : ComponentActivity() {
                     val status by mainViewModel.status.collectAsState()
                     val settings by settingsViewModel.settings.collectAsState()
                     val vlmState by mainViewModel.vlmUiState.collectAsState()
+                    val activeVlmProfile = vlmProfilesConfig.resolve(settings.vlmProfileId)
                     val showSettingsState = remember { showSettings }
                     val showVlmState = remember { showVlm }
+                    val showVlmProfilesState = remember { showVlmProfiles }
 
                     DemoScreen(
                         isRunning = isRunning,
@@ -152,6 +159,8 @@ class MainActivity : ComponentActivity() {
                     if (showSettingsState.value) {
                         SettingsScreen(
                             settings = settings,
+                            activeVlmProfileLabel = activeVlmProfile.label,
+                            onOpenVlmProfiles = { showVlmProfilesState.value = true },
                             onUpdate = { update -> settingsViewModel.update { update(it) } },
                             onClose = { showSettingsState.value = false },
                             onReset = { settingsViewModel.reset() }
@@ -172,6 +181,17 @@ class MainActivity : ComponentActivity() {
                                 showVlmState.value = false
                                 mainViewModel.closeVlm()
                             }
+                        )
+                    }
+                    if (showVlmProfilesState.value) {
+                        VlmProfileScreen(
+                            profiles = vlmProfilesConfig.profiles,
+                            activeProfileId = activeVlmProfile.id,
+                            onSelect = { profile ->
+                                settingsViewModel.update { it.copy(vlmProfileId = profile.id) }
+                                showVlmProfilesState.value = false
+                            },
+                            onClose = { showVlmProfilesState.value = false }
                         )
                     }
                 }
@@ -272,7 +292,7 @@ class MainActivity : ComponentActivity() {
             analysisIntervalMs = settings.analysisIntervalMs
         )
         mainViewModel.setPipeline(handle)
-        mainViewModel.applyVlmProfile(findVlmProfile(settings.vlmProfileId))
+        mainViewModel.applyVlmProfile(vlmProfilesConfig.resolve(settings.vlmProfileId))
         ensurePermissionAndAutoStart()
     }
 }
@@ -535,6 +555,8 @@ fun PreviewControlPanel() {
 @Composable
 fun SettingsScreen(
     settings: AppSettings,
+    activeVlmProfileLabel: String,
+    onOpenVlmProfiles: () -> Unit,
     onUpdate: (((AppSettings) -> AppSettings)) -> Unit,
     onClose: () -> Unit,
     onReset: () -> Unit
@@ -638,28 +660,18 @@ fun SettingsScreen(
                 onValueChange = { v -> onUpdate { it.copy(ttsSpeechRate = v) } },
                 helper = "Sprechgeschwindigkeit"
             )
-            Text("VLM Profil", style = MaterialTheme.typography.titleSmall)
-            DEFAULT_VLM_PROFILES.forEach { profile ->
-                val selected = settings.vlmProfileId == profile.id
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onUpdate { it.copy(vlmProfileId = profile.id) } }
-                        .padding(vertical = 4.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    RadioButton(
-                        selected = selected,
-                        onClick = { onUpdate { it.copy(vlmProfileId = profile.id) } }
-                    )
-                    Column {
-                        Text(profile.label)
-                        Text(
-                            text = "Model: ${profile.model}, temp=${"%.2f".format(profile.temperature)}, max=${profile.maxTokens}",
-                            style = MaterialTheme.typography.bodySmall
-                        )
-                    }
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(vertical = 4.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column {
+                    Text("VLM Profil", style = MaterialTheme.typography.titleSmall)
+                    Text(activeVlmProfileLabel, style = MaterialTheme.typography.bodySmall)
                 }
+                Button(onClick = onOpenVlmProfiles) { Text("Auswaehlen") }
             }
             SettingIntSlider(
                 label = "Analysis Interval (ms)",
@@ -689,6 +701,62 @@ fun SettingsScreen(
                 horizontalArrangement = Arrangement.End
             ) {
                 Button(onClick = onReset) { Text("Reset Defaults") }
+            }
+        }
+    }
+}
+
+@Composable
+fun VlmProfileScreen(
+    profiles: List<VlmProfile>,
+    activeProfileId: String,
+    onSelect: (VlmProfile) -> Unit,
+    onClose: () -> Unit
+) {
+    Scaffold(
+        topBar = {
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text("VLM Profile", style = MaterialTheme.typography.titleMedium)
+                Button(onClick = onClose) { Text("Schliessen") }
+            }
+        }
+    ) { innerPadding ->
+        LazyColumn(
+            modifier = Modifier
+                .padding(innerPadding)
+                .padding(12.dp)
+                .fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(10.dp)
+        ) {
+            items(profiles, key = { it.id }) { profile ->
+                val isActive = profile.id == activeProfileId
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clickable { onSelect(profile) }
+                ) {
+                    SectionCard(
+                        title = if (isActive) "${profile.label} (Aktiv)" else profile.label
+                    ) {
+                        profile.description?.let {
+                            Text(it, style = MaterialTheme.typography.bodySmall)
+                        }
+                        Text(
+                            text = "Model: ${profile.model}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                        Text(
+                            text = "Temp: ${"%.2f".format(profile.temperature)}  MaxTokens: ${profile.maxTokens}",
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
             }
         }
     }

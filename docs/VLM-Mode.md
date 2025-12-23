@@ -35,8 +35,6 @@ Optional:
 - Aktuell laeuft der VLM im Raw-Debug-Mode: Antwort wird als Freitext angezeigt, JSON-Parsing ist voruebergehend deaktiviert.
 
 ## VLM-Profile
-- Profile definieren Modell, Temperatur und Token-Limit.
-- Standardprofile:
-  - "safe": konservativ (niedrige Temperatur, mehr Tokens).
-  - "fast": schneller/guenstiger (hoeherer Temperaturwert, weniger Tokens).
-- Die Auswahl erfolgt im Settings-Screen und wird in den App-Settings gespeichert.
+- Profile werden aus `app/src/main/assets/vlm-profiles.json` geladen.
+- Jedes Profil definiert Modell, Temperatur, Token-Limit sowie `system_prompt` und `overview_prompt`.
+- Die Auswahl erfolgt im separaten VLM-Profile-Screen (aus den Settings heraus) und wird als `vlmProfileId` gespeichert.

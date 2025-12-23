@@ -67,7 +67,7 @@ data class AppSettings(
 
 object AppSettingsDefaults {
     val appMode = AppMode.BLINDVIEW
-    const val vlmProfileId: String = "safe"
+    const val vlmProfileId: String = "nano_safe"
     const val detectorMinConfidence: Float = 0.3f
     const val detectorMaxResults: Int = 3
     const val detectorNumThreads: Int = 2
