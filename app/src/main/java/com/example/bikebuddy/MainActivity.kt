@@ -485,22 +485,22 @@ fun ControlPanel(
     Column(modifier = modifier) {
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceEvenly,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Button(onClick = onStart, enabled = !isRunning) {
+            Button(onClick = onStart, enabled = !isRunning, modifier = Modifier.weight(1f)) {
                 Text(text = "Start")
             }
-            Button(onClick = onStop, enabled = isRunning) {
+            Button(onClick = onStop, enabled = isRunning, modifier = Modifier.weight(1f)) {
                 Text(text = "Stop")
             }
-            Button(onClick = onOpenSettings) {
+            Button(onClick = onOpenSettings, modifier = Modifier.weight(1f)) {
                 Text(text = "Settings")
             }
-            Button(onClick = onOpenDiagnostics) {
+            Button(onClick = onOpenDiagnostics, modifier = Modifier.weight(1f)) {
                 Text(text = "Diag")
             }
-            Button(onClick = onOpenVlm) {
+            Button(onClick = onOpenVlm, modifier = Modifier.weight(1f)) {
                 Text(text = "VLM")
             }
         }
