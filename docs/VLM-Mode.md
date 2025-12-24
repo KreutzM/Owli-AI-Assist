@@ -3,25 +3,16 @@
 ## Ziel
 - On-demand Szenenbeschreibung ueber OpenRouter (Bild + Text).
 - Kein Dauerbetrieb, nur per Button/Frage.
-- Antwort wird als JSON geparst und via UI/TTS ausgegeben.
+- Antwort wird im Raw-Debug-Mode als Freitext angezeigt (JSON-Parsing aktuell deaktiviert).
 
 ## Ablauf
 1. UI-Button "VLM" fordert Snapshot an (letzter preprocessierter Frame als JPEG).
 2. OpenRouter Chat-Completions Request mit Bild als base64 data URL.
-3. Antwort als JSON parsen.
-4. UI zeigt die Antwort; TTS spricht `tts_one_liner` + `action_suggestion`.
-5. Follow-up "Frage stellen" nutzt dieselbe Session-History.
+3. Antwort als Freitext anzeigen (Raw-Debug-Mode).
+4. Follow-up "Frage stellen" nutzt dieselbe Session-History.
 
 ## JSON-Schema (Antwort)
-Pflichtfelder:
-- `tts_one_liner` (String, kurz, sprechbar)
-- `obstacles` (Array[String])
-- `landmarks` (Array[String])
-- `readable_text` (String, etwas laenger)
-- `action_suggestion` (String, kurz)
-
-Optional:
-- `overall_confidence` (String, low|medium|high)
+Der JSON-Modus ist aktuell deaktiviert. Das Schema bleibt fuer eine spaetere Reaktivierung vorgesehen.
 
 ## Safety-Regeln
 - Niemals "Weg frei" sagen, wenn `obstacles` nicht leer sind oder `overall_confidence` nicht `high` ist.
@@ -30,7 +21,7 @@ Optional:
 
 ## Hinweise
 - API-Key kommt aus `local.properties` via `OPENROUTER_API_KEY` (BuildConfig).
-- Modell-ID und Prompts werden aus `app/src/main/assets/vlm-config.json` geladen.
+- Profile und Prompts werden aus `app/src/main/assets/vlm-profiles.json` geladen.
 - Fehlerfaelle (Timeout, Parse-Fehler, kein Snapshot) muessen UI-seitig angezeigt werden.
 - Aktuell laeuft der VLM im Raw-Debug-Mode: Antwort wird als Freitext angezeigt, JSON-Parsing ist voruebergehend deaktiviert.
 

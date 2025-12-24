@@ -70,7 +70,11 @@ class OpenRouterVlmClient(
 
         val assistant = parseAssistantContent(body)
         if (assistant.isBlank()) {
-            throw IOException("Leere VLM-Antwort.")
+            val error = extractErrorMessage(body)
+            if (!error.isNullOrBlank()) {
+                throw IOException("OpenRouter Fehler: $error")
+            }
+            throw IOException("Leere VLM-Antwort. raw=${body.take(500)}")
         }
         VlmClientResult(
             assistantContent = assistant,
@@ -106,8 +110,8 @@ class OpenRouterVlmClient(
             val root = JSONObject(body)
             val choices = root.optJSONArray("choices") ?: return ""
             val first = choices.optJSONObject(0) ?: return ""
-            val message = first.optJSONObject("message") ?: return ""
-            val content = message.opt("content")
+            val message = first.optJSONObject("message")
+            val content = message?.opt("content") ?: first.opt("text")
             when (content) {
                 is String -> content
                 is JSONArray -> {
@@ -121,6 +125,14 @@ class OpenRouterVlmClient(
                     }
                     sb.toString()
                 }
+                is JSONObject -> {
+                    val text = content.optString("text", "")
+                    if (text.isNotBlank()) {
+                        text
+                    } else {
+                        content.optString("content", "")
+                    }
+                }
                 else -> ""
             }
         } catch (ex: Exception) {
@@ -133,6 +145,20 @@ class OpenRouterVlmClient(
         return runCatching { JSONObject(body).optString("id", "") }
             .getOrNull()
             ?.ifEmpty { null }
+    }
+
+    private fun extractErrorMessage(body: String): String? {
+        return runCatching {
+            val root = JSONObject(body)
+            val errorObj = root.optJSONObject("error")
+            val errorMessage = errorObj?.optString("message")?.takeIf { it.isNotBlank() }
+            val errorType = errorObj?.optString("type")?.takeIf { it.isNotBlank() }
+            when {
+                errorMessage != null && errorType != null -> "$errorMessage (type=$errorType)"
+                errorMessage != null -> errorMessage
+                else -> root.optString("message", "").ifBlank { null }
+            }
+        }.getOrNull()
     }
 
     fun updateProfile(newProfile: VlmProfile) {

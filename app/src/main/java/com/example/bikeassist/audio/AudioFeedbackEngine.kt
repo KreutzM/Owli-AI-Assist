@@ -34,6 +34,8 @@ class AudioFeedbackEngine(
     private val notReadyLogInterval = 1_000L
     private var lastVlmMessage: String? = null
     private var lastVlmSpokenAt: Long = 0L
+    private var standardVolume: Float = 1.0f
+    private var vlmVolume: Float = 1.0f
     private var desiredSpeechRate: Float =
         blindViewConfig.ttsSpeechRate.coerceIn(MIN_SPEECH_RATE, MAX_SPEECH_RATE)
 
@@ -115,8 +117,7 @@ class AudioFeedbackEngine(
             Log.d(TAG, "speak skipped, ttsReady=false, text=$text")
             return
         }
-        val result = tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, "scene-state") ?: TextToSpeech.ERROR
-        Log.d(TAG, "speak result=$result, text=$text")
+        speakWithVolume(text, standardVolume, "scene-state")
     }
 
     fun speakVlmResponse(ttsOneLiner: String?, actionSuggestion: String?) {
@@ -136,8 +137,7 @@ class AudioFeedbackEngine(
             }
             return
         }
-        val result = tts?.speak(combined, TextToSpeech.QUEUE_FLUSH, null, "vlm") ?: TextToSpeech.ERROR
-        Log.d(TAG, "speak VLM result=$result, text=$combined")
+        speakWithVolume(combined, vlmVolume, "vlm")
         lastVlmMessage = combined
         lastVlmSpokenAt = now
     }
@@ -180,6 +180,26 @@ class AudioFeedbackEngine(
         private const val MIN_SPEECH_RATE = 0.5f
         private const val MAX_SPEECH_RATE = 3.0f
         private const val VLM_REPEAT_SUPPRESS_MS = 8_000L
+    }
+
+    fun setStandardVolume(volume: Float) {
+        standardVolume = volume.coerceIn(0.0f, 1.0f)
+    }
+
+    fun setVlmVolume(volume: Float) {
+        vlmVolume = volume.coerceIn(0.0f, 1.0f)
+    }
+
+    private fun speakWithVolume(text: String, volume: Float, utteranceId: String) {
+        if (!ttsReady) {
+            Log.d(TAG, "speak skipped, ttsReady=false, text=$text")
+            return
+        }
+        val params = android.os.Bundle().apply {
+            putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volume.coerceIn(0.0f, 1.0f))
+        }
+        val result = tts?.speak(text, TextToSpeech.QUEUE_FLUSH, params, utteranceId) ?: TextToSpeech.ERROR
+        Log.d(TAG, "speak result=$result, text=$text volume=$volume")
     }
 
     fun diagnostics(): com.example.bikeassist.diagnostics.TtsDiagnostics {

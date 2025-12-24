@@ -13,6 +13,7 @@ BikeBuddy ist eine Android-Demo-App fuer ein Fahrrad-Assistenzsystem mit On-Devi
 - DataStore-basiertes Settings-Menue (Detector/Tracking/BlindView/TTS/Debug/Pipeline) inkl. Reset-to-Defaults
 - Diagnostics-Screen mit Live-Metriken und Copy-to-Clipboard Debug-Report
 - Start/Stop der Pipeline; Decay-Logik fuer Hazards; Auto-Restart nach Rotation/Settings-Aenderung
+- VLM-On-Demand (OpenRouter) mit Profil-Auswahl; Antworten im Raw-Debug-Mode
 
 ## Architektur (kurz)
 - `camera`: CameraFrameSource (CameraX Preview + ImageAnalysis)
@@ -46,6 +47,7 @@ BikeBuddy ist eine Android-Demo-App fuer ein Fahrrad-Assistenzsystem mit On-Devi
 6. Settings (Button) oeffnen -> Parameter anpassen; Reset setzt Defaults.
 7. Diagnostics (Button) oeffnen -> Status ansehen, Report kopieren.
 8. Stop-Button -> Pipeline stoppt, Overlay/State wird zurueckgesetzt.
+9. VLM -> Profil auswaehlen (Settings), Szene beschreiben lassen, Follow-up fragen.
 
 ## Konfiguration
 - Settings via DataStore (persistiert): Detector/Tracking/BlindView/TTS/Debug/Pipeline-Intervall; Reset im Settings-Screen
@@ -55,6 +57,7 @@ BikeBuddy ist eine Android-Demo-App fuer ein Fahrrad-Assistenzsystem mit On-Devi
 - TTS: Cooldown 2500 ms, Speech-Rate konfigurierbar (Default 2.0, via Settings); BlindView nutzt Hash/Cooldown fuer Anti-Spam.
 - Preprocessing: YUV_420_888 -> ARGB_8888 (ohne JPEG-Roundtrip), Rotation wird angewendet, optional Downscale.
 - Ampel: TrafficLightPhaseClassifier (ROI-Inset, Zonenanalyse rot/oben, gruen/unten, Hysterese mit stabiler Phase).
+- VLM: Profile und Prompts in `app/src/main/assets/vlm-profiles.json` (On-Demand, Raw-Debug-Mode).
 
 ## Hinweise / Fehlerquellen
 - Fehlt das Modell-Asset, wird automatisch der FakeDetector verwendet (Status-Anzeige).

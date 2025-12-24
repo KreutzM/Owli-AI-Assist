@@ -252,6 +252,9 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
                 mainViewModel.vlmUiState.collect { state ->
+                    val backgroundVolume = 0.25f
+                    val standardVolume = if (state is VlmUiState.Inactive) 1.0f else backgroundVolume
+                    audioFeedbackEngine.setStandardVolume(standardVolume)
                     if (state is VlmUiState.OverviewReadyRaw) {
                         return@collect
                     }
@@ -273,6 +276,11 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun applySettings(settings: AppSettings) {
+        val configDefaultId = vlmProfilesConfig.defaultProfileId
+        if (settings.vlmProfileId == "nano_safe" && configDefaultId != "nano_safe") {
+            settingsViewModel.update { it.copy(vlmProfileId = configDefaultId) }
+            return
+        }
         audioFeedbackEngine.updateSpeechRate(settings.ttsSpeechRate)
         com.example.bikeassist.diagnostics.DiagnosticsCollector.updateSettings(settings)
         com.example.bikeassist.diagnostics.DiagnosticsCollector.updatePipelineStatus(

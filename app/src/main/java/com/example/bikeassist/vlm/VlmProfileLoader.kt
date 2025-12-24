@@ -11,7 +11,7 @@ data class VlmProfilesConfig(
 ) {
     fun resolve(profileId: String?): VlmProfile {
         if (profiles.isEmpty()) {
-            return fallbackProfiles().first()
+            return VlmProfileLoader.fallbackProfiles().first()
         }
         val id = profileId ?: defaultProfileId
         return profiles.firstOrNull { it.id == id }
@@ -40,16 +40,24 @@ object VlmProfileLoader {
     }
 
     fun fallbackProfiles(): List<VlmProfile> {
+        val safeSystem = VlmConfig.DEFAULT_SYSTEM_PROMPT
+        val safeOverview = VlmConfig.DEFAULT_OVERVIEW_PROMPT
+        val fastSystem =
+            "Du bist ein Assistenzsystem fuer sehbehinderte Radfahrer. " +
+                "Antworte sehr kurz und klar auf Deutsch. " +
+                "Fokus: Hindernisse und vorsichtige Empfehlung. " +
+                "Keine Garantien wie 'Weg frei'."
+        val fastOverview = "Sehr kurz: Hindernisse + vorsichtige Empfehlung."
         return listOf(
             VlmProfile(
                 id = "nano_safe",
                 label = "Nano Safe",
                 description = "Sicher & konservativ, klare Hinweise",
-                model = "gpt-5-nano",
+                model = "openai/gpt-5-nano",
                 temperature = 0.15,
                 maxTokens = 360,
-                systemPrompt = VlmConfig.DEFAULT_SYSTEM_PROMPT,
-                overviewPrompt = VlmConfig.DEFAULT_OVERVIEW_PROMPT,
+                systemPrompt = safeSystem,
+                overviewPrompt = safeOverview,
                 thinkingEnabled = false,
                 thinkingBudgetTokens = null
             ),
@@ -57,11 +65,11 @@ object VlmProfileLoader {
                 id = "nano_fast",
                 label = "Nano Fast",
                 description = "Schneller, knapper, weniger Tokens",
-                model = "gpt-5-nano",
+                model = "openai/gpt-5-nano",
                 temperature = 0.35,
                 maxTokens = 200,
-                systemPrompt = VlmConfig.DEFAULT_SYSTEM_PROMPT,
-                overviewPrompt = VlmConfig.DEFAULT_OVERVIEW_PROMPT,
+                systemPrompt = fastSystem,
+                overviewPrompt = fastOverview,
                 thinkingEnabled = false,
                 thinkingBudgetTokens = null
             )

@@ -17,6 +17,20 @@ Format (angelehnt an Keep a Changelog / SemVer):
 
 ---
 
+## [0.5.0] – 2025-12-24
+
+### Added
+- VLM-Profile aus `app/src/main/assets/vlm-profiles.json` inkl. eigenem Prompt je Profil.
+- VLM-Profile-Screen zur Auswahl (LazyColumn) und Speicherung als `vlmProfileId`.
+- Default-Profil (gpt-4o-mini) als datengetriebene Voreinstellung.
+
+### Changed
+- VLM im Raw-Debug-Mode: Antworten werden als Freitext angezeigt (JSON-Parsing deaktiviert).
+- OpenRouter-Client robuster bei leeren Antworten/Fehlertexten.
+- Dokumentation zu VLM-Profilen und Raw-Debug-Mode aktualisiert.
+
+---
+
 ## [0.4.0] – 2025-12-23
 
 ### Added

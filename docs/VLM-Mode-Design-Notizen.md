@@ -1,9 +1,11 @@
 # VLM Mode Design Notes (On-Demand)
 
+Hinweis: MVP ist implementiert; aktuelle Details siehe `docs/VLM-Mode.md`.
+
 ## Scope
+- Historische Design-Notizen zum VLM-MVP.
 - On-demand VLM request using the latest camera snapshot.
 - No continuous VLM inference.
-- No code changes yet; planning only.
 
 ## Extension Points
 - Snapshot capture: best after preprocessing in `DefaultVisionPipeline` where a rotated/scaled `Bitmap` already exists.
