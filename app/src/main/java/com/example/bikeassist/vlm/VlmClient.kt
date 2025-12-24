@@ -17,7 +17,12 @@ data class VlmClientResult(
     val debugPath: String? = null,
     val reasoning: String? = null,
     val reasoningDetailsJson: String? = null,
-    val isReasoningOnly: Boolean = false
+    val isReasoningOnly: Boolean = false,
+    val usage: VlmUsage? = null,
+    val finishReason: String? = null,
+    val nativeFinishReason: String? = null,
+    val retries: Int = 0,
+    val retryLabel: String? = null
 )
 
 interface VlmClient {

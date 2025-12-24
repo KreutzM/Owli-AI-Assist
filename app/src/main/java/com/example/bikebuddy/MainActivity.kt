@@ -67,7 +67,6 @@ import com.example.bikeassist.settings.SettingsViewModel
 import com.example.bikeassist.ui.MainViewModel
 import com.example.bikeassist.util.AppLogger
 import com.example.bikeassist.vlm.OpenRouterVlmClient
-import com.example.bikeassist.vlm.VlmConfigLoader
 import com.example.bikeassist.vlm.VlmProfile
 import com.example.bikeassist.vlm.VlmProfileLoader
 import com.example.bikeassist.vlm.VlmUiState
@@ -83,9 +82,8 @@ class MainActivity : ComponentActivity() {
     private val audioFeedbackEngine by lazy { AudioFeedbackEngine(this) }
 
     private val vlmProfilesConfig by lazy { VlmProfileLoader.load(applicationContext) }
-    private val vlmConfig by lazy { VlmConfigLoader.load(applicationContext) }
     private val vlmClient by lazy {
-        OpenRouterVlmClient(vlmConfig, vlmProfilesConfig.resolve(vlmProfilesConfig.defaultProfileId))
+        OpenRouterVlmClient(vlmProfilesConfig.resolve(vlmProfilesConfig.defaultProfileId))
     }
     private val mainViewModel: MainViewModel by viewModels {
         MainViewModel.Factory(vlmClient)
@@ -759,14 +757,14 @@ fun VlmProfileScreen(
                         profile.description?.let {
                             Text(it, style = MaterialTheme.typography.bodySmall)
                         }
-                        val tempText = profile.temperature?.let { "%.2f".format(it) } ?: "n/a"
-                        val effortText = profile.thinkingEffort?.let { "  Reasoning: $it" } ?: ""
+                        val tempText = profile.parameterOverrides.temperature?.let { "%.2f".format(it) } ?: "n/a"
+                        val effortText = profile.tokenPolicy.reasoningEffort?.let { "  Reasoning: $it" } ?: ""
                         Text(
-                            text = "Model: ${profile.model}",
+                            text = "Model: ${profile.modelId}",
                             style = MaterialTheme.typography.bodySmall
                         )
                         Text(
-                            text = "Temp: $tempText  MaxTokens: ${profile.maxTokens}$effortText",
+                            text = "Temp: $tempText  MaxTokens: ${profile.tokenPolicy.maxTokens}$effortText",
                             style = MaterialTheme.typography.bodySmall
                         )
                     }

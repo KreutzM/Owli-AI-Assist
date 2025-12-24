@@ -50,50 +50,80 @@ object VlmProfileLoader {
     fun fallbackProfiles(): List<VlmProfile> {
         val safeSystem = VlmConfig.DEFAULT_SYSTEM_PROMPT
         val safeOverview = VlmConfig.DEFAULT_OVERVIEW_PROMPT
+        val defaults = VlmProfileDefaults(
+            provider = "openrouter",
+            family = null,
+            systemPrompt = safeSystem,
+            overviewPrompt = safeOverview,
+            imageSettings = VlmImageSettings(),
+            tokenPolicy = VlmTokenPolicy(maxTokens = VlmConfig.DEFAULT_MAX_TOKENS),
+            parameterOverrides = VlmParameterOverrides(),
+            capabilities = VlmCapabilities()
+        )
         return listOf(
             VlmProfile(
                 id = "gpt4o_default",
                 label = "GPT-4o Mini",
                 description = "Standardprofil, balanciert",
-                model = "openai/gpt-4o-mini",
-                maxTokens = VlmConfig.DEFAULT_MAX_TOKENS,
-                systemPrompt = safeSystem,
-                overviewPrompt = safeOverview,
-                temperature = VlmConfig.DEFAULT_TEMPERATURE,
-                thinkingEffort = null
+                modelId = "openai/gpt-4o-mini",
+                provider = defaults.provider,
+                family = "gpt4o",
+                systemPrompt = defaults.systemPrompt,
+                overviewPrompt = defaults.overviewPrompt,
+                imageSettings = defaults.imageSettings,
+                tokenPolicy = VlmTokenPolicy(maxTokens = VlmConfig.DEFAULT_MAX_TOKENS),
+                parameterOverrides = VlmParameterOverrides(temperature = VlmConfig.DEFAULT_TEMPERATURE),
+                capabilities = defaults.capabilities
             ),
             VlmProfile(
                 id = "nano-low",
                 label = "Nano Low",
                 description = "Reasoning low, sicherheitsbewusst",
-                model = "openai/gpt-5-nano",
-                maxTokens = 512,
-                systemPrompt = safeSystem,
-                overviewPrompt = safeOverview,
-                temperature = null,
-                thinkingEffort = "low"
+                modelId = "openai/gpt-5-nano",
+                provider = defaults.provider,
+                family = "gpt5",
+                systemPrompt = defaults.systemPrompt,
+                overviewPrompt = defaults.overviewPrompt,
+                imageSettings = defaults.imageSettings,
+                tokenPolicy = VlmTokenPolicy(
+                    maxTokens = 900,
+                    reasoningEffort = "low",
+                    retry1MaxTokens = 1200,
+                    retry2MaxTokens = 1400
+                ),
+                parameterOverrides = defaults.parameterOverrides,
+                capabilities = defaults.capabilities.copy(supportsReasoning = true)
             ),
             VlmProfile(
                 id = "nano-high",
                 label = "Nano High",
                 description = "Reasoning medium, detailreicher",
-                model = "openai/gpt-5-nano",
-                maxTokens = 512,
-                systemPrompt = safeSystem,
-                overviewPrompt = safeOverview,
-                temperature = null,
-                thinkingEffort = "medium"
+                modelId = "openai/gpt-5-nano",
+                provider = defaults.provider,
+                family = "gpt5",
+                systemPrompt = defaults.systemPrompt,
+                overviewPrompt = defaults.overviewPrompt,
+                imageSettings = defaults.imageSettings,
+                tokenPolicy = VlmTokenPolicy(
+                    maxTokens = 900,
+                    reasoningEffort = "medium",
+                    retry1MaxTokens = 1200,
+                    retry2MaxTokens = 1400
+                ),
+                parameterOverrides = defaults.parameterOverrides,
+                capabilities = defaults.capabilities.copy(supportsReasoning = true)
             )
         )
     }
 
     private fun parse(raw: String): VlmProfilesConfig {
         val root = JSONObject(raw)
+        val defaults = parseDefaults(root)
         val profilesArray = root.optJSONArray("profiles") ?: JSONArray()
         val profiles = buildList {
             for (i in 0 until profilesArray.length()) {
                 val obj = profilesArray.optJSONObject(i) ?: continue
-                val profile = parseProfile(obj) ?: continue
+                val profile = parseProfile(obj, defaults) ?: continue
                 add(profile)
             }
         }
@@ -107,41 +137,148 @@ object VlmProfileLoader {
         return VlmProfilesConfig(profiles = profiles, defaultProfileId = resolvedDefault)
     }
 
-    private fun parseProfile(obj: JSONObject): VlmProfile? {
+    private fun parseDefaults(root: JSONObject): VlmProfileDefaults {
+        val obj = root.optJSONObject("defaults")
+        val provider = obj?.optString("provider")?.trim().orEmpty().ifBlank { "openrouter" }
+        val family = obj?.optString("family")?.trim()?.takeIf { it.isNotBlank() }
+        val systemPrompt = obj?.optString("system_prompt")?.trim()?.takeIf { it.isNotBlank() }
+            ?: VlmConfig.DEFAULT_SYSTEM_PROMPT
+        val overviewPrompt = obj?.optString("overview_prompt")?.trim()?.takeIf { it.isNotBlank() }
+            ?: VlmConfig.DEFAULT_OVERVIEW_PROMPT
+        val imageSettings = parseImageSettings(obj?.optJSONObject("image"), VlmImageSettings())
+        val tokenPolicy = parseTokenPolicy(obj?.optJSONObject("token_policy"), VlmTokenPolicy(VlmConfig.DEFAULT_MAX_TOKENS), null)
+        val parameterOverrides = parseParameterOverrides(obj?.optJSONObject("parameter_overrides"), VlmParameterOverrides(), null)
+        val capabilities = parseCapabilities(obj?.optJSONObject("capabilities"), VlmCapabilities())
+        return VlmProfileDefaults(
+            provider = provider,
+            family = family,
+            systemPrompt = systemPrompt,
+            overviewPrompt = overviewPrompt,
+            imageSettings = imageSettings,
+            tokenPolicy = tokenPolicy,
+            parameterOverrides = parameterOverrides,
+            capabilities = capabilities
+        )
+    }
+
+    private fun parseProfile(obj: JSONObject, defaults: VlmProfileDefaults): VlmProfile? {
         val id = obj.optString("id", "").trim()
         val label = obj.optString("label", "").trim()
-        val model = obj.optString("model", "").trim()
-        val systemPrompt = obj.optString("system_prompt", "").trim()
-        if (id.isBlank() || label.isBlank() || model.isBlank() || systemPrompt.isBlank()) {
+        val modelId = obj.optString("model_id", "").trim()
+            .ifBlank { obj.optString("model", "").trim() }
+        val systemPrompt = obj.optString("system_prompt", "").trim().ifBlank { defaults.systemPrompt }
+        if (id.isBlank() || label.isBlank() || modelId.isBlank() || systemPrompt.isBlank()) {
+            AppLogger.w(
+                "VLM",
+                "VLM profile invalid: id=$id label=$label modelId=$modelId systemPrompt=${systemPrompt.isNotBlank()}"
+            )
             return null
         }
         val description = obj.optString("description", "").trim().ifBlank { null }
         val overviewPrompt = obj.optString("overview_prompt", "").trim().ifBlank {
-            VlmConfig.DEFAULT_OVERVIEW_PROMPT
+            defaults.overviewPrompt
         }
-        val maxTokens = obj.optInt("max_tokens", VlmConfig.DEFAULT_MAX_TOKENS)
-            .takeIf { it > 0 } ?: VlmConfig.DEFAULT_MAX_TOKENS
-        val temperature = if (obj.has("temperature")) {
-            if (obj.isNull("temperature")) {
-                null
-            } else {
-                obj.optDouble("temperature", VlmConfig.DEFAULT_TEMPERATURE).takeIf { !it.isNaN() }
-            }
-        } else {
-            null
-        }
-        val thinkingEffort = obj.optString("thinking_effort", "").trim().lowercase().ifBlank { null }
-            ?.takeIf { it == "low" || it == "medium" || it == "high" }
+        val provider = obj.optString("provider", defaults.provider).trim().ifBlank { defaults.provider }
+        val family = obj.optString("family", "").trim().ifBlank { defaults.family }
+        val imageSettings = parseImageSettings(obj.optJSONObject("image"), defaults.imageSettings)
+        val tokenPolicy = parseTokenPolicy(obj.optJSONObject("token_policy"), defaults.tokenPolicy, obj)
+        val parameterOverrides = parseParameterOverrides(obj.optJSONObject("parameter_overrides"), defaults.parameterOverrides, obj)
+        val capabilities = parseCapabilities(obj.optJSONObject("capabilities"), defaults.capabilities)
         return VlmProfile(
             id = id,
             label = label,
             description = description,
-            model = model,
-            maxTokens = maxTokens,
+            modelId = modelId,
+            provider = provider,
+            family = family,
             systemPrompt = systemPrompt,
             overviewPrompt = overviewPrompt,
-            temperature = temperature,
-            thinkingEffort = thinkingEffort
+            imageSettings = imageSettings,
+            tokenPolicy = tokenPolicy,
+            parameterOverrides = parameterOverrides,
+            capabilities = capabilities
         )
     }
+
+    private fun parseImageSettings(obj: JSONObject?, defaults: VlmImageSettings): VlmImageSettings {
+        if (obj == null) return defaults
+        val maxSidePx = obj.optInt("max_side_px", defaults.maxSidePx).takeIf { it > 0 } ?: defaults.maxSidePx
+        val jpegQuality = obj.optInt("jpeg_quality", defaults.jpegQuality).takeIf { it in 10..100 } ?: defaults.jpegQuality
+        val detail = obj.optString("detail", "").trim().ifBlank { defaults.detail }
+        return VlmImageSettings(
+            maxSidePx = maxSidePx,
+            jpegQuality = jpegQuality,
+            detail = detail
+        )
+    }
+
+    private fun parseTokenPolicy(
+        obj: JSONObject?,
+        defaults: VlmTokenPolicy,
+        legacy: JSONObject?
+    ): VlmTokenPolicy {
+        val legacyMax = legacy?.optInt("max_tokens", -1)?.takeIf { it > 0 }
+        val maxTokens = obj?.optInt("max_tokens", defaults.maxTokens)?.takeIf { it > 0 }
+            ?: legacyMax
+            ?: defaults.maxTokens
+        val rawEffort = obj?.optString("reasoning_effort", "")?.trim()?.takeIf { it.isNotBlank() }
+            ?: legacy?.optString("thinking_effort", "")?.trim()?.takeIf { it.isNotBlank() }
+        val reasoningEffort = VlmModelFamilyPolicy.sanitizeReasoningEffort(rawEffort)
+            ?: defaults.reasoningEffort
+        val retry1 = obj?.optInt("retry1_max_tokens", -1)?.takeIf { it > 0 }
+        val retry2 = obj?.optInt("retry2_max_tokens", -1)?.takeIf { it > 0 }
+        return VlmTokenPolicy(
+            maxTokens = maxTokens,
+            reasoningEffort = reasoningEffort,
+            retry1MaxTokens = retry1 ?: defaults.retry1MaxTokens,
+            retry2MaxTokens = retry2 ?: defaults.retry2MaxTokens
+        )
+    }
+
+    private fun parseParameterOverrides(
+        obj: JSONObject?,
+        defaults: VlmParameterOverrides,
+        legacy: JSONObject?
+    ): VlmParameterOverrides {
+        val temp = when {
+            obj != null && obj.has("temperature") -> {
+                if (obj.isNull("temperature")) null else obj.optDouble("temperature", Double.NaN).takeIf { !it.isNaN() }
+            }
+            legacy != null && legacy.has("temperature") -> {
+                if (legacy.isNull("temperature")) null else legacy.optDouble("temperature", Double.NaN).takeIf { !it.isNaN() }
+            }
+            else -> defaults.temperature
+        }
+        val effort = when {
+            obj != null && obj.has("reasoning_effort") -> obj.optString("reasoning_effort", "").trim()
+            else -> defaults.reasoningEffort
+        }
+        return VlmParameterOverrides(
+            temperature = temp,
+            reasoningEffort = VlmModelFamilyPolicy.sanitizeReasoningEffort(effort)
+        )
+    }
+
+    private fun parseCapabilities(obj: JSONObject?, defaults: VlmCapabilities): VlmCapabilities {
+        if (obj == null) return defaults
+        val supportsVision = obj.optBoolean("supports_vision", defaults.supportsVision)
+        val supportsReasoning = obj.optBoolean("supports_reasoning", defaults.supportsReasoning)
+        val supportsJson = obj.optBoolean("supports_json", defaults.supportsJson)
+        return VlmCapabilities(
+            supportsVision = supportsVision,
+            supportsReasoning = supportsReasoning,
+            supportsJson = supportsJson
+        )
+    }
+
+    private data class VlmProfileDefaults(
+        val provider: String,
+        val family: String?,
+        val systemPrompt: String,
+        val overviewPrompt: String,
+        val imageSettings: VlmImageSettings,
+        val tokenPolicy: VlmTokenPolicy,
+        val parameterOverrides: VlmParameterOverrides,
+        val capabilities: VlmCapabilities
+    )
 }

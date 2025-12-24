@@ -58,6 +58,7 @@ Codex übernimmt in diesem Projekt drei Rollen. Der Nutzer muss die Rolle nicht 
 * Nur Dateien bearbeiten, die im Prompt **explizit** genannt werden oder logisch direkt dazugehören (z. B. passende Testdatei oder Interface).
 * Keine weitreichenden Refactorings über mehrere Subsysteme, wenn der Nutzer nur eine kleine Änderung angefragt hat.
 * Kein produktiver Code im Testpaket und umgekehrt.
+* regelmäßige Git-Commits durchführen (zuvor /docs/Changelog.md aktualisieren)
 
 ---
 
@@ -107,10 +108,11 @@ Codex kann Shell-Kommandos nutzen, um Builds/Tests auszuführen oder Repo-Zustan
 * `./gradlew tasks`
 * `./gradlew assembleDebug`
 * `./gradlew test`
+* `git add`, `git commit`
 
 **Nur mit klarer Bestätigung des Nutzers:**
 
-* `git add`, `git commit`, `git push`, `git checkout`, `git merge`, `git rebase`
+* `git push`, `git checkout`, `git merge`, `git rebase`
 * Kommandos mit potenziell destruktiver Wirkung (`rm`, `mv`, `cp` außerhalb klarer Projektdateien)
 * `adb`-Befehle (Install/Uninstall/Logs)
 
@@ -181,7 +183,7 @@ Codex darf Branch-Namen vorschlagen, aber Branches nur erstellen oder wechseln, 
   * `test`: Tests oder Testinfrastruktur
   * `chore`: Build-/Tooling-/Meta-Aufgaben
 
-* Codex darf Vorschläge für Commit-Messages machen, aber Commits nur ausführen, wenn der Nutzer zustimmt.
+* Codex darf Vorschläge für Commit-Messages machen und Commits ausführen.
 
 ---
 
@@ -207,7 +209,7 @@ Wenn eine Anfrage zu riskant oder zu unklar ist, soll Codex:
 Wenn Codex zum ersten Mal in diesem Repo gestartet wird, ist folgender Prompt empfehlenswert:
 
 ```text
-Du bist GPT-5.1-Codex-max und arbeitest als Code-/Architecture-Agent für dieses Android-Projekt.
+Du bist GPT-5.2-Codex und arbeitest als Code-/Architecture-Agent für dieses Android-Projekt.
 Bitte beachte die Richtlinien in:
 - docs/System-Architektur.md
 - docs/System-Spezifikation.md

@@ -29,7 +29,6 @@ import kotlinx.coroutines.withContext
 class MainViewModel(
     detectorInfo: String = "",
     private val vlmClient: VlmClient = OpenRouterVlmClient(
-        VlmConfig.defaults(),
         VlmProfileLoader.fallbackProfiles().first()
     )
 ) : ViewModel() {
@@ -150,7 +149,7 @@ class MainViewModel(
     }
 
     fun enterVlmMode() {
-        AppLogger.i("VLM", "enterVlmMode started profile=${vlmProfile.id} model=${vlmProfile.model}")
+        AppLogger.i("VLM", "enterVlmMode started profile=${vlmProfile.id} model=${vlmProfile.modelId}")
         if (!vlmClient.isConfigured || BuildConfig.OPENROUTER_API_KEY.isBlank()) {
             AppLogger.e("VLM", "OpenRouter API-Key fehlt")
             _vlmUiState.value = VlmUiState.Error("OpenRouter API-Key fehlt. Bitte OPENROUTER_API_KEY in local.properties setzen.")
@@ -163,8 +162,12 @@ class MainViewModel(
         }
         _vlmUiState.value = VlmUiState.LoadingOverview("Snapshot vorbereiten...")
         viewModelScope.launch {
+            val imageSettings = vlmProfile.imageSettings
             val jpeg = withContext(Dispatchers.Default) {
-                provider.getLatestJpegSnapshot(maxSidePx = 1024, quality = 80)
+                provider.getLatestJpegSnapshot(
+                    maxSidePx = imageSettings.maxSidePx,
+                    quality = imageSettings.jpegQuality
+                )
             }
             if (jpeg == null) {
                 AppLogger.e("VLM", "Kein JPEG-Snapshot verfuegbar")
@@ -179,6 +182,13 @@ class MainViewModel(
                 }
                 if (result.isReasoningOnly) {
                     AppLogger.w("VLM", "VLM: Antwort enthaelt nur Reasoning (Overview)")
+                    _vlmUiState.value = VlmUiState.Error("VLM lieferte nur Reasoning ohne Ergebnis.")
+                    return@launch
+                }
+                if (result.assistantContent.isBlank()) {
+                    AppLogger.w("VLM", "VLM: Leere Antwort (Overview)")
+                    _vlmUiState.value = VlmUiState.Error("VLM-Antwort war leer.")
+                    return@launch
                 }
                 if (useStructuredVlmParsing) {
                     if (result.isReasoningOnly) {
@@ -238,6 +248,13 @@ class MainViewModel(
                 }
                 if (result.isReasoningOnly) {
                     AppLogger.w("VLM", "VLM: Antwort enthaelt nur Reasoning (Follow-up)")
+                    _vlmUiState.value = VlmUiState.Error("VLM lieferte nur Reasoning ohne Ergebnis.")
+                    return@launch
+                }
+                if (result.assistantContent.isBlank()) {
+                    AppLogger.w("VLM", "VLM: Leere Antwort (Follow-up)")
+                    _vlmUiState.value = VlmUiState.Error("VLM-Antwort war leer.")
+                    return@launch
                 }
                 if (useStructuredVlmParsing) {
                     if (result.isReasoningOnly) {
@@ -295,7 +312,7 @@ class MainViewModel(
         vlmSystemPrompt = profile.systemPrompt.ifBlank { VlmConfig.DEFAULT_SYSTEM_PROMPT }
         vlmOverviewPrompt = profile.overviewPrompt.ifBlank { VlmConfig.DEFAULT_OVERVIEW_PROMPT }
         (vlmClient as? OpenRouterVlmClient)?.updateProfile(profile)
-        AppLogger.i("VLM", "VLM profile applied id=${profile.id} model=${profile.model}")
+        AppLogger.i("VLM", "VLM profile applied id=${profile.id} model=${profile.modelId}")
     }
 
     private fun buildOverviewMessages(session: VlmSession): List<VlmChatMessage> {

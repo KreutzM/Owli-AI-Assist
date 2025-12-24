@@ -10,10 +10,15 @@ Format (angelehnt an Keep a Changelog / SemVer):
 ## [Unreleased]
 
 ### Added
-- (none)
+- VLM policy layer mit Provider-Interface und GPT-5 Reasoning-Retries.
+- Dokumentation `docs/VLM.md` fuer Profile, Policies und Retry-Strategie.
 
 ### Changed
-- (none)
+- VLM-Profile auf neues Schema mit token_policy, parameter_overrides und defaults umgestellt.
+- OpenRouter-Parsing nutzt nur message.content fuer UI/TTS; Reasoning bleibt Debug/Telemetry.
+
+### Fixed
+- GPT-5 Reasoning-only Antworten: automatische Retries mit hoeherem Token-Budget und Final-Only Hinweis.
 
 ---
 
