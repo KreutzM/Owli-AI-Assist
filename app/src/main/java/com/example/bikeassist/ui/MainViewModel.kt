@@ -18,6 +18,7 @@ import com.example.bikeassist.vlm.VlmClient
 import com.example.bikeassist.vlm.VlmProfile
 import com.example.bikeassist.vlm.VlmProfileLoader
 import com.example.bikebuddy.BuildConfig
+import com.example.bikeassist.util.AppLogger
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -60,6 +61,7 @@ class MainViewModel(
     private var vlmSystemPrompt: String = VlmConfig.DEFAULT_SYSTEM_PROMPT
     private var vlmOverviewPrompt: String = VlmConfig.DEFAULT_OVERVIEW_PROMPT
     private var vlmProfile: VlmProfile = VlmProfileLoader.fallbackProfiles().first()
+    private val useStructuredVlmParsing = false
 
     fun setPipeline(handle: VisionPipelineHandle) {
         // stop old pipeline if running
@@ -148,11 +150,14 @@ class MainViewModel(
     }
 
     fun enterVlmMode() {
+        AppLogger.i("VLM", "enterVlmMode started profile=${vlmProfile.id} model=${vlmProfile.model}")
         if (!vlmClient.isConfigured || BuildConfig.OPENROUTER_API_KEY.isBlank()) {
+            AppLogger.e("VLM", "OpenRouter API-Key fehlt")
             _vlmUiState.value = VlmUiState.Error("OpenRouter API-Key fehlt. Bitte OPENROUTER_API_KEY in local.properties setzen.")
             return
         }
         val provider = snapshotProvider ?: run {
+            AppLogger.e("VLM", "SnapshotProvider ist null - Pipeline noch nicht aktiv?")
             _vlmUiState.value = VlmUiState.Error("Snapshot ist nicht verfuegbar. Pipeline noch nicht aktiv?")
             return
         }
@@ -162,6 +167,7 @@ class MainViewModel(
                 provider.getLatestJpegSnapshot(maxSidePx = 1024, quality = 80)
             }
             if (jpeg == null) {
+                AppLogger.e("VLM", "Kein JPEG-Snapshot verfuegbar")
                 _vlmUiState.value = VlmUiState.Error("Kein Kamerabild verfuegbar.")
                 return@launch
             }
@@ -171,14 +177,40 @@ class MainViewModel(
                 val result = withContext(Dispatchers.IO) {
                     vlmClient.chat(messages)
                 }
-                val raw = result.assistantContent.trim()
-                lastVlmDescription = null
-                session.messageHistory.add(
-                    VlmChatMessage(role = "assistant", content = listOf(VlmContentPart.Text(result.assistantContent)))
-                )
-                vlmSession = session
-                _vlmUiState.value = VlmUiState.OverviewReadyRaw(raw, System.currentTimeMillis())
+                if (result.isReasoningOnly) {
+                    AppLogger.w("VLM", "VLM: Antwort enthaelt nur Reasoning (Overview)")
+                }
+                if (useStructuredVlmParsing) {
+                    if (result.isReasoningOnly) {
+                        AppLogger.e("VLM", "VLM lieferte nur Thinking ohne Ergebnis (Overview)")
+                        _vlmUiState.value = VlmUiState.Error("VLM lieferte nur Thinking ohne Ergebnis.")
+                        return@launch
+                    }
+                    val parsed = VlmSceneDescription.parse(result.assistantContent)
+                    if (parsed.isSuccess) {
+                        lastVlmDescription = parsed.getOrNull()
+                        session.messageHistory.add(
+                            VlmChatMessage(role = "assistant", content = listOf(VlmContentPart.Text(result.assistantContent)))
+                        )
+                        vlmSession = session
+                        _vlmUiState.value = VlmUiState.OverviewReady(
+                            lastVlmDescription!!,
+                            System.currentTimeMillis()
+                        )
+                    } else {
+                        _vlmUiState.value = VlmUiState.Error("VLM-Antwort konnte nicht gelesen werden.")
+                    }
+                } else {
+                    val raw = result.assistantContent.trim()
+                    lastVlmDescription = null
+                    session.messageHistory.add(
+                        VlmChatMessage(role = "assistant", content = listOf(VlmContentPart.Text(result.assistantContent)))
+                    )
+                    vlmSession = session
+                    _vlmUiState.value = VlmUiState.OverviewReadyRaw(raw, System.currentTimeMillis())
+                }
             } catch (ex: Exception) {
+                AppLogger.e(ex, "VLM: Fehler bei enterVlmMode (Overview-Request)")
                 _vlmUiState.value = VlmUiState.Error(ex.message ?: "Unbekannter VLM-Fehler")
             }
         }
@@ -186,31 +218,62 @@ class MainViewModel(
 
     fun askVlm(questionText: String) {
         if (!vlmClient.isConfigured || BuildConfig.OPENROUTER_API_KEY.isBlank()) {
+            AppLogger.e("VLM", "OpenRouter API-Key fehlt")
             _vlmUiState.value = VlmUiState.Error("OpenRouter API-Key fehlt. Bitte OPENROUTER_API_KEY in local.properties setzen.")
             return
         }
         val session = vlmSession ?: run {
+            AppLogger.w("VLM", "VLM: askVlm ohne aktive Session aufgerufen.")
             _vlmUiState.value = VlmUiState.Error("Keine aktive VLM-Session. Bitte zuerst 'Neue Szene' ausfuehren.")
             return
         }
         if (questionText.isBlank()) return
         _vlmUiState.value = VlmUiState.Asking(lastVlmDescription, questionText)
+        AppLogger.i("VLM", "askVlm started questionLength=${questionText.length}")
         viewModelScope.launch {
             val messages = buildFollowUpMessages(session, questionText)
             try {
                 val result = withContext(Dispatchers.IO) {
                     vlmClient.chat(messages)
                 }
-                val raw = result.assistantContent.trim()
-                session.messageHistory.add(
-                    VlmChatMessage(role = "user", content = listOf(VlmContentPart.Text(questionText)))
-                )
-                session.messageHistory.add(
-                    VlmChatMessage(role = "assistant", content = listOf(VlmContentPart.Text(result.assistantContent)))
-                )
-                lastVlmDescription = null
-                _vlmUiState.value = VlmUiState.OverviewReadyRaw(raw, System.currentTimeMillis())
+                if (result.isReasoningOnly) {
+                    AppLogger.w("VLM", "VLM: Antwort enthaelt nur Reasoning (Follow-up)")
+                }
+                if (useStructuredVlmParsing) {
+                    if (result.isReasoningOnly) {
+                        AppLogger.e("VLM", "VLM lieferte nur Thinking ohne Ergebnis (Follow-up)")
+                        _vlmUiState.value = VlmUiState.Error("VLM lieferte nur Thinking ohne Ergebnis.")
+                        return@launch
+                    }
+                    val parsed = VlmSceneDescription.parse(result.assistantContent)
+                    if (parsed.isSuccess) {
+                        lastVlmDescription = parsed.getOrNull()
+                        session.messageHistory.add(
+                            VlmChatMessage(role = "user", content = listOf(VlmContentPart.Text(questionText)))
+                        )
+                        session.messageHistory.add(
+                            VlmChatMessage(role = "assistant", content = listOf(VlmContentPart.Text(result.assistantContent)))
+                        )
+                        _vlmUiState.value = VlmUiState.OverviewReady(
+                            lastVlmDescription!!,
+                            System.currentTimeMillis()
+                        )
+                    } else {
+                        _vlmUiState.value = VlmUiState.Error("VLM-Antwort konnte nicht gelesen werden.")
+                    }
+                } else {
+                    val raw = result.assistantContent.trim()
+                    session.messageHistory.add(
+                        VlmChatMessage(role = "user", content = listOf(VlmContentPart.Text(questionText)))
+                    )
+                    session.messageHistory.add(
+                        VlmChatMessage(role = "assistant", content = listOf(VlmContentPart.Text(result.assistantContent)))
+                    )
+                    lastVlmDescription = null
+                    _vlmUiState.value = VlmUiState.OverviewReadyRaw(raw, System.currentTimeMillis())
+                }
             } catch (ex: Exception) {
+                AppLogger.e(ex, "VLM: Fehler bei askVlm (Follow-up-Request)")
                 _vlmUiState.value = VlmUiState.Error(ex.message ?: "Unbekannter VLM-Fehler")
             }
         }
@@ -232,6 +295,7 @@ class MainViewModel(
         vlmSystemPrompt = profile.systemPrompt.ifBlank { VlmConfig.DEFAULT_SYSTEM_PROMPT }
         vlmOverviewPrompt = profile.overviewPrompt.ifBlank { VlmConfig.DEFAULT_OVERVIEW_PROMPT }
         (vlmClient as? OpenRouterVlmClient)?.updateProfile(profile)
+        AppLogger.i("VLM", "VLM profile applied id=${profile.id} model=${profile.model}")
     }
 
     private fun buildOverviewMessages(session: VlmSession): List<VlmChatMessage> {

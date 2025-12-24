@@ -1,5 +1,7 @@
 package com.example.bikeassist.vlm
 
+import com.example.bikeassist.util.AppLogger
+import com.example.bikeassist.util.truncateForLog
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -15,7 +17,13 @@ data class VlmSceneDescription(
         fun parse(raw: String): Result<VlmSceneDescription> {
             return runCatching {
                 val jsonText = extractJsonObject(raw)
-                    ?: throw IllegalArgumentException("Kein JSON-Objekt gefunden.")
+                if (jsonText == null) {
+                    AppLogger.e(
+                        "VLM",
+                        "VLM: Kein JSON-Objekt in der VLM-Antwort gefunden. raw=${raw.truncateForLog(300)}"
+                    )
+                    throw IllegalArgumentException("Kein JSON-Objekt gefunden.")
+                }
                 val obj = JSONObject(jsonText)
                 val tts = obj.optString("tts_one_liner", "").trim()
                 val readable = obj.optString("readable_text", "").trim()
@@ -24,6 +32,10 @@ data class VlmSceneDescription(
                 val landmarks = obj.optJSONArray("landmarks").toStringList()
                 val confidence = obj.optString("overall_confidence", "").trim().ifEmpty { null }
                 if (tts.isBlank() && readable.isBlank() && action.isBlank()) {
+                    AppLogger.w(
+                        "VLM",
+                        "VLM: Antwort JSON enthaelt keine verwertbaren Felder. raw=${raw.truncateForLog(300)}"
+                    )
                     throw IllegalArgumentException("JSON enthaelt keine verwertbaren Felder.")
                 }
                 VlmSceneDescription(
@@ -34,6 +46,8 @@ data class VlmSceneDescription(
                     actionSuggestion = action,
                     overallConfidence = confidence
                 )
+            }.onFailure { ex ->
+                AppLogger.e("VLM", "VLM: JSON-Parsing fehlgeschlagen", ex)
             }
         }
 

@@ -13,7 +13,11 @@ data class VlmChatMessage(
 data class VlmClientResult(
     val assistantContent: String,
     val rawResponse: String,
-    val requestId: String? = null
+    val requestId: String? = null,
+    val debugPath: String? = null,
+    val reasoning: String? = null,
+    val reasoningDetailsJson: String? = null,
+    val isReasoningOnly: Boolean = false
 )
 
 interface VlmClient {

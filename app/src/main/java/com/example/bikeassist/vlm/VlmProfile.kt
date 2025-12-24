@@ -5,10 +5,9 @@ data class VlmProfile(
     val label: String,
     val description: String?,
     val model: String,
-    val temperature: Double,
     val maxTokens: Int,
     val systemPrompt: String,
     val overviewPrompt: String,
-    val thinkingEnabled: Boolean = false,
-    val thinkingBudgetTokens: Int? = null
+    val temperature: Double?,
+    val thinkingEffort: String? = null
 )

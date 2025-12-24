@@ -276,9 +276,13 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun applySettings(settings: AppSettings) {
-        val configDefaultId = vlmProfilesConfig.defaultProfileId
-        if (settings.vlmProfileId == "nano_safe" && configDefaultId != "nano_safe") {
-            settingsViewModel.update { it.copy(vlmProfileId = configDefaultId) }
+        val migratedProfileId = when (settings.vlmProfileId) {
+            "nano_safe" -> "nano-low"
+            "nano_fast" -> "nano-high"
+            else -> settings.vlmProfileId
+        }
+        if (migratedProfileId != settings.vlmProfileId) {
+            settingsViewModel.update { it.copy(vlmProfileId = migratedProfileId) }
             return
         }
         audioFeedbackEngine.updateSpeechRate(settings.ttsSpeechRate)
@@ -755,12 +759,14 @@ fun VlmProfileScreen(
                         profile.description?.let {
                             Text(it, style = MaterialTheme.typography.bodySmall)
                         }
+                        val tempText = profile.temperature?.let { "%.2f".format(it) } ?: "n/a"
+                        val effortText = profile.thinkingEffort?.let { "  Reasoning: $it" } ?: ""
                         Text(
                             text = "Model: ${profile.model}",
                             style = MaterialTheme.typography.bodySmall
                         )
                         Text(
-                            text = "Temp: ${"%.2f".format(profile.temperature)}  MaxTokens: ${profile.maxTokens}",
+                            text = "Temp: $tempText  MaxTokens: ${profile.maxTokens}$effortText",
                             style = MaterialTheme.typography.bodySmall
                         )
                     }

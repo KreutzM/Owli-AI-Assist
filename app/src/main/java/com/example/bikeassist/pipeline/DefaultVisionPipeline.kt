@@ -15,6 +15,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import java.io.ByteArrayOutputStream
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 
 /**
@@ -40,6 +41,7 @@ class DefaultVisionPipeline(
     private var running = false
     private var lastProcessedAt: Long = 0L
     private val latestBitmap = AtomicReference<Bitmap?>(null)
+    private val latestBitmapUpdatedAt = AtomicLong(0L)
 
     private val frameListener = object : FrameListener {
         override fun onFrame(image: ImageProxy) {
@@ -53,6 +55,7 @@ class DefaultVisionPipeline(
                 cameraFrameSource.lastRotationDegrees = image.imageInfo.rotationDegrees
                 val bitmap = preprocessor.preprocess(image)
                 latestBitmap.set(bitmap)
+                latestBitmapUpdatedAt.set(now)
                 val detections = detector.detect(bitmap)
                 val trafficLights = trafficLightClassifier.classify(bitmap, detections)
                 val sceneState = sceneAnalyzer.analyze(detections, trafficLights)
@@ -89,7 +92,14 @@ class DefaultVisionPipeline(
     }
 
     override fun getLatestJpegSnapshot(maxSidePx: Int, quality: Int): ByteArray? {
-        val source = latestBitmap.get() ?: return null
+        val source = latestBitmap.get()
+        val updatedAt = latestBitmapUpdatedAt.get()
+        val ageMs = if (updatedAt > 0L) System.currentTimeMillis() - updatedAt else -1L
+        if (source == null) {
+            AppLogger.d("VLM", "Snapshot requested but no bitmap available (ageMs=$ageMs)")
+            return null
+        }
+        AppLogger.d("VLM", "Snapshot requested (ageMs=$ageMs, size=${source.width}x${source.height})")
         val safeMaxSide = maxSidePx.coerceAtLeast(256)
         val safeQuality = quality.coerceIn(30, 95)
         val scaled = scaleToMaxSide(source, safeMaxSide)

@@ -27,5 +27,6 @@ Der JSON-Modus ist aktuell deaktiviert. Das Schema bleibt fuer eine spaetere Rea
 
 ## VLM-Profile
 - Profile werden aus `app/src/main/assets/vlm-profiles.json` geladen.
-- Jedes Profil definiert Modell, Temperatur, Token-Limit sowie `system_prompt` und `overview_prompt`.
+- Jedes Profil definiert Modell, Token-Limit sowie `system_prompt` und `overview_prompt`.
+- Fuer GPT-5-Modelle wird `thinking_effort` genutzt (mapping auf `reasoning.effort`) und `temperature` bleibt leer.
 - Die Auswahl erfolgt im separaten VLM-Profile-Screen (aus den Settings heraus) und wird als `vlmProfileId` gespeichert.

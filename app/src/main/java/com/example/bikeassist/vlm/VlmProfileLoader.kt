@@ -13,10 +13,18 @@ data class VlmProfilesConfig(
         if (profiles.isEmpty()) {
             return VlmProfileLoader.fallbackProfiles().first()
         }
-        val id = profileId ?: defaultProfileId
+        val id = normalizeProfileId(profileId ?: defaultProfileId)
         return profiles.firstOrNull { it.id == id }
             ?: profiles.firstOrNull { it.id == defaultProfileId }
             ?: profiles.first()
+    }
+
+    private fun normalizeProfileId(profileId: String): String {
+        return when (profileId) {
+            "nano_safe" -> "nano-low"
+            "nano_fast" -> "nano-high"
+            else -> profileId
+        }
     }
 }
 
@@ -42,36 +50,39 @@ object VlmProfileLoader {
     fun fallbackProfiles(): List<VlmProfile> {
         val safeSystem = VlmConfig.DEFAULT_SYSTEM_PROMPT
         val safeOverview = VlmConfig.DEFAULT_OVERVIEW_PROMPT
-        val fastSystem =
-            "Du bist ein Assistenzsystem fuer sehbehinderte Radfahrer. " +
-                "Antworte sehr kurz und klar auf Deutsch. " +
-                "Fokus: Hindernisse und vorsichtige Empfehlung. " +
-                "Keine Garantien wie 'Weg frei'."
-        val fastOverview = "Sehr kurz: Hindernisse + vorsichtige Empfehlung."
         return listOf(
             VlmProfile(
-                id = "nano_safe",
-                label = "Nano Safe",
-                description = "Sicher & konservativ, klare Hinweise",
-                model = "openai/gpt-5-nano",
-                temperature = 0.15,
-                maxTokens = 360,
+                id = "gpt4o_default",
+                label = "GPT-4o Mini",
+                description = "Standardprofil, balanciert",
+                model = "openai/gpt-4o-mini",
+                maxTokens = VlmConfig.DEFAULT_MAX_TOKENS,
                 systemPrompt = safeSystem,
                 overviewPrompt = safeOverview,
-                thinkingEnabled = false,
-                thinkingBudgetTokens = null
+                temperature = VlmConfig.DEFAULT_TEMPERATURE,
+                thinkingEffort = null
             ),
             VlmProfile(
-                id = "nano_fast",
-                label = "Nano Fast",
-                description = "Schneller, knapper, weniger Tokens",
+                id = "nano-low",
+                label = "Nano Low",
+                description = "Reasoning low, sicherheitsbewusst",
                 model = "openai/gpt-5-nano",
-                temperature = 0.35,
-                maxTokens = 200,
-                systemPrompt = fastSystem,
-                overviewPrompt = fastOverview,
-                thinkingEnabled = false,
-                thinkingBudgetTokens = null
+                maxTokens = 512,
+                systemPrompt = safeSystem,
+                overviewPrompt = safeOverview,
+                temperature = null,
+                thinkingEffort = "low"
+            ),
+            VlmProfile(
+                id = "nano-high",
+                label = "Nano High",
+                description = "Reasoning medium, detailreicher",
+                model = "openai/gpt-5-nano",
+                maxTokens = 512,
+                systemPrompt = safeSystem,
+                overviewPrompt = safeOverview,
+                temperature = null,
+                thinkingEffort = "medium"
             )
         )
     }
@@ -108,26 +119,29 @@ object VlmProfileLoader {
         val overviewPrompt = obj.optString("overview_prompt", "").trim().ifBlank {
             VlmConfig.DEFAULT_OVERVIEW_PROMPT
         }
-        val temperature = obj.optDouble("temperature", VlmConfig.DEFAULT_TEMPERATURE)
         val maxTokens = obj.optInt("max_tokens", VlmConfig.DEFAULT_MAX_TOKENS)
-        val thinkingObj = obj.optJSONObject("thinking")
-        val thinkingEnabled = thinkingObj?.optBoolean("enabled", false) ?: false
-        val thinkingBudget = if (thinkingObj?.has("budget_tokens") == true) {
-            thinkingObj.optInt("budget_tokens").takeIf { it > 0 }
+            .takeIf { it > 0 } ?: VlmConfig.DEFAULT_MAX_TOKENS
+        val temperature = if (obj.has("temperature")) {
+            if (obj.isNull("temperature")) {
+                null
+            } else {
+                obj.optDouble("temperature", VlmConfig.DEFAULT_TEMPERATURE).takeIf { !it.isNaN() }
+            }
         } else {
             null
         }
+        val thinkingEffort = obj.optString("thinking_effort", "").trim().lowercase().ifBlank { null }
+            ?.takeIf { it == "low" || it == "medium" || it == "high" }
         return VlmProfile(
             id = id,
             label = label,
             description = description,
             model = model,
-            temperature = temperature,
             maxTokens = maxTokens,
             systemPrompt = systemPrompt,
             overviewPrompt = overviewPrompt,
-            thinkingEnabled = thinkingEnabled,
-            thinkingBudgetTokens = thinkingBudget
+            temperature = temperature,
+            thinkingEffort = thinkingEffort
         )
     }
 }
