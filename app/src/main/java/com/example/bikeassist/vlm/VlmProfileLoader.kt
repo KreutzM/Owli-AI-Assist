@@ -22,7 +22,7 @@ data class VlmProfilesConfig(
     private fun normalizeProfileId(profileId: String): String {
         return when (profileId) {
             "nano_safe" -> "nano-low"
-            "nano_fast" -> "nano-high"
+            "nano_fast" -> "nano-fast"
             else -> profileId
         }
     }
@@ -58,7 +58,8 @@ object VlmProfileLoader {
             imageSettings = VlmImageSettings(),
             tokenPolicy = VlmTokenPolicy(maxTokens = VlmConfig.DEFAULT_MAX_TOKENS),
             parameterOverrides = VlmParameterOverrides(),
-            capabilities = VlmCapabilities()
+            capabilities = VlmCapabilities(),
+            streamingEnabled = false
         )
         return listOf(
             VlmProfile(
@@ -73,7 +74,8 @@ object VlmProfileLoader {
                 imageSettings = defaults.imageSettings,
                 tokenPolicy = VlmTokenPolicy(maxTokens = VlmConfig.DEFAULT_MAX_TOKENS),
                 parameterOverrides = VlmParameterOverrides(temperature = VlmConfig.DEFAULT_TEMPERATURE),
-                capabilities = defaults.capabilities
+                capabilities = defaults.capabilities,
+                streamingEnabled = defaults.streamingEnabled
             ),
             VlmProfile(
                 id = "nano-low",
@@ -92,7 +94,29 @@ object VlmProfileLoader {
                     retry2MaxTokens = 1400
                 ),
                 parameterOverrides = defaults.parameterOverrides,
-                capabilities = defaults.capabilities.copy(supportsReasoning = true)
+                capabilities = defaults.capabilities.copy(supportsReasoning = true),
+                streamingEnabled = defaults.streamingEnabled
+            ),
+            VlmProfile(
+                id = "nano-fast",
+                label = "Nano Fast",
+                description = "Sehr kurz, ohne Reasoning",
+                modelId = "openai/gpt-5-nano",
+                provider = defaults.provider,
+                family = "gpt5",
+                systemPrompt = defaults.systemPrompt,
+                overviewPrompt = defaults.overviewPrompt,
+                imageSettings = defaults.imageSettings,
+                tokenPolicy = VlmTokenPolicy(
+                    maxTokens = 200,
+                    reasoningEffort = "minimal",
+                    reasoningExclude = true,
+                    retry1MaxTokens = 260,
+                    retry2MaxTokens = 320
+                ),
+                parameterOverrides = defaults.parameterOverrides,
+                capabilities = defaults.capabilities.copy(supportsReasoning = true),
+                streamingEnabled = true
             ),
             VlmProfile(
                 id = "nano-high",
@@ -111,7 +135,8 @@ object VlmProfileLoader {
                     retry2MaxTokens = 1400
                 ),
                 parameterOverrides = defaults.parameterOverrides,
-                capabilities = defaults.capabilities.copy(supportsReasoning = true)
+                capabilities = defaults.capabilities.copy(supportsReasoning = true),
+                streamingEnabled = defaults.streamingEnabled
             )
         )
     }
@@ -149,6 +174,7 @@ object VlmProfileLoader {
         val tokenPolicy = parseTokenPolicy(obj?.optJSONObject("token_policy"), VlmTokenPolicy(VlmConfig.DEFAULT_MAX_TOKENS), null)
         val parameterOverrides = parseParameterOverrides(obj?.optJSONObject("parameter_overrides"), VlmParameterOverrides(), null)
         val capabilities = parseCapabilities(obj?.optJSONObject("capabilities"), VlmCapabilities())
+        val streamingEnabled = obj?.optBoolean("streaming_enabled", false) ?: false
         return VlmProfileDefaults(
             provider = provider,
             family = family,
@@ -157,7 +183,8 @@ object VlmProfileLoader {
             imageSettings = imageSettings,
             tokenPolicy = tokenPolicy,
             parameterOverrides = parameterOverrides,
-            capabilities = capabilities
+            capabilities = capabilities,
+            streamingEnabled = streamingEnabled
         )
     }
 
@@ -184,6 +211,11 @@ object VlmProfileLoader {
         val tokenPolicy = parseTokenPolicy(obj.optJSONObject("token_policy"), defaults.tokenPolicy, obj)
         val parameterOverrides = parseParameterOverrides(obj.optJSONObject("parameter_overrides"), defaults.parameterOverrides, obj)
         val capabilities = parseCapabilities(obj.optJSONObject("capabilities"), defaults.capabilities)
+        val streamingEnabled = if (obj.has("streaming_enabled")) {
+            obj.optBoolean("streaming_enabled", defaults.streamingEnabled)
+        } else {
+            defaults.streamingEnabled
+        }
         return VlmProfile(
             id = id,
             label = label,
@@ -196,7 +228,8 @@ object VlmProfileLoader {
             imageSettings = imageSettings,
             tokenPolicy = tokenPolicy,
             parameterOverrides = parameterOverrides,
-            capabilities = capabilities
+            capabilities = capabilities,
+            streamingEnabled = streamingEnabled
         )
     }
 
@@ -227,9 +260,11 @@ object VlmProfileLoader {
             ?: defaults.reasoningEffort
         val retry1 = obj?.optInt("retry1_max_tokens", -1)?.takeIf { it > 0 }
         val retry2 = obj?.optInt("retry2_max_tokens", -1)?.takeIf { it > 0 }
+        val reasoningExclude = obj?.optBoolean("reasoning_exclude", defaults.reasoningExclude) ?: defaults.reasoningExclude
         return VlmTokenPolicy(
             maxTokens = maxTokens,
             reasoningEffort = reasoningEffort,
+            reasoningExclude = reasoningExclude,
             retry1MaxTokens = retry1 ?: defaults.retry1MaxTokens,
             retry2MaxTokens = retry2 ?: defaults.retry2MaxTokens
         )
@@ -279,6 +314,7 @@ object VlmProfileLoader {
         val imageSettings: VlmImageSettings,
         val tokenPolicy: VlmTokenPolicy,
         val parameterOverrides: VlmParameterOverrides,
-        val capabilities: VlmCapabilities
+        val capabilities: VlmCapabilities,
+        val streamingEnabled: Boolean
     )
 }

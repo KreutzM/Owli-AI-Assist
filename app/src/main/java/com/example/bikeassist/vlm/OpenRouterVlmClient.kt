@@ -22,6 +22,25 @@ class OpenRouterVlmClient(
         messages: List<VlmChatMessage>,
         maxTokens: Int,
         temperature: Double
+    ): VlmClientResult {
+        return runChat(messages, maxTokens, temperature, stream = false, callback = null)
+    }
+
+    override suspend fun chatStreaming(
+        messages: List<VlmChatMessage>,
+        callback: VlmStreamingCallback,
+        maxTokens: Int,
+        temperature: Double
+    ): VlmClientResult {
+        return runChat(messages, maxTokens, temperature, stream = true, callback = callback)
+    }
+
+    private suspend fun runChat(
+        messages: List<VlmChatMessage>,
+        maxTokens: Int,
+        temperature: Double,
+        stream: Boolean,
+        callback: VlmStreamingCallback?
     ): VlmClientResult = withContext(Dispatchers.IO) {
         if (!isConfigured) {
             throw IllegalStateException("OPENROUTER_API_KEY fehlt.")
@@ -29,13 +48,16 @@ class OpenRouterVlmClient(
         val family = VlmModelFamilyPolicy.resolveFamily(profile)
         val effectiveTokenPolicy = resolveTokenPolicy(profile, maxTokens, family)
         val resolvedTemperature = resolveTemperature(profile, temperature)
+        val allowReasoning = VlmModelFamilyPolicy.allowReasoning(family) || profile.capabilities.supportsReasoning
         val baseOptions = VlmRequestOptions(
             maxTokens = effectiveTokenPolicy.maxTokens,
             temperature = resolvedTemperature,
             reasoningEffort = VlmModelFamilyPolicy.sanitizeReasoningEffort(
                 profile.parameterOverrides.reasoningEffort ?: effectiveTokenPolicy.reasoningEffort
             ),
-            includeReasoning = VlmModelFamilyPolicy.allowReasoning(family)
+            reasoningExclude = effectiveTokenPolicy.reasoningExclude,
+            includeReasoning = allowReasoning,
+            stream = stream
         )
         val retryPlans = VlmModelFamilyPolicy.buildRetryPlans(family, baseOptions, effectiveTokenPolicy)
         var attempt = 0
@@ -51,10 +73,12 @@ class OpenRouterVlmClient(
             }
             val tempText = plan.options.temperature?.toString() ?: "unset"
             val reasoningText = plan.options.reasoningEffort ?: "unset"
+            val excludeText = if (plan.options.reasoningExclude) "true" else "false"
             AppLogger.d(
                 VLM_LOG_TAG,
                 "OpenRouter request: model=${profile.modelId} profile=${profile.id} attempt=${plan.label} " +
-                    "max_tokens=${plan.options.maxTokens} temperature=$tempText reasoning_effort=$reasoningText"
+                    "max_tokens=${plan.options.maxTokens} temperature=$tempText " +
+                    "reasoning_effort=$reasoningText reasoning_exclude=$excludeText stream=$stream"
             )
             val request = VlmProviderRequest(
                 modelId = profile.modelId,
@@ -62,7 +86,11 @@ class OpenRouterVlmClient(
                 options = plan.options,
                 family = family
             )
-            val result = provider.sendChat(request)
+            val result = if (stream && callback != null) {
+                provider.sendChatStreaming(request, callback)
+            } else {
+                provider.sendChat(request)
+            }
             lastResult = result
             val parsed = result.parsed
             AppLogger.d(
@@ -118,6 +146,7 @@ class OpenRouterVlmClient(
         return VlmTokenPolicy(
             maxTokens = baseMax,
             reasoningEffort = profile.tokenPolicy.reasoningEffort ?: defaults.reasoningEffort,
+            reasoningExclude = profile.tokenPolicy.reasoningExclude,
             retry1MaxTokens = profile.tokenPolicy.retry1MaxTokens ?: defaults.retry1MaxTokens,
             retry2MaxTokens = profile.tokenPolicy.retry2MaxTokens ?: defaults.retry2MaxTokens
         )

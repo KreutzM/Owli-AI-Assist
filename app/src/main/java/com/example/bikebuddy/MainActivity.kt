@@ -763,8 +763,9 @@ fun VlmProfileScreen(
                             text = "Model: ${profile.modelId}",
                             style = MaterialTheme.typography.bodySmall
                         )
+                        val streamingText = if (profile.streamingEnabled) "  Streaming: on" else "  Streaming: off"
                         Text(
-                            text = "Temp: $tempText  MaxTokens: ${profile.tokenPolicy.maxTokens}$effortText",
+                            text = "Temp: $tempText  MaxTokens: ${profile.tokenPolicy.maxTokens}$effortText$streamingText",
                             style = MaterialTheme.typography.bodySmall
                         )
                     }
@@ -948,6 +949,10 @@ fun VlmOverlay(
                         CircularProgressIndicator()
                         Text("Sende Frage...")
                     }
+                }
+                is VlmUiState.Streaming -> {
+                    Text(text = "Streaming...")
+                    Text(text = state.partialText)
                 }
                 is VlmUiState.Error -> {
                     Text(text = "Fehler: ${state.message}", color = MaterialTheme.colorScheme.error)

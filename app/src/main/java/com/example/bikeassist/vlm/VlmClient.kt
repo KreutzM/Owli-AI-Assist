@@ -25,11 +25,29 @@ data class VlmClientResult(
     val retryLabel: String? = null
 )
 
+interface VlmStreamingCallback {
+    fun onDelta(textDelta: String)
+    fun onComplete(
+        finalText: String,
+        usage: VlmUsage?,
+        finishReason: String?,
+        nativeFinishReason: String?
+    )
+    fun onError(error: Throwable)
+}
+
 interface VlmClient {
     val isConfigured: Boolean
 
     suspend fun chat(
         messages: List<VlmChatMessage>,
+        maxTokens: Int = -1,
+        temperature: Double = -1.0
+    ): VlmClientResult
+
+    suspend fun chatStreaming(
+        messages: List<VlmChatMessage>,
+        callback: VlmStreamingCallback,
         maxTokens: Int = -1,
         temperature: Double = -1.0
     ): VlmClientResult

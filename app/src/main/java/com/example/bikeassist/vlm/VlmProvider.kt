@@ -4,7 +4,9 @@ data class VlmRequestOptions(
     val maxTokens: Int,
     val temperature: Double?,
     val reasoningEffort: String?,
-    val includeReasoning: Boolean
+    val reasoningExclude: Boolean,
+    val includeReasoning: Boolean,
+    val stream: Boolean
 )
 
 data class VlmProviderRequest(
@@ -24,4 +26,9 @@ data class VlmProviderResult(
 
 interface VlmProvider {
     suspend fun sendChat(request: VlmProviderRequest): VlmProviderResult
+
+    suspend fun sendChatStreaming(
+        request: VlmProviderRequest,
+        callback: VlmStreamingCallback
+    ): VlmProviderResult
 }

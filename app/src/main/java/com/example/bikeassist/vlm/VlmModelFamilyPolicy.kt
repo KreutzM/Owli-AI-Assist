@@ -83,12 +83,16 @@ object VlmModelFamilyPolicy {
         val retry1Options = baseOptions.copy(
             maxTokens = retry1Max,
             reasoningEffort = "low",
-            includeReasoning = true
+            includeReasoning = baseOptions.includeReasoning,
+            reasoningExclude = baseOptions.reasoningExclude,
+            stream = baseOptions.stream
         )
         val retry2Options = baseOptions.copy(
             maxTokens = retry2Max,
             reasoningEffort = null,
-            includeReasoning = false
+            includeReasoning = false,
+            reasoningExclude = false,
+            stream = baseOptions.stream
         )
         plans += VlmRetryPlan("retry1_low_reasoning", retry1Options, addFinalOnlyInstruction = false)
         plans += VlmRetryPlan("retry2_no_reasoning", retry2Options, addFinalOnlyInstruction = true)

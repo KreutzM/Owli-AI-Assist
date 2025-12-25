@@ -7,7 +7,7 @@ und Reasoning nur fuer Debug/Telemetry nutzen.
 ## 1) Zentrale Konfiguration
 
 Quelle der Wahrheit ist `app/src/main/assets/vlm-profiles.json`.
-`vlm-config.json` ist legacy und wird nicht mehr aktiv verwendet.
+`vlm-config.json` ist entfernt; die Konfiguration laeuft ausschliesslich ueber `vlm-profiles.json`.
 
 Die Datei enthaelt globale Defaults und eine Liste von Profilen:
 
@@ -30,15 +30,17 @@ Die Datei enthaelt globale Defaults und eine Liste von Profilen:
       "token_policy": { "max_tokens": 320 }
     },
     {
-      "id": "nano-low",
-      "label": "Nano Low",
+      "id": "nano-fast",
+      "label": "Nano Fast",
       "model_id": "openai/gpt-5-nano",
       "family": "gpt5",
+      "streaming_enabled": true,
       "token_policy": {
-        "max_tokens": 900,
-        "reasoning_effort": "low",
-        "retry1_max_tokens": 1200,
-        "retry2_max_tokens": 1400
+        "max_tokens": 200,
+        "reasoning_exclude": true,
+        "reasoning_effort": "minimal",
+        "retry1_max_tokens": 260,
+        "retry2_max_tokens": 320
       }
     }
   ]
@@ -52,7 +54,8 @@ Die Datei enthaelt globale Defaults und eine Liste von Profilen:
 - `family`: steuert Policy (z.B. `gpt5`, `gpt4o`)
 - `system_prompt`, `overview_prompt`: prompt defaults (falls im Profil nicht gesetzt)
 - `image`: Snapshot-Qualitaet (`max_side_px`, `jpeg_quality`)
-- `token_policy`: `max_tokens`, optional `reasoning_effort`, retry budgets
+- `token_policy`: `max_tokens`, optional `reasoning_effort`, optional `reasoning_exclude`, retry budgets
+- `streaming_enabled`: optional, aktiviert SSE-Streaming im VLM-Mode
 - `parameter_overrides`: z.B. `temperature`
 - `capabilities`: `supports_vision`, `supports_reasoning`, `supports_json`
 
@@ -73,6 +76,22 @@ Reasoning-only und wird nicht an UI/TTS weitergegeben. Dann:
 
 Maximal 2 Retries, jeder Schritt wird im Log markiert.
 
+## 5) Minimal-Latenz Profil (nano-fast)
+
+Empfohlen fuer GPT-5-nano mit sehr kurzer Ausgabe:
+- `max_tokens`: 180-200
+- `reasoning_exclude`: true
+- `reasoning_effort`: "minimal" (optional)
+- kleine Retries (z.B. 260/320)
+- kurze Prompts (max 3 Saetze)
+
+## 6) Streaming-Mode
+
+Wenn `streaming_enabled=true`, werden Antworten per SSE gestreamt:
+- UI zeigt fortlaufenden Text an.
+- Abschluss kommt mit `onComplete` (finaler Text + usage/finish_reason).
+Wenn Streaming aus ist, verhaelt sich die App wie bisher.
+
 ## 5) Response-Parsing
 
 - `finalAnswer` kommt **nur** aus `message.content` (oder kompatiblen Feldern wie
@@ -81,7 +100,7 @@ Maximal 2 Retries, jeder Schritt wird im Log markiert.
 - UI/TTS verwenden ausschliesslich `finalAnswer`.
 - `usage` (prompt/completion/reasoning Tokens) wird geloggt.
 
-## 6) Neue Modelle hinzufuegen
+## 7) Neue Modelle hinzufuegen
 
 1. Profil in `vlm-profiles.json` ergaenzen (neue `id`, `model_id`).
 2. Optional `family`, `token_policy`, `parameter_overrides` definieren.

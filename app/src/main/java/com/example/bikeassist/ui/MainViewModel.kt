@@ -17,6 +17,7 @@ import com.example.bikeassist.vlm.VlmUiState
 import com.example.bikeassist.vlm.VlmClient
 import com.example.bikeassist.vlm.VlmProfile
 import com.example.bikeassist.vlm.VlmProfileLoader
+import com.example.bikeassist.vlm.VlmStreamingCallback
 import com.example.bikebuddy.BuildConfig
 import com.example.bikeassist.util.AppLogger
 import kotlinx.coroutines.Job
@@ -149,7 +150,11 @@ class MainViewModel(
     }
 
     fun enterVlmMode() {
-        AppLogger.i("VLM", "enterVlmMode started profile=${vlmProfile.id} model=${vlmProfile.modelId}")
+        AppLogger.i(
+            "VLM",
+            "enterVlmMode started profile=${vlmProfile.id} model=${vlmProfile.modelId} " +
+                "streaming=${vlmProfile.streamingEnabled}"
+        )
         if (!vlmClient.isConfigured || BuildConfig.OPENROUTER_API_KEY.isBlank()) {
             AppLogger.e("VLM", "OpenRouter API-Key fehlt")
             _vlmUiState.value = VlmUiState.Error("OpenRouter API-Key fehlt. Bitte OPENROUTER_API_KEY in local.properties setzen.")
@@ -177,8 +182,36 @@ class MainViewModel(
             val session = VlmSession(snapshotBytes = jpeg, messageHistory = mutableListOf())
             val messages = buildOverviewMessages(session)
             try {
-                val result = withContext(Dispatchers.IO) {
-                    vlmClient.chat(messages)
+                val result = if (vlmProfile.streamingEnabled && !useStructuredVlmParsing) {
+                    val buffer = StringBuilder()
+                    val callback = object : VlmStreamingCallback {
+                        override fun onDelta(textDelta: String) {
+                            if (textDelta.isBlank()) return
+                            buffer.append(textDelta)
+                            _vlmUiState.value = VlmUiState.Streaming(
+                                partialText = buffer.toString(),
+                                updatedAt = System.currentTimeMillis()
+                            )
+                        }
+
+                        override fun onComplete(
+                            finalText: String,
+                            usage: com.example.bikeassist.vlm.VlmUsage?,
+                            finishReason: String?,
+                            nativeFinishReason: String?
+                        ) = Unit
+
+                        override fun onError(error: Throwable) {
+                            AppLogger.e(error, "VLM: Streaming error (Overview)")
+                        }
+                    }
+                    withContext(Dispatchers.IO) {
+                        vlmClient.chatStreaming(messages, callback)
+                    }
+                } else {
+                    withContext(Dispatchers.IO) {
+                        vlmClient.chat(messages)
+                    }
                 }
                 if (result.isReasoningOnly) {
                     AppLogger.w("VLM", "VLM: Antwort enthaelt nur Reasoning (Overview)")
@@ -243,8 +276,36 @@ class MainViewModel(
         viewModelScope.launch {
             val messages = buildFollowUpMessages(session, questionText)
             try {
-                val result = withContext(Dispatchers.IO) {
-                    vlmClient.chat(messages)
+                val result = if (vlmProfile.streamingEnabled && !useStructuredVlmParsing) {
+                    val buffer = StringBuilder()
+                    val callback = object : VlmStreamingCallback {
+                        override fun onDelta(textDelta: String) {
+                            if (textDelta.isBlank()) return
+                            buffer.append(textDelta)
+                            _vlmUiState.value = VlmUiState.Streaming(
+                                partialText = buffer.toString(),
+                                updatedAt = System.currentTimeMillis()
+                            )
+                        }
+
+                        override fun onComplete(
+                            finalText: String,
+                            usage: com.example.bikeassist.vlm.VlmUsage?,
+                            finishReason: String?,
+                            nativeFinishReason: String?
+                        ) = Unit
+
+                        override fun onError(error: Throwable) {
+                            AppLogger.e(error, "VLM: Streaming error (Follow-up)")
+                        }
+                    }
+                    withContext(Dispatchers.IO) {
+                        vlmClient.chatStreaming(messages, callback)
+                    }
+                } else {
+                    withContext(Dispatchers.IO) {
+                        vlmClient.chat(messages)
+                    }
                 }
                 if (result.isReasoningOnly) {
                     AppLogger.w("VLM", "VLM: Antwort enthaelt nur Reasoning (Follow-up)")
@@ -312,7 +373,11 @@ class MainViewModel(
         vlmSystemPrompt = profile.systemPrompt.ifBlank { VlmConfig.DEFAULT_SYSTEM_PROMPT }
         vlmOverviewPrompt = profile.overviewPrompt.ifBlank { VlmConfig.DEFAULT_OVERVIEW_PROMPT }
         (vlmClient as? OpenRouterVlmClient)?.updateProfile(profile)
-        AppLogger.i("VLM", "VLM profile applied id=${profile.id} model=${profile.modelId}")
+        AppLogger.i(
+            "VLM",
+            "VLM profile applied id=${profile.id} model=${profile.modelId} " +
+                "streaming=${profile.streamingEnabled}"
+        )
     }
 
     private fun buildOverviewMessages(session: VlmSession): List<VlmChatMessage> {

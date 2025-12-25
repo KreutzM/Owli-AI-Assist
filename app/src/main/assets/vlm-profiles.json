@@ -16,7 +16,7 @@
       "supports_json": false
     }
   },
-  "default_profile_id": "gpt4o_default",
+  "default_profile_id": "nano-fast",
   "profiles": [
     {
       "id": "gpt4o_default",
@@ -45,6 +45,26 @@
       "capabilities": {
         "supports_reasoning": true
       }
+    },
+    {
+      "id": "nano-fast",
+      "label": "Nano Fast",
+      "description": "Sehr kurz, ohne Reasoning",
+      "model_id": "openai/gpt-5-nano",
+      "family": "gpt5",
+      "system_prompt": "Du bist ein Assistent fuer einen blinden Fahrradfahrer. Beschreibe sehr kurz und klar, was direkt vor ihm passiert. Fokus: Hindernisse, Verkehrsteilnehmer, Fahrbahnverlauf. Antworte auf Deutsch, duzt die Person und verwende maximal 3 kurze Saetze.",
+      "overview_prompt": "Beschreibe das folgende Kamerabild so, dass sicheres Weiterfahren moeglich ist.",
+      "token_policy": {
+        "max_tokens": 200,
+        "reasoning_exclude": true,
+        "reasoning_effort": "minimal",
+        "retry1_max_tokens": 260,
+        "retry2_max_tokens": 320
+      },
+      "capabilities": {
+        "supports_reasoning": true
+      },
+      "streaming_enabled": true
     },
     {
       "id": "nano-high",

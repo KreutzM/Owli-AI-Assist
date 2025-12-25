@@ -22,7 +22,8 @@ class OpenRouterProvider(
         if (apiKey.isBlank()) {
             throw IllegalStateException("OPENROUTER_API_KEY fehlt.")
         }
-        val payloadResult = buildPayload(request)
+        val nonStreamRequest = request.copy(options = request.options.copy(stream = false))
+        val payloadResult = buildPayload(nonStreamRequest)
         val payload = payloadResult.payload
         val payloadForLog = redactPayloadForLog(payload)
         AppLogger.d(
@@ -93,12 +94,128 @@ class OpenRouterProvider(
         )
     }
 
+    override suspend fun sendChatStreaming(
+        request: VlmProviderRequest,
+        callback: VlmStreamingCallback
+    ): VlmProviderResult = withContext(Dispatchers.IO) {
+        if (apiKey.isBlank()) {
+            throw IllegalStateException("OPENROUTER_API_KEY fehlt.")
+        }
+        val streamRequest = request.copy(options = request.options.copy(stream = true))
+        val payloadResult = buildPayload(streamRequest)
+        val payload = payloadResult.payload
+        val payloadForLog = redactPayloadForLog(payload)
+        AppLogger.d(
+            VLM_LOG_TAG,
+            "OpenRouter payload(stream): model=${request.modelId} omitted=${payloadResult.omittedFields.joinToString()} " +
+                "payload=${payloadForLog.truncateForLog(1200)}"
+        )
+
+        val connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"
+            doOutput = true
+            connectTimeout = 10_000
+            readTimeout = 30_000
+            setRequestProperty("Authorization", "Bearer $apiKey")
+            setRequestProperty("Content-Type", "application/json")
+            setRequestProperty("Accept", "text/event-stream")
+            setRequestProperty("HTTP-Referer", "https://localhost")
+            setRequestProperty("X-Title", "BikeBuddy")
+        }
+
+        connection.outputStream.use { out ->
+            out.write(payload.toString().toByteArray(Charsets.UTF_8))
+        }
+
+        val code = connection.responseCode
+        if (code !in 200..299) {
+            val body = connection.errorStream?.bufferedReader()?.use { it.readText() }.orEmpty()
+            val root = parseRoot(body, request.modelId)
+            val requestId = root?.optString("id", "")?.ifEmpty { null }
+            val msg = "OpenRouter HTTP $code (model=${request.modelId} requestId=${requestId ?: "-"})"
+            AppLogger.e(VLM_LOG_TAG, "OpenRouter error: $msg bodyLength=${body.length}")
+            AppLogger.e(VLM_LOG_TAG, "OpenRouter error shape: ${VlmResponseParser.summarizeJsonShape(root)}")
+            logLong(VLM_LOG_TAG, "OpenRouter error body: ", body)
+            val ex = IOException("$msg: ${body.truncateForLog(500)}")
+            AppLogger.e(VLM_LOG_TAG, "VLM: OpenRouter HTTP error", ex)
+            callback.onError(ex)
+            throw ex
+        }
+
+        val reader = connection.inputStream.bufferedReader()
+        val finalBuffer = StringBuilder()
+        var finishReason: String? = null
+        var nativeFinishReason: String? = null
+        var usage: VlmUsage? = null
+        var requestId: String? = null
+        var sawReasoning = false
+
+        try {
+            while (true) {
+                val line = reader.readLine() ?: break
+                if (line.isBlank()) continue
+                if (!line.startsWith("data:")) continue
+                val data = line.removePrefix("data:").trim()
+                if (data.isBlank()) continue
+                if (data == "[DONE]") {
+                    break
+                }
+            val event = VlmSseParser.parseEvent(data) ?: continue
+                if (requestId == null && event.requestId != null) {
+                    requestId = event.requestId
+                }
+                if (event.deltaText?.isNotBlank() == true) {
+                    finalBuffer.append(event.deltaText)
+                    callback.onDelta(event.deltaText)
+                }
+                if (event.reasoningDelta?.isNotBlank() == true) {
+                    sawReasoning = true
+                }
+                finishReason = event.finishReason ?: finishReason
+                nativeFinishReason = event.nativeFinishReason ?: nativeFinishReason
+                usage = event.usage ?: usage
+            }
+        } catch (ex: Exception) {
+            AppLogger.e(ex, "VLM: Streaming parse failed")
+            callback.onError(ex)
+            throw ex
+        } finally {
+            reader.close()
+        }
+
+        val finalText = finalBuffer.toString()
+        val isReasoningOnly = finalText.isBlank() && sawReasoning
+        val parsed = VlmParsedResponse(
+            finalAnswer = if (isReasoningOnly) "" else finalText,
+            debugPath = "stream.delta",
+            contentType = "stream",
+            debugReasoningSummary = if (sawReasoning) "<stream>" else null,
+            reasoningDetailsJson = null,
+            isReasoningOnly = isReasoningOnly,
+            usage = usage,
+            finishReason = finishReason,
+            nativeFinishReason = nativeFinishReason
+        )
+        callback.onComplete(finalText, usage, finishReason, nativeFinishReason)
+        val usageText = usage?.let {
+            "usage prompt=${it.promptTokens} completion=${it.completionTokens} reasoning=${it.reasoningTokens ?: "-"}"
+        } ?: "usage n/a"
+        AppLogger.d(VLM_LOG_TAG, "OpenRouter stream done: $usageText finish=${finishReason ?: "-"}")
+        VlmProviderResult(
+            parsed = parsed,
+            rawResponse = "<stream>",
+            requestId = requestId,
+            httpCode = code,
+            payloadOmittedFields = payloadResult.omittedFields
+        )
+    }
+
     private fun buildPayload(request: VlmProviderRequest): PayloadBuildResult {
         val payload = JSONObject()
             .put("model", request.modelId)
             .put("messages", buildMessagesJson(request.messages))
             .put("max_tokens", request.options.maxTokens)
-            .put("stream", false)
+            .put("stream", request.options.stream)
 
         val omitted = mutableListOf<String>()
         if (VlmModelFamilyPolicy.allowTemperature(request.family)) {
@@ -113,17 +230,29 @@ class OpenRouterProvider(
         }
 
         val reasoningEffort = request.options.reasoningEffort
+        val reasoningExclude = request.options.reasoningExclude
         if (VlmModelFamilyPolicy.allowReasoning(request.family) && request.options.includeReasoning) {
+            val reasoning = JSONObject()
+            if (reasoningExclude) {
+                reasoning.put("exclude", true)
+            }
             if (!reasoningEffort.isNullOrBlank()) {
-                payload.put("reasoning", JSONObject().put("effort", reasoningEffort))
+                reasoning.put("effort", reasoningEffort)
+            }
+            if (reasoning.length() > 0) {
+                payload.put("reasoning", reasoning)
             } else {
                 omitted += "reasoning(unset)"
             }
-        } else if (!reasoningEffort.isNullOrBlank()) {
+        } else if (reasoningExclude || !reasoningEffort.isNullOrBlank()) {
             omitted += "reasoning(disallowed)"
         }
 
         return PayloadBuildResult(payload = payload, omittedFields = omitted)
+    }
+
+    internal fun buildPayloadForTest(request: VlmProviderRequest): PayloadBuildResult {
+        return buildPayload(request)
     }
 
     private fun buildMessagesJson(messages: List<VlmChatMessage>): JSONArray {
@@ -189,7 +318,7 @@ class OpenRouterProvider(
         }
     }
 
-    private data class PayloadBuildResult(
+    internal data class PayloadBuildResult(
         val payload: JSONObject,
         val omittedFields: List<String>
     )

@@ -15,6 +15,7 @@ data class VlmImageSettings(
 data class VlmTokenPolicy(
     val maxTokens: Int,
     val reasoningEffort: String? = null,
+    val reasoningExclude: Boolean = false,
     val retry1MaxTokens: Int? = null,
     val retry2MaxTokens: Int? = null
 )
@@ -36,5 +37,6 @@ data class VlmProfile(
     val imageSettings: VlmImageSettings,
     val tokenPolicy: VlmTokenPolicy,
     val parameterOverrides: VlmParameterOverrides,
-    val capabilities: VlmCapabilities
+    val capabilities: VlmCapabilities,
+    val streamingEnabled: Boolean = false
 )
