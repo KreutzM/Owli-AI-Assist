@@ -210,7 +210,9 @@ class MainActivity : ComponentActivity() {
                             profiles = vlmProfilesConfig.profiles,
                             activeProfileId = activeVlmProfile.id,
                             onSelect = { profile ->
-                                settingsViewModel.update { it.copy(vlmProfileId = profile.id) }
+                                settingsViewModel.update {
+                                    it.copy(vlmProfileId = profile.id, vlmProfileIdUserSet = true)
+                                }
                                 showVlmProfilesState.value = false
                             },
                             onClose = { showVlmProfilesState.value = false }
@@ -311,6 +313,14 @@ class MainActivity : ComponentActivity() {
         }
         if (migratedProfileId != settings.vlmProfileId) {
             settingsViewModel.update { it.copy(vlmProfileId = migratedProfileId) }
+            return
+        }
+        val defaultProfileId = vlmProfilesConfig.defaultProfileId
+        val profileExists = vlmProfilesConfig.profiles.any { it.id == settings.vlmProfileId }
+        if ((!settings.vlmProfileIdUserSet && settings.vlmProfileId != defaultProfileId) || !profileExists) {
+            settingsViewModel.update {
+                it.copy(vlmProfileId = defaultProfileId, vlmProfileIdUserSet = false)
+            }
             return
         }
         audioFeedbackEngine.updateSpeechRate(settings.ttsSpeechRate)
