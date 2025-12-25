@@ -215,10 +215,11 @@ Bitte beachte die Richtlinien in:
 - docs/System-Spezifikation.md
 - docs/Coding-Guidelines.md
 - docs/Prompts-Codex-CLI.md
+- docs/*.md
 - Agents.md
 
-1. Lies diese Dokumente und fasse in 5–7 Bulletpoints zusammen, wie du Architektur, Zielsetzung und wichtigste technischen Leitplanken verstehst.
-2. Schlage mir anschließend 3–5 konkrete nächste Entwicklungsschritte (Milestones) vor.
+1. Lies diese Dokumente und fasse in 7 Bulletpoints zusammen, wie du Architektur, Zielsetzung und wichtigste technischen Leitplanken verstehst.
+2. Schlage mir anschließend 5 konkrete nächste Entwicklungsschritte (Milestones) vor.
 
 Führe zunächst **keine** Änderungen am Dateisystem und **keine** Shell-Kommandos aus. Antworte nur mit Text.
 ```

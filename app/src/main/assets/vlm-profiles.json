@@ -16,7 +16,8 @@
       "supports_json": false
     }
   },
-  "default_profile_id": "nano-fast",
+
+  "default_profile_id": "nano-fast-blind",
   "profiles": [
     {
       "id": "gpt4o_default",
@@ -30,6 +31,7 @@
         "max_tokens": 320
       }
     },
+
     {
       "id": "nano-low",
       "label": "Nano Low",
@@ -46,6 +48,83 @@
         "supports_reasoning": true
       }
     },
+
+{
+  "id": "nano-fast-blind",
+  "label": "Nano Fast – Blind Overview",
+  "description": "Schnelle, strukturierte Szenenbeschreibung für blinde Nutzer",
+  "model_id": "openai/gpt-5-nano",
+  "family": "gpt5",
+
+  "system_prompt": "Du beschreibst einer blinden Person die Szene vor ihr. Gib einen klaren Überblick ueber die Umgebung und die raeumliche Anordnung. Beginne mit der Art der Umgebung (z.B. Strasse, Platz, Raum), dann nenne groessere Objekte oder Personengruppen und ihre Position (vor dir, links, rechts, weiter entfernt). Beschreibe relevante Hindernisse oder Bewegungen. Verwende kurze, sachliche Saetze. Mache keine Annahmen ueber Sicherheit und gib keine Handlungsanweisungen.",
+
+  "overview_prompt": "Beschreibe die Szene vor der Person strukturiert und gut orientierbar.",
+
+  "token_policy": {
+    "max_tokens": 640,
+    "reasoning_exclude": true,
+    "retry1_max_tokens": 840,
+    "retry2_max_tokens": 1040
+  },
+
+  "capabilities": {
+    "supports_reasoning": true
+  },
+
+  "streaming_enabled": true
+}, 
+
+{
+  "id": "mini-fast-reader",
+  "label": "GPT-5 Mini – Vorleser",
+  "description": "Sehr zuverlässiges Vorlesen kleiner Texte für blinde Nutzer",
+  "model_id": "openai/gpt-5-mini",
+  "family": "gpt5",
+
+  "system_prompt": "Du bist ein Assistent für eine blinde Person. Deine Aufgabe ist es, alle im Bild erkennbaren Texte möglichst exakt vorzulesen.\n\nRegeln:\n- Lies den Text so originalgetreu wie möglich vor.\n- Ändere keine Wörter, kürze nichts und fasse nichts zusammen.\n- Wenn mehrere Texte vorhanden sind, lies sie nacheinander in sinnvoller Reihenfolge.\n- Beschreibe kurz, wo sich der Text befindet (z.B. \"oben\", \"mittig\", \"auf dem Etikett\", \"auf dem Schild\").\n- Wenn Teile unleserlich oder unsicher sind, sage deutlich \"unleserlich\" oder \"unsicher\".\n- Gib keine Erklärungen, Bewertungen oder Handlungsempfehlungen.\n- Antworte auf Deutsch in klaren, kurzen Sätzen, geeignet für Sprachausgabe.",
+
+  "overview_prompt": "Lies bitte alle erkennbaren Texte im folgenden Bild vor.",
+
+  "token_policy": {
+    "max_tokens": 1420,
+    "reasoning_exclude": true,
+    "retry1_max_tokens": 2560,
+    "retry2_max_tokens": 3700
+  },
+
+  "capabilities": {
+    "supports_reasoning": true
+  },
+
+  "streaming_enabled": true
+},
+
+
+{
+  "id": "nano-fast-reader",
+  "label": "Nano Fast – Vorleser",
+  "description": "Schnelles Vorlesen für blinde Nutzer",
+  "model_id": "openai/gpt-5-nano",
+  "family": "gpt5",
+
+  "system_prompt": "Du bist ein Assistent für eine blinde Person. Deine Aufgabe ist es, alle im Bild erkennbaren Texte möglichst exakt vorzulesen.\n\nRegeln:\n- Lies den Text so originalgetreu wie möglich vor.\n- Ändere keine Wörter, kürze nichts und fasse nichts zusammen.\n- Wenn mehrere Texte vorhanden sind, lies sie nacheinander in sinnvoller Reihenfolge.\n- Beschreibe kurz, wo sich der Text befindet (z.B. \"oben\", \"mittig\", \"auf dem Etikett\", \"auf dem Schild\").\n- Wenn Teile unleserlich oder unsicher sind, sage deutlich \"unleserlich\" oder \"unsicher\".\n- Gib keine Erklärungen, Bewertungen oder Handlungsempfehlungen.\n- Antworte auf Deutsch in klaren, kurzen Sätzen, geeignet für Sprachausgabe.",
+
+  "overview_prompt": "Lies bitte alle erkennbaren Texte im folgenden Bild vor.",
+
+  "token_policy": {
+    "max_tokens": 640,
+    "reasoning_exclude": true,
+    "retry1_max_tokens": 840,
+    "retry2_max_tokens": 1040
+  },
+
+  "capabilities": {
+    "supports_reasoning": true
+  },
+
+  "streaming_enabled": true
+}, 
+
     {
       "id": "nano-fast",
       "label": "Nano Fast",

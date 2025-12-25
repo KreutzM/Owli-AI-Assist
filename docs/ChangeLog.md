@@ -14,12 +14,16 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - Dokumentation `docs/VLM.md` fuer Profile, Policies und Retry-Strategie.
 - StreamingTtsController fuer fruehen TTS-Start bei VLM-Streaming inkl. Chunking/Dedup.
 - Settings fuer VLM-Streaming-TTS und TTS-Pitch.
+- VLM-Overlay zeigt das zuletzt verwendete Snapshot-Bild als Hintergrund (50% Helligkeit).
+- Neue Vorlese-Profile in `app/src/main/assets/vlm-profiles.json`.
 
 ### Changed
 - VLM-Profile auf neues Schema mit token_policy, parameter_overrides und defaults umgestellt.
 - OpenRouter-Parsing nutzt nur message.content fuer UI/TTS; Reasoning bleibt Debug/Telemetry.
 - AudioFeedbackEngine nutzt AudioFocus/AudioAttributes und TTS-Prewarm fuer stabileres Streaming.
 - On-Device TTS wird bei aktivem VLM-Streaming unterdrueckt (Warnungen werden verworfen).
+- Diagnostics nutzt jetzt LocalClipboard (suspend API) statt LocalClipboardManager.
+- Default-VLM-Profil auf nano-fast-blind gesetzt.
 
 ### Fixed
 - GPT-5 Reasoning-only Antworten: automatische Retries mit hoeherem Token-Budget und Final-Only Hinweis.

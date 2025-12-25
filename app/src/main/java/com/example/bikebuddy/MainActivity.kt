@@ -1,7 +1,9 @@
 package com.example.bikebuddy
 
 import android.Manifest
+import android.content.ClipData
 import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -9,6 +11,7 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.camera.view.PreviewView
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -33,20 +36,26 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.ColorMatrix
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.toClipEntry
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
@@ -74,11 +83,14 @@ import com.example.bikeassist.vlm.VlmProfileLoader
 import com.example.bikeassist.vlm.VlmProfilesConfig
 import com.example.bikeassist.vlm.VlmUiState
 import com.example.bikebuddy.ui.theme.BikeBuddyTheme
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : ComponentActivity() {
 
@@ -296,6 +308,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    @OptIn(FlowPreview::class)
     private fun observeSettings() {
         settingsCollectJob?.cancel()
         settingsCollectJob = lifecycleScope.launch {
@@ -979,7 +992,8 @@ fun DiagnosticsScreen(
     onClose: () -> Unit
 ) {
     val context = LocalContext.current
-    val clipboard = LocalClipboardManager.current
+    val clipboard = LocalClipboard.current
+    val coroutineScope = rememberCoroutineScope()
     val diagState by DiagnosticsCollector.state.collectAsState()
     Scaffold(
         topBar = {
@@ -994,7 +1008,11 @@ fun DiagnosticsScreen(
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(onClick = {
                         val report = DiagnosticsReportBuilder.build(diagState, settings)
-                        clipboard.setText(AnnotatedString(report))
+                        coroutineScope.launch {
+                            clipboard.setClipEntry(
+                                ClipData.newPlainText("Debug Report", report).toClipEntry()
+                            )
+                        }
                         Toast.makeText(context, "Debug Report kopiert", Toast.LENGTH_SHORT).show()
                     }) { Text("Copy") }
                     Button(onClick = onClose) { Text("Schließen") }
@@ -1048,6 +1066,22 @@ fun VlmOverlay(
     val scrollState = rememberScrollState()
     val isBusy = state is VlmUiState.LoadingOverview || state is VlmUiState.Asking
     var question by remember { mutableStateOf("") }
+    var backgroundBitmap by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
+    val dimFilter = remember {
+        ColorFilter.colorMatrix(
+            ColorMatrix().apply { setToScale(0.5f, 0.5f, 0.5f, 1f) }
+        )
+    }
+    LaunchedEffect(state.snapshotBytes) {
+        backgroundBitmap = null
+        val bytes = state.snapshotBytes
+        if (bytes != null) {
+            val decoded = withContext(Dispatchers.Default) {
+                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+            }
+            backgroundBitmap = decoded?.asImageBitmap()
+        }
+    }
     Scaffold(
         topBar = {
             Row(
@@ -1065,72 +1099,83 @@ fun VlmOverlay(
             }
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .padding(innerPadding)
-                .padding(12.dp)
-                .fillMaxSize()
-                .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            when (state) {
-                is VlmUiState.Inactive -> {
-                    Text("Bereit. Tippe auf 'Neue Szene'.")
-                }
-                is VlmUiState.LoadingOverview -> {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        CircularProgressIndicator()
-                        Text(state.message ?: "Lade VLM...")
-                    }
-                }
-                is VlmUiState.Asking -> {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        CircularProgressIndicator()
-                        Text("Sende Frage...")
-                    }
-                }
-                is VlmUiState.Streaming -> {
-                    Text(text = "Streaming...")
-                    Text(text = state.partialText)
-                }
-                is VlmUiState.Error -> {
-                    Text(text = "Fehler: ${state.message}", color = MaterialTheme.colorScheme.error)
-                }
-                is VlmUiState.OverviewReadyRaw -> {
-                    Text(text = "Antwort:")
-                    Text(text = state.rawText)
-                }
-                is VlmUiState.OverviewReady -> {
-                    val desc = state.description
-                    val obstaclesText = if (desc.obstacles.isEmpty()) "keine" else desc.obstacles.joinToString()
-                    val landmarksText = if (desc.landmarks.isEmpty()) "keine" else desc.landmarks.joinToString()
-                    Text(text = "Kurz: ${desc.ttsOneLiner}")
-                    Text(text = "Empfehlung: ${desc.actionSuggestion}")
-                    Text(text = "Hindernisse: $obstaclesText")
-                    Text(text = "Landmarken: $landmarksText")
-                    Text(text = "Details: ${desc.readableText}")
-                    desc.overallConfidence?.let { Text(text = "Confidence: $it") }
-                }
+        Box(modifier = Modifier.fillMaxSize()) {
+            backgroundBitmap?.let { image ->
+                Image(
+                    bitmap = image,
+                    contentDescription = null,
+                    modifier = Modifier.matchParentSize(),
+                    contentScale = ContentScale.Crop,
+                    colorFilter = dimFilter
+                )
             }
-
-            OutlinedTextField(
-                value = question,
-                onValueChange = { question = it },
-                label = { Text("Frage stellen") },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !isBusy
-            )
-            Button(
-                onClick = {
-                    val text = question.trim()
-                    if (text.isNotEmpty()) {
-                        onAsk(text)
-                        question = ""
-                    }
-                },
-                enabled = !isBusy && question.isNotBlank()
+            Column(
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .padding(12.dp)
+                    .fillMaxSize()
+                    .verticalScroll(scrollState),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("Senden")
+                when (state) {
+                    is VlmUiState.Inactive -> {
+                        Text("Bereit. Tippe auf 'Neue Szene'.")
+                    }
+                    is VlmUiState.LoadingOverview -> {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            CircularProgressIndicator()
+                            Text(state.message ?: "Lade VLM...")
+                        }
+                    }
+                    is VlmUiState.Asking -> {
+                        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            CircularProgressIndicator()
+                            Text("Sende Frage...")
+                        }
+                    }
+                    is VlmUiState.Streaming -> {
+                        Text(text = "Streaming...")
+                        Text(text = state.partialText)
+                    }
+                    is VlmUiState.Error -> {
+                        Text(text = "Fehler: ${state.message}", color = MaterialTheme.colorScheme.error)
+                    }
+                    is VlmUiState.OverviewReadyRaw -> {
+                        Text(text = "Antwort:")
+                        Text(text = state.rawText)
+                    }
+                    is VlmUiState.OverviewReady -> {
+                        val desc = state.description
+                        val obstaclesText = if (desc.obstacles.isEmpty()) "keine" else desc.obstacles.joinToString()
+                        val landmarksText = if (desc.landmarks.isEmpty()) "keine" else desc.landmarks.joinToString()
+                        Text(text = "Kurz: ${desc.ttsOneLiner}")
+                        Text(text = "Empfehlung: ${desc.actionSuggestion}")
+                        Text(text = "Hindernisse: $obstaclesText")
+                        Text(text = "Landmarken: $landmarksText")
+                        Text(text = "Details: ${desc.readableText}")
+                        desc.overallConfidence?.let { Text(text = "Confidence: $it") }
+                    }
+                }
+
+                OutlinedTextField(
+                    value = question,
+                    onValueChange = { question = it },
+                    label = { Text("Frage stellen") },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isBusy
+                )
+                Button(
+                    onClick = {
+                        val text = question.trim()
+                        if (text.isNotEmpty()) {
+                            onAsk(text)
+                            question = ""
+                        }
+                    },
+                    enabled = !isBusy && question.isNotBlank()
+                ) {
+                    Text("Senden")
+                }
             }
         }
     }

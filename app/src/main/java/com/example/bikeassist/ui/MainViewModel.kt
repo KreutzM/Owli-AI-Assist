@@ -187,6 +187,7 @@ class MainViewModel(
                 _vlmUiState.value = VlmUiState.Error("Kein Kamerabild verfuegbar.")
                 return@launch
             }
+            _vlmUiState.value = VlmUiState.LoadingOverview("VLM anfragen...", snapshotBytes = jpeg)
             val session = VlmSession(snapshotBytes = jpeg, messageHistory = mutableListOf())
             val messages = buildOverviewMessages(session)
             try {
@@ -198,7 +199,8 @@ class MainViewModel(
                             buffer.append(textDelta)
                             _vlmUiState.value = VlmUiState.Streaming(
                                 partialText = buffer.toString(),
-                                updatedAt = System.currentTimeMillis()
+                                updatedAt = System.currentTimeMillis(),
+                                snapshotBytes = jpeg
                             )
                         }
 
@@ -223,18 +225,24 @@ class MainViewModel(
                 }
                 if (result.isReasoningOnly) {
                     AppLogger.w("VLM", "VLM: Antwort enthaelt nur Reasoning (Overview)")
-                    _vlmUiState.value = VlmUiState.Error("VLM lieferte nur Reasoning ohne Ergebnis.")
+                    _vlmUiState.value = VlmUiState.Error(
+                        "VLM lieferte nur Reasoning ohne Ergebnis.",
+                        snapshotBytes = jpeg
+                    )
                     return@launch
                 }
                 if (result.assistantContent.isBlank()) {
                     AppLogger.w("VLM", "VLM: Leere Antwort (Overview)")
-                    _vlmUiState.value = VlmUiState.Error("VLM-Antwort war leer.")
+                    _vlmUiState.value = VlmUiState.Error("VLM-Antwort war leer.", snapshotBytes = jpeg)
                     return@launch
                 }
                 if (useStructuredVlmParsing) {
                     if (result.isReasoningOnly) {
                         AppLogger.e("VLM", "VLM lieferte nur Thinking ohne Ergebnis (Overview)")
-                        _vlmUiState.value = VlmUiState.Error("VLM lieferte nur Thinking ohne Ergebnis.")
+                        _vlmUiState.value = VlmUiState.Error(
+                            "VLM lieferte nur Thinking ohne Ergebnis.",
+                            snapshotBytes = jpeg
+                        )
                         return@launch
                     }
                     val parsed = VlmSceneDescription.parse(result.assistantContent)
@@ -246,10 +254,14 @@ class MainViewModel(
                         vlmSession = session
                         _vlmUiState.value = VlmUiState.OverviewReady(
                             lastVlmDescription!!,
-                            System.currentTimeMillis()
+                            System.currentTimeMillis(),
+                            snapshotBytes = jpeg
                         )
                     } else {
-                        _vlmUiState.value = VlmUiState.Error("VLM-Antwort konnte nicht gelesen werden.")
+                        _vlmUiState.value = VlmUiState.Error(
+                            "VLM-Antwort konnte nicht gelesen werden.",
+                            snapshotBytes = jpeg
+                        )
                     }
                 } else {
                     val raw = result.assistantContent.trim()
@@ -258,11 +270,18 @@ class MainViewModel(
                         VlmChatMessage(role = "assistant", content = listOf(VlmContentPart.Text(result.assistantContent)))
                     )
                     vlmSession = session
-                    _vlmUiState.value = VlmUiState.OverviewReadyRaw(raw, System.currentTimeMillis())
+                    _vlmUiState.value = VlmUiState.OverviewReadyRaw(
+                        raw,
+                        System.currentTimeMillis(),
+                        snapshotBytes = jpeg
+                    )
                 }
             } catch (ex: Exception) {
                 AppLogger.e(ex, "VLM: Fehler bei enterVlmMode (Overview-Request)")
-                _vlmUiState.value = VlmUiState.Error(ex.message ?: "Unbekannter VLM-Fehler")
+                _vlmUiState.value = VlmUiState.Error(
+                    ex.message ?: "Unbekannter VLM-Fehler",
+                    snapshotBytes = jpeg
+                )
             }
         }
     }
@@ -278,8 +297,9 @@ class MainViewModel(
             _vlmUiState.value = VlmUiState.Error("Keine aktive VLM-Session. Bitte zuerst 'Neue Szene' ausfuehren.")
             return
         }
+        val snapshotBytes = session.snapshotBytes
         if (questionText.isBlank()) return
-        _vlmUiState.value = VlmUiState.Asking(lastVlmDescription, questionText)
+        _vlmUiState.value = VlmUiState.Asking(lastVlmDescription, questionText, snapshotBytes = snapshotBytes)
         AppLogger.i("VLM", "askVlm started questionLength=${questionText.length}")
         viewModelScope.launch {
             val messages = buildFollowUpMessages(session, questionText)
@@ -292,7 +312,8 @@ class MainViewModel(
                             buffer.append(textDelta)
                             _vlmUiState.value = VlmUiState.Streaming(
                                 partialText = buffer.toString(),
-                                updatedAt = System.currentTimeMillis()
+                                updatedAt = System.currentTimeMillis(),
+                                snapshotBytes = snapshotBytes
                             )
                         }
 
@@ -317,18 +338,24 @@ class MainViewModel(
                 }
                 if (result.isReasoningOnly) {
                     AppLogger.w("VLM", "VLM: Antwort enthaelt nur Reasoning (Follow-up)")
-                    _vlmUiState.value = VlmUiState.Error("VLM lieferte nur Reasoning ohne Ergebnis.")
+                    _vlmUiState.value = VlmUiState.Error(
+                        "VLM lieferte nur Reasoning ohne Ergebnis.",
+                        snapshotBytes = snapshotBytes
+                    )
                     return@launch
                 }
                 if (result.assistantContent.isBlank()) {
                     AppLogger.w("VLM", "VLM: Leere Antwort (Follow-up)")
-                    _vlmUiState.value = VlmUiState.Error("VLM-Antwort war leer.")
+                    _vlmUiState.value = VlmUiState.Error("VLM-Antwort war leer.", snapshotBytes = snapshotBytes)
                     return@launch
                 }
                 if (useStructuredVlmParsing) {
                     if (result.isReasoningOnly) {
                         AppLogger.e("VLM", "VLM lieferte nur Thinking ohne Ergebnis (Follow-up)")
-                        _vlmUiState.value = VlmUiState.Error("VLM lieferte nur Thinking ohne Ergebnis.")
+                        _vlmUiState.value = VlmUiState.Error(
+                            "VLM lieferte nur Thinking ohne Ergebnis.",
+                            snapshotBytes = snapshotBytes
+                        )
                         return@launch
                     }
                     val parsed = VlmSceneDescription.parse(result.assistantContent)
@@ -342,10 +369,14 @@ class MainViewModel(
                         )
                         _vlmUiState.value = VlmUiState.OverviewReady(
                             lastVlmDescription!!,
-                            System.currentTimeMillis()
+                            System.currentTimeMillis(),
+                            snapshotBytes = snapshotBytes
                         )
                     } else {
-                        _vlmUiState.value = VlmUiState.Error("VLM-Antwort konnte nicht gelesen werden.")
+                        _vlmUiState.value = VlmUiState.Error(
+                            "VLM-Antwort konnte nicht gelesen werden.",
+                            snapshotBytes = snapshotBytes
+                        )
                     }
                 } else {
                     val raw = result.assistantContent.trim()
@@ -356,11 +387,18 @@ class MainViewModel(
                         VlmChatMessage(role = "assistant", content = listOf(VlmContentPart.Text(result.assistantContent)))
                     )
                     lastVlmDescription = null
-                    _vlmUiState.value = VlmUiState.OverviewReadyRaw(raw, System.currentTimeMillis())
+                    _vlmUiState.value = VlmUiState.OverviewReadyRaw(
+                        raw,
+                        System.currentTimeMillis(),
+                        snapshotBytes = snapshotBytes
+                    )
                 }
             } catch (ex: Exception) {
                 AppLogger.e(ex, "VLM: Fehler bei askVlm (Follow-up-Request)")
-                _vlmUiState.value = VlmUiState.Error(ex.message ?: "Unbekannter VLM-Fehler")
+                _vlmUiState.value = VlmUiState.Error(
+                    ex.message ?: "Unbekannter VLM-Fehler",
+                    snapshotBytes = snapshotBytes
+                )
             }
         }
     }
