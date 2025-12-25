@@ -316,6 +316,7 @@ class MainActivity : ComponentActivity() {
         audioFeedbackEngine.updateSpeechRate(settings.ttsSpeechRate)
         audioFeedbackEngine.updatePitch(settings.ttsPitch)
         streamingTtsEnabled = settings.streamingVlmTtsEnabled
+        audioFeedbackEngine.setSceneSpeechSuppressed(streamingActive && shouldUseStreamingTts())
         com.example.bikeassist.diagnostics.DiagnosticsCollector.updateSettings(settings)
         com.example.bikeassist.diagnostics.DiagnosticsCollector.updatePipelineStatus(
             isRunning = mainViewModel.isRunning.value,
@@ -344,7 +345,10 @@ class MainActivity : ComponentActivity() {
             streamingActive = true
             lastStreamingText = ""
             if (shouldUseStreamingTts()) {
+                audioFeedbackEngine.setSceneSpeechSuppressed(true)
                 streamingTtsController.startNewRun()
+            } else {
+                audioFeedbackEngine.setSceneSpeechSuppressed(false)
             }
         }
         val delta = computeStreamingDelta(lastStreamingText, state.partialText)
@@ -356,6 +360,9 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun handleStreamingEnd(state: VlmUiState) {
+        if (!streamingActive) {
+            audioFeedbackEngine.setSceneSpeechSuppressed(false)
+        }
         val hadStreamingOutput = streamingActive || lastStreamingText.isNotEmpty()
         if (streamingActive) {
             streamingActive = false
@@ -368,6 +375,7 @@ class MainActivity : ComponentActivity() {
                 streamingTtsController.cancel()
             }
             lastStreamingText = ""
+            audioFeedbackEngine.setSceneSpeechSuppressed(false)
         }
         if (!shouldUseStreamingTts() || !hadStreamingOutput) {
             when (state) {

@@ -19,6 +19,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - VLM-Profile auf neues Schema mit token_policy, parameter_overrides und defaults umgestellt.
 - OpenRouter-Parsing nutzt nur message.content fuer UI/TTS; Reasoning bleibt Debug/Telemetry.
 - AudioFeedbackEngine nutzt AudioFocus/AudioAttributes und TTS-Prewarm fuer stabileres Streaming.
+- On-Device TTS wird bei aktivem VLM-Streaming unterdrueckt (Warnungen werden verworfen).
 
 ### Fixed
 - GPT-5 Reasoning-only Antworten: automatische Retries mit hoeherem Token-Budget und Final-Only Hinweis.

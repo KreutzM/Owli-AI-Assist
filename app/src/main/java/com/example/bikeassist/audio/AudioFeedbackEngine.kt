@@ -54,6 +54,7 @@ class AudioFeedbackEngine(
     private var desiredSpeechRate: Float =
         blindViewConfig.ttsSpeechRate.coerceIn(MIN_SPEECH_RATE, MAX_SPEECH_RATE)
     private var desiredPitch: Float = DEFAULT_PITCH
+    private var sceneSpeechSuppressed: Boolean = false
 
     init {
         tts = TextToSpeech(context) { status ->
@@ -80,6 +81,11 @@ class AudioFeedbackEngine(
     }
 
     fun onSceneUpdated(state: SceneState) {
+        if (sceneSpeechSuppressed) {
+            pendingMessage = null
+            pendingLevel = HazardLevel.NONE
+            return
+        }
         if (mode == AppMode.BLINDVIEW) {
             val now = System.currentTimeMillis()
             val utterance = speechPlanner.nextUtterance(state.blindViewItems, now)
@@ -181,6 +187,11 @@ class AudioFeedbackEngine(
     }
 
     private fun speakPendingIfPossible() {
+        if (sceneSpeechSuppressed) {
+            pendingMessage = null
+            pendingLevel = HazardLevel.NONE
+            return
+        }
         val message = pendingMessage ?: return
         val now = System.currentTimeMillis()
         val cooldownPassed = now - lastSpokenAt >= cooldownMillis
@@ -220,6 +231,16 @@ class AudioFeedbackEngine(
 
     fun setVlmVolume(volume: Float) {
         vlmVolume = volume.coerceIn(0.0f, 1.0f)
+    }
+
+    fun setSceneSpeechSuppressed(suppressed: Boolean) {
+        if (sceneSpeechSuppressed == suppressed) return
+        sceneSpeechSuppressed = suppressed
+        if (suppressed) {
+            pendingMessage = null
+            pendingLevel = HazardLevel.NONE
+        }
+        Log.d(TAG, "sceneSpeechSuppressed=$sceneSpeechSuppressed")
     }
 
     fun speakVlmStreamingChunk(text: String, queueMode: QueueMode) {
