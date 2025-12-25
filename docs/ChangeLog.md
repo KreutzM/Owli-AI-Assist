@@ -12,13 +12,17 @@ Format (angelehnt an Keep a Changelog / SemVer):
 ### Added
 - VLM policy layer mit Provider-Interface und GPT-5 Reasoning-Retries.
 - Dokumentation `docs/VLM.md` fuer Profile, Policies und Retry-Strategie.
+- StreamingTtsController fuer fruehen TTS-Start bei VLM-Streaming inkl. Chunking/Dedup.
+- Settings fuer VLM-Streaming-TTS und TTS-Pitch.
 
 ### Changed
 - VLM-Profile auf neues Schema mit token_policy, parameter_overrides und defaults umgestellt.
 - OpenRouter-Parsing nutzt nur message.content fuer UI/TTS; Reasoning bleibt Debug/Telemetry.
+- AudioFeedbackEngine nutzt AudioFocus/AudioAttributes und TTS-Prewarm fuer stabileres Streaming.
 
 ### Fixed
 - GPT-5 Reasoning-only Antworten: automatische Retries mit hoeherem Token-Budget und Final-Only Hinweis.
+- App-Start-Crash durch zu fruehe VLM-Profil-Initialisierung in MainActivity.
 
 ---
 

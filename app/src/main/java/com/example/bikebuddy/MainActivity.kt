@@ -55,6 +55,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.example.bikeassist.audio.AudioFeedbackEngine
+import com.example.bikeassist.audio.StreamingTtsController
 import com.example.bikeassist.camera.CameraFrameSource
 import com.example.bikeassist.domain.TrafficLightObservation
 import com.example.bikeassist.ml.Detection
@@ -62,6 +63,7 @@ import com.example.bikeassist.pipeline.VisionPipelineModule
 import com.example.bikeassist.diagnostics.DiagnosticsCollector
 import com.example.bikeassist.diagnostics.DiagnosticsReportBuilder
 import com.example.bikeassist.settings.AppSettings
+import com.example.bikeassist.settings.AppSettingsDefaults
 import com.example.bikeassist.settings.SettingsRepository
 import com.example.bikeassist.settings.SettingsViewModel
 import com.example.bikeassist.ui.MainViewModel
@@ -69,9 +71,11 @@ import com.example.bikeassist.util.AppLogger
 import com.example.bikeassist.vlm.OpenRouterVlmClient
 import com.example.bikeassist.vlm.VlmProfile
 import com.example.bikeassist.vlm.VlmProfileLoader
+import com.example.bikeassist.vlm.VlmProfilesConfig
 import com.example.bikeassist.vlm.VlmUiState
 import com.example.bikebuddy.ui.theme.BikeBuddyTheme
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
@@ -80,8 +84,21 @@ class MainActivity : ComponentActivity() {
 
     private val cameraFrameSource by lazy { CameraFrameSource(this, this) }
     private val audioFeedbackEngine by lazy { AudioFeedbackEngine(this) }
+    private val streamingTtsController by lazy {
+        StreamingTtsController(
+            speaker = object : StreamingTtsController.Speaker {
+                override fun speakChunk(text: String, queueMode: com.example.bikeassist.audio.QueueMode) {
+                    audioFeedbackEngine.speakVlmStreamingChunk(text, queueMode)
+                }
 
-    private val vlmProfilesConfig by lazy { VlmProfileLoader.load(applicationContext) }
+                override fun stop() {
+                    audioFeedbackEngine.stopVlmTts()
+                }
+            }
+        )
+    }
+
+    private lateinit var vlmProfilesConfig: VlmProfilesConfig
     private val vlmClient by lazy {
         OpenRouterVlmClient(vlmProfilesConfig.resolve(vlmProfilesConfig.defaultProfileId))
     }
@@ -92,6 +109,11 @@ class MainActivity : ComponentActivity() {
         SettingsViewModel.Factory(SettingsRepository(applicationContext))
     }
     private var settingsCollectJob: Job? = null
+    private var streamingTimeoutJob: Job? = null
+    private var streamingActive = false
+    private var lastStreamingText = ""
+    private var streamingTtsEnabled: Boolean = AppSettingsDefaults.streamingVlmTtsEnabled
+    private lateinit var activeVlmProfile: VlmProfile
     private val showSettings = mutableStateOf(false)
     private val showDiagnostics = mutableStateOf(false)
     private val showVlm = mutableStateOf(false)
@@ -110,7 +132,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AppLogger.d("Activity onCreate")
-        mainViewModel.applyVlmProfile(vlmProfilesConfig.resolve(vlmProfilesConfig.defaultProfileId))
+        vlmProfilesConfig = VlmProfileLoader.load(applicationContext)
+        activeVlmProfile = vlmProfilesConfig.resolve(vlmProfilesConfig.defaultProfileId)
+        mainViewModel.applyVlmProfile(activeVlmProfile)
         enableEdgeToEdge()
         observeSceneState()
         observeVlmState()
@@ -207,6 +231,11 @@ class MainActivity : ComponentActivity() {
         super.onStop()
         AppLogger.d("Activity onStop -> stop pipeline (lifecycle)")
         mainViewModel.stopForLifecycle()
+        streamingTimeoutJob?.cancel()
+        streamingActive = false
+        lastStreamingText = ""
+        streamingTtsController.cancel()
+        audioFeedbackEngine.stopAllTts()
     }
 
     override fun onDestroy() {
@@ -253,8 +282,9 @@ class MainActivity : ComponentActivity() {
                     val backgroundVolume = 0.25f
                     val standardVolume = if (state is VlmUiState.Inactive) 1.0f else backgroundVolume
                     audioFeedbackEngine.setStandardVolume(standardVolume)
-                    if (state is VlmUiState.OverviewReadyRaw) {
-                        return@collect
+                    when (state) {
+                        is VlmUiState.Streaming -> handleStreamingState(state)
+                        else -> handleStreamingEnd(state)
                     }
                 }
             }
@@ -284,6 +314,8 @@ class MainActivity : ComponentActivity() {
             return
         }
         audioFeedbackEngine.updateSpeechRate(settings.ttsSpeechRate)
+        audioFeedbackEngine.updatePitch(settings.ttsPitch)
+        streamingTtsEnabled = settings.streamingVlmTtsEnabled
         com.example.bikeassist.diagnostics.DiagnosticsCollector.updateSettings(settings)
         com.example.bikeassist.diagnostics.DiagnosticsCollector.updatePipelineStatus(
             isRunning = mainViewModel.isRunning.value,
@@ -302,8 +334,79 @@ class MainActivity : ComponentActivity() {
             analysisIntervalMs = settings.analysisIntervalMs
         )
         mainViewModel.setPipeline(handle)
-        mainViewModel.applyVlmProfile(vlmProfilesConfig.resolve(settings.vlmProfileId))
+        activeVlmProfile = vlmProfilesConfig.resolve(settings.vlmProfileId)
+        mainViewModel.applyVlmProfile(activeVlmProfile)
         ensurePermissionAndAutoStart()
+    }
+
+    private fun handleStreamingState(state: VlmUiState.Streaming) {
+        if (!streamingActive) {
+            streamingActive = true
+            lastStreamingText = ""
+            if (shouldUseStreamingTts()) {
+                streamingTtsController.startNewRun()
+            }
+        }
+        val delta = computeStreamingDelta(lastStreamingText, state.partialText)
+        lastStreamingText = state.partialText
+        if (delta.isNotEmpty() && shouldUseStreamingTts()) {
+            streamingTtsController.onDelta(delta)
+            scheduleStreamingTimeout()
+        }
+    }
+
+    private fun handleStreamingEnd(state: VlmUiState) {
+        val hadStreamingOutput = streamingActive || lastStreamingText.isNotEmpty()
+        if (streamingActive) {
+            streamingActive = false
+            streamingTimeoutJob?.cancel()
+            val shouldFlush = shouldUseStreamingTts() &&
+                (state is VlmUiState.OverviewReady || state is VlmUiState.OverviewReadyRaw)
+            if (shouldFlush) {
+                streamingTtsController.flushRemaining()
+            } else {
+                streamingTtsController.cancel()
+            }
+            lastStreamingText = ""
+        }
+        if (!shouldUseStreamingTts() || !hadStreamingOutput) {
+            when (state) {
+                is VlmUiState.OverviewReady -> {
+                    audioFeedbackEngine.speakVlmResponse(
+                        state.description.ttsOneLiner,
+                        state.description.actionSuggestion
+                    )
+                }
+                is VlmUiState.OverviewReadyRaw -> {
+                    audioFeedbackEngine.speakVlmResponse(state.rawText, null)
+                }
+                else -> Unit
+            }
+        }
+    }
+
+    private fun scheduleStreamingTimeout() {
+        streamingTimeoutJob?.cancel()
+        streamingTimeoutJob = lifecycleScope.launch {
+            delay(StreamingTtsController.DEFAULT_IDLE_TIMEOUT_MS)
+            streamingTtsController.onIdleTimeout()
+        }
+    }
+
+    private fun computeStreamingDelta(previous: String, current: String): String {
+        return if (current.startsWith(previous)) {
+            current.substring(previous.length)
+        } else {
+            AppLogger.w("VLM", "Streaming text reset detected.")
+            if (shouldUseStreamingTts()) {
+                streamingTtsController.startNewRun()
+            }
+            current
+        }
+    }
+
+    private fun shouldUseStreamingTts(): Boolean {
+        return streamingTtsEnabled && activeVlmProfile.streamingEnabled
     }
 }
 
@@ -670,6 +773,14 @@ fun SettingsScreen(
                 onValueChange = { v -> onUpdate { it.copy(ttsSpeechRate = v) } },
                 helper = "Sprechgeschwindigkeit"
             )
+            SettingSlider(
+                label = "TTS Pitch",
+                value = settings.ttsPitch,
+                valueRange = 0.5f..2.0f,
+                steps = 6,
+                onValueChange = { v -> onUpdate { it.copy(ttsPitch = v) } },
+                helper = "Stimmhoehe"
+            )
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -683,6 +794,12 @@ fun SettingsScreen(
                 }
                 Button(onClick = onOpenVlmProfiles) { Text("Auswaehlen") }
             }
+            SettingSwitch(
+                label = "Streaming TTS (VLM)",
+                checked = settings.streamingVlmTtsEnabled,
+                onCheckedChange = { v -> onUpdate { it.copy(streamingVlmTtsEnabled = v) } },
+                helper = "Frueher TTS-Start bei Streaming"
+            )
             SettingIntSlider(
                 label = "Analysis Interval (ms)",
                 value = settings.analysisIntervalMs.toInt(),

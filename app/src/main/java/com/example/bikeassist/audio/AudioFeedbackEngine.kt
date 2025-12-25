@@ -1,7 +1,12 @@
 package com.example.bikeassist.audio
 
 import android.content.Context
+import android.media.AudioAttributes
+import android.media.AudioFocusRequest
+import android.media.AudioManager
+import android.os.Build
 import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.util.Log
 import com.example.bikeassist.domain.HazardLevel
 import com.example.bikeassist.domain.SceneState
@@ -10,6 +15,8 @@ import com.example.bikeassist.blindview.BlindViewSpeechPlanner
 import com.example.bikeassist.pipeline.AppMode
 import java.io.Closeable
 import java.util.Locale
+import java.util.Collections
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Erzeugt Audio-/TTS-Ausgabe basierend auf SceneState.
@@ -23,6 +30,14 @@ class AudioFeedbackEngine(
 ) : Closeable {
 
     private var tts: TextToSpeech? = null
+    private val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+    private val audioAttributes = AudioAttributes.Builder()
+        .setUsage(AudioAttributes.USAGE_ASSISTANCE_ACCESSIBILITY)
+        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+        .build()
+    private val utteranceCounter = AtomicLong(0L)
+    private val pendingUtterances = Collections.synchronizedSet(mutableSetOf<String>())
+    private var audioFocusRequest: AudioFocusRequest? = null
     private var lastSpokenAt: Long = 0L
     private var lastMessage: String? = null
     private var lastLevel: HazardLevel = HazardLevel.NONE
@@ -38,17 +53,22 @@ class AudioFeedbackEngine(
     private var vlmVolume: Float = 1.0f
     private var desiredSpeechRate: Float =
         blindViewConfig.ttsSpeechRate.coerceIn(MIN_SPEECH_RATE, MAX_SPEECH_RATE)
+    private var desiredPitch: Float = DEFAULT_PITCH
 
     init {
         tts = TextToSpeech(context) { status ->
             if (status == TextToSpeech.SUCCESS) {
                 val result = tts?.setLanguage(Locale.getDefault()) ?: TextToSpeech.LANG_NOT_SUPPORTED
                 val rateResult = tts?.setSpeechRate(desiredSpeechRate)
+                tts?.setPitch(desiredPitch)
+                tts?.setAudioAttributes(audioAttributes)
+                tts?.setOnUtteranceProgressListener(ttsProgressListener)
+                tts?.playSilentUtterance(PREWARM_SILENCE_MS, TextToSpeech.QUEUE_ADD, "tts-prewarm")
                 ttsReady = result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED
                 ttsState = if (ttsReady) TtsState.READY else TtsState.ERROR
                 Log.d(
                     TAG,
-                    "TTS init success, languageResult=$result, ready=$ttsReady, speechRate=$desiredSpeechRate setResult=$rateResult, pendingMessage=$pendingMessage"
+                    "TTS init success, languageResult=$result, ready=$ttsReady, speechRate=$desiredSpeechRate pitch=$desiredPitch setResult=$rateResult, pendingMessage=$pendingMessage"
                 )
                 speakPendingIfPossible()
             } else {
@@ -117,7 +137,7 @@ class AudioFeedbackEngine(
             Log.d(TAG, "speak skipped, ttsReady=false, text=$text")
             return
         }
-        speakWithVolume(text, standardVolume, "scene-state")
+        speakWithVolume(text, standardVolume, "scene-state", QueueMode.FLUSH)
     }
 
     fun speakVlmResponse(ttsOneLiner: String?, actionSuggestion: String?) {
@@ -137,7 +157,7 @@ class AudioFeedbackEngine(
             }
             return
         }
-        speakWithVolume(combined, vlmVolume, "vlm")
+        speakWithVolume(combined, vlmVolume, "vlm", QueueMode.FLUSH)
         lastVlmMessage = combined
         lastVlmSpokenAt = now
     }
@@ -147,6 +167,13 @@ class AudioFeedbackEngine(
         desiredSpeechRate = clamped
         tts?.setSpeechRate(clamped)
         Log.d(TAG, "updateSpeechRate to $clamped")
+    }
+
+    fun updatePitch(pitch: Float) {
+        val clamped = pitch.coerceIn(MIN_PITCH, MAX_PITCH)
+        desiredPitch = clamped
+        tts?.setPitch(clamped)
+        Log.d(TAG, "updatePitch to $clamped")
     }
 
     private fun maxHazard(a: HazardLevel, b: HazardLevel): HazardLevel {
@@ -173,13 +200,18 @@ class AudioFeedbackEngine(
         tts?.shutdown()
         tts = null
         ttsReady = false
+        pendingUtterances.clear()
     }
 
     companion object {
         private const val TAG = "AudioFeedbackEngine"
         private const val MIN_SPEECH_RATE = 0.5f
         private const val MAX_SPEECH_RATE = 3.0f
+        private const val MIN_PITCH = 0.5f
+        private const val MAX_PITCH = 2.0f
+        private const val DEFAULT_PITCH = 1.0f
         private const val VLM_REPEAT_SUPPRESS_MS = 8_000L
+        private const val PREWARM_SILENCE_MS = 150L
     }
 
     fun setStandardVolume(volume: Float) {
@@ -190,7 +222,26 @@ class AudioFeedbackEngine(
         vlmVolume = volume.coerceIn(0.0f, 1.0f)
     }
 
-    private fun speakWithVolume(text: String, volume: Float, utteranceId: String) {
+    fun speakVlmStreamingChunk(text: String, queueMode: QueueMode) {
+        speakWithVolume(text, vlmVolume, "vlm-stream", queueMode)
+    }
+
+    fun stopVlmTts() {
+        stopAllTts()
+    }
+
+    fun stopAllTts() {
+        tts?.stop()
+        pendingUtterances.clear()
+        abandonAudioFocus()
+    }
+
+    private fun speakWithVolume(
+        text: String,
+        volume: Float,
+        utterancePrefix: String,
+        queueMode: QueueMode
+    ) {
         if (!ttsReady) {
             Log.d(TAG, "speak skipped, ttsReady=false, text=$text")
             return
@@ -198,8 +249,73 @@ class AudioFeedbackEngine(
         val params = android.os.Bundle().apply {
             putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, volume.coerceIn(0.0f, 1.0f))
         }
-        val result = tts?.speak(text, TextToSpeech.QUEUE_FLUSH, params, utteranceId) ?: TextToSpeech.ERROR
-        Log.d(TAG, "speak result=$result, text=$text volume=$volume")
+        requestAudioFocus()
+        val utteranceId = nextUtteranceId(utterancePrefix)
+        pendingUtterances.add(utteranceId)
+        val result = tts?.speak(text, queueMode.toTtsQueueMode(), params, utteranceId) ?: TextToSpeech.ERROR
+        if (result == TextToSpeech.ERROR) {
+            pendingUtterances.remove(utteranceId)
+        }
+        Log.d(TAG, "speak result=$result, text=$text volume=$volume queue=$queueMode")
+    }
+
+    private fun requestAudioFocus() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val request = audioFocusRequest ?: AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK)
+                .setAudioAttributes(audioAttributes)
+                .setAcceptsDelayedFocusGain(false)
+                .setOnAudioFocusChangeListener { }
+                .build()
+                .also { audioFocusRequest = it }
+            audioManager.requestAudioFocus(request)
+        } else {
+            @Suppress("DEPRECATION")
+            audioManager.requestAudioFocus(
+                null,
+                AudioManager.STREAM_MUSIC,
+                AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
+            )
+        }
+    }
+
+    private fun abandonAudioFocus() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            audioFocusRequest?.let { audioManager.abandonAudioFocusRequest(it) }
+        } else {
+            @Suppress("DEPRECATION")
+            audioManager.abandonAudioFocus(null)
+        }
+    }
+
+    private fun nextUtteranceId(prefix: String): String {
+        return "$prefix-${utteranceCounter.incrementAndGet()}"
+    }
+
+    private fun QueueMode.toTtsQueueMode(): Int {
+        return when (this) {
+            QueueMode.ADD -> TextToSpeech.QUEUE_ADD
+            QueueMode.FLUSH -> TextToSpeech.QUEUE_FLUSH
+        }
+    }
+
+    private val ttsProgressListener = object : UtteranceProgressListener() {
+        override fun onStart(utteranceId: String?) = Unit
+
+        override fun onDone(utteranceId: String?) {
+            if (utteranceId == null) return
+            pendingUtterances.remove(utteranceId)
+            if (pendingUtterances.isEmpty()) {
+                abandonAudioFocus()
+            }
+        }
+
+        override fun onError(utteranceId: String?) {
+            if (utteranceId == null) return
+            pendingUtterances.remove(utteranceId)
+            if (pendingUtterances.isEmpty()) {
+                abandonAudioFocus()
+            }
+        }
     }
 
     fun diagnostics(): com.example.bikeassist.diagnostics.TtsDiagnostics {

@@ -43,7 +43,8 @@ object DiagnosticsReportBuilder {
         sb.appendLine("  detector: conf=${settings.detectorMinConfidence} maxResults=${settings.detectorMaxResults} threads=${settings.detectorNumThreads} nnapi=${settings.detectorUseNnapi}")
         sb.appendLine("  blindView: minConfidence=${settings.blindViewMinConfidence} minConfidenceTrack=${settings.minConfidenceTrack} iou=${settings.iouThreshold}")
         sb.appendLine("             bboxAlpha=${settings.bboxSmoothingAlpha} minHits=${settings.minConsecutiveHits} maxDetections=${settings.maxDetectionsPerFrameForTracking} maxTracks=${settings.maxTracks}")
-        sb.appendLine("  ttsSpeechRate=${settings.ttsSpeechRate}")
+        sb.appendLine("  ttsSpeechRate=${settings.ttsSpeechRate} ttsPitch=${settings.ttsPitch}")
+        sb.appendLine("  streamingVlmTtsEnabled=${settings.streamingVlmTtsEnabled}")
         return sb.toString()
     }
 }

@@ -26,6 +26,8 @@ data class AppSettings(
     val minSpeakIntervalMs: Long = AppSettingsDefaults.minSpeakIntervalMs,
     val repeatSamePlanIntervalMs: Long = AppSettingsDefaults.repeatSamePlanIntervalMs,
     val ttsSpeechRate: Float = AppSettingsDefaults.ttsSpeechRate,
+    val ttsPitch: Float = AppSettingsDefaults.ttsPitch,
+    val streamingVlmTtsEnabled: Boolean = AppSettingsDefaults.streamingVlmTtsEnabled,
     val showOverlay: Boolean = AppSettingsDefaults.showOverlay,
     val showBlindViewPreview: Boolean = AppSettingsDefaults.showBlindViewPreview,
     val showOverlayLabels: Boolean = AppSettingsDefaults.showOverlayLabels,
@@ -87,6 +89,8 @@ object AppSettingsDefaults {
     const val minSpeakIntervalMs: Long = 2_500L
     const val repeatSamePlanIntervalMs: Long = 8_000L
     const val ttsSpeechRate: Float = 2.0f
+    const val ttsPitch: Float = 1.0f
+    const val streamingVlmTtsEnabled: Boolean = true
     const val showOverlay: Boolean = true
     const val showBlindViewPreview: Boolean = true
     const val showOverlayLabels: Boolean = true

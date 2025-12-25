@@ -43,6 +43,8 @@ class SettingsRepository(private val context: Context) {
             prefs[PrefKeys.minSpeakIntervalMs] = updated.minSpeakIntervalMs
             prefs[PrefKeys.repeatSamePlanIntervalMs] = updated.repeatSamePlanIntervalMs
             prefs[PrefKeys.ttsSpeechRate] = updated.ttsSpeechRate
+            prefs[PrefKeys.ttsPitch] = updated.ttsPitch
+            prefs[PrefKeys.streamingVlmTtsEnabled] = updated.streamingVlmTtsEnabled
             prefs[PrefKeys.showOverlay] = updated.showOverlay
             prefs[PrefKeys.showBlindViewPreview] = updated.showBlindViewPreview
             prefs[PrefKeys.showOverlayLabels] = updated.showOverlayLabels
@@ -79,6 +81,8 @@ private object PrefKeys {
     val minSpeakIntervalMs = longPreferencesKey("minSpeakIntervalMs")
     val repeatSamePlanIntervalMs = longPreferencesKey("repeatSamePlanIntervalMs")
     val ttsSpeechRate = floatPreferencesKey("ttsSpeechRate")
+    val ttsPitch = floatPreferencesKey("ttsPitch")
+    val streamingVlmTtsEnabled = booleanPreferencesKey("streamingVlmTtsEnabled")
     val showOverlay = booleanPreferencesKey("showOverlay")
     val showBlindViewPreview = booleanPreferencesKey("showBlindViewPreview")
     val showOverlayLabels = booleanPreferencesKey("showOverlayLabels")
@@ -109,6 +113,8 @@ private fun androidx.datastore.preferences.core.Preferences.toSettings(): AppSet
         minSpeakIntervalMs = this[PrefKeys.minSpeakIntervalMs] ?: AppSettingsDefaults.minSpeakIntervalMs,
         repeatSamePlanIntervalMs = this[PrefKeys.repeatSamePlanIntervalMs] ?: AppSettingsDefaults.repeatSamePlanIntervalMs,
         ttsSpeechRate = this[PrefKeys.ttsSpeechRate] ?: AppSettingsDefaults.ttsSpeechRate,
+        ttsPitch = this[PrefKeys.ttsPitch] ?: AppSettingsDefaults.ttsPitch,
+        streamingVlmTtsEnabled = this[PrefKeys.streamingVlmTtsEnabled] ?: AppSettingsDefaults.streamingVlmTtsEnabled,
         showOverlay = this[PrefKeys.showOverlay] ?: AppSettingsDefaults.showOverlay,
         showBlindViewPreview = this[PrefKeys.showBlindViewPreview] ?: AppSettingsDefaults.showBlindViewPreview,
         showOverlayLabels = this[PrefKeys.showOverlayLabels] ?: AppSettingsDefaults.showOverlayLabels,
