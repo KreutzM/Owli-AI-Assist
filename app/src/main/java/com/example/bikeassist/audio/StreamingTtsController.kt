@@ -59,6 +59,8 @@ class StreamingTtsController(
         flushPending(force = true, drainAll = true)
     }
 
+    fun hasPending(): Boolean = pending.isNotEmpty()
+
     private fun maybeSpeakOnDelta() {
         val now = clock()
         if (!canSpeak(now, force = false)) return

@@ -135,6 +135,9 @@ class MainActivity : ComponentActivity() {
         vlmProfilesConfig = VlmProfileLoader.load(applicationContext)
         activeVlmProfile = vlmProfilesConfig.resolve(vlmProfilesConfig.defaultProfileId)
         mainViewModel.applyVlmProfile(activeVlmProfile)
+        audioFeedbackEngine.setOnVlmStreamIdleListener {
+            updateSceneSpeechSuppression()
+        }
         enableEdgeToEdge()
         observeSceneState()
         observeVlmState()
@@ -326,7 +329,7 @@ class MainActivity : ComponentActivity() {
         audioFeedbackEngine.updateSpeechRate(settings.ttsSpeechRate)
         audioFeedbackEngine.updatePitch(settings.ttsPitch)
         streamingTtsEnabled = settings.streamingVlmTtsEnabled
-        audioFeedbackEngine.setSceneSpeechSuppressed(streamingActive && shouldUseStreamingTts())
+        updateSceneSpeechSuppression()
         com.example.bikeassist.diagnostics.DiagnosticsCollector.updateSettings(settings)
         com.example.bikeassist.diagnostics.DiagnosticsCollector.updatePipelineStatus(
             isRunning = mainViewModel.isRunning.value,
@@ -355,10 +358,7 @@ class MainActivity : ComponentActivity() {
             streamingActive = true
             lastStreamingText = ""
             if (shouldUseStreamingTts()) {
-                audioFeedbackEngine.setSceneSpeechSuppressed(true)
                 streamingTtsController.startNewRun()
-            } else {
-                audioFeedbackEngine.setSceneSpeechSuppressed(false)
             }
         }
         val delta = computeStreamingDelta(lastStreamingText, state.partialText)
@@ -367,12 +367,10 @@ class MainActivity : ComponentActivity() {
             streamingTtsController.onDelta(delta)
             scheduleStreamingTimeout()
         }
+        updateSceneSpeechSuppression()
     }
 
     private fun handleStreamingEnd(state: VlmUiState) {
-        if (!streamingActive) {
-            audioFeedbackEngine.setSceneSpeechSuppressed(false)
-        }
         val hadStreamingOutput = streamingActive || lastStreamingText.isNotEmpty()
         if (streamingActive) {
             streamingActive = false
@@ -385,8 +383,8 @@ class MainActivity : ComponentActivity() {
                 streamingTtsController.cancel()
             }
             lastStreamingText = ""
-            audioFeedbackEngine.setSceneSpeechSuppressed(false)
         }
+        updateSceneSpeechSuppression()
         if (!shouldUseStreamingTts() || !hadStreamingOutput) {
             when (state) {
                 is VlmUiState.OverviewReady -> {
@@ -421,6 +419,12 @@ class MainActivity : ComponentActivity() {
             }
             current
         }
+    }
+
+    private fun updateSceneSpeechSuppression() {
+        val shouldSuppress = shouldUseStreamingTts() &&
+            (streamingActive || streamingTtsController.hasPending() || audioFeedbackEngine.isVlmStreamBusy())
+        audioFeedbackEngine.setSceneSpeechSuppressed(shouldSuppress)
     }
 
     private fun shouldUseStreamingTts(): Boolean {

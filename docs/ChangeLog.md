@@ -25,6 +25,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - GPT-5 Reasoning-only Antworten: automatische Retries mit hoeherem Token-Budget und Final-Only Hinweis.
 - App-Start-Crash durch zu fruehe VLM-Profil-Initialisierung in MainActivity.
 - VLM Default-Profil folgt jetzt dem JSON-default, sofern kein Nutzerprofil gesetzt ist.
+- On-Device TTS unterbricht Streaming-TTS nicht mehr zwischen Saetzen (VLM-Queue wird komplett abgewartet).
 
 ---
 

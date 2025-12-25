@@ -16,6 +16,7 @@ import com.example.bikeassist.pipeline.AppMode
 import java.io.Closeable
 import java.util.Locale
 import java.util.Collections
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 
 /**
@@ -36,6 +37,7 @@ class AudioFeedbackEngine(
         .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
         .build()
     private val utteranceCounter = AtomicLong(0L)
+    private val vlmStreamInFlight = AtomicInteger(0)
     private val pendingUtterances = Collections.synchronizedSet(mutableSetOf<String>())
     private var audioFocusRequest: AudioFocusRequest? = null
     private var lastSpokenAt: Long = 0L
@@ -55,6 +57,7 @@ class AudioFeedbackEngine(
         blindViewConfig.ttsSpeechRate.coerceIn(MIN_SPEECH_RATE, MAX_SPEECH_RATE)
     private var desiredPitch: Float = DEFAULT_PITCH
     private var sceneSpeechSuppressed: Boolean = false
+    private var onVlmStreamIdle: (() -> Unit)? = null
 
     init {
         tts = TextToSpeech(context) { status ->
@@ -216,6 +219,7 @@ class AudioFeedbackEngine(
 
     companion object {
         private const val TAG = "AudioFeedbackEngine"
+        private const val VLM_STREAM_PREFIX = "vlm-stream"
         private const val MIN_SPEECH_RATE = 0.5f
         private const val MAX_SPEECH_RATE = 3.0f
         private const val MIN_PITCH = 0.5f
@@ -243,6 +247,12 @@ class AudioFeedbackEngine(
         Log.d(TAG, "sceneSpeechSuppressed=$sceneSpeechSuppressed")
     }
 
+    fun setOnVlmStreamIdleListener(listener: (() -> Unit)?) {
+        onVlmStreamIdle = listener
+    }
+
+    fun isVlmStreamBusy(): Boolean = vlmStreamInFlight.get() > 0
+
     fun speakVlmStreamingChunk(text: String, queueMode: QueueMode) {
         speakWithVolume(text, vlmVolume, "vlm-stream", queueMode)
     }
@@ -254,6 +264,8 @@ class AudioFeedbackEngine(
     fun stopAllTts() {
         tts?.stop()
         pendingUtterances.clear()
+        vlmStreamInFlight.set(0)
+        onVlmStreamIdle?.invoke()
         abandonAudioFocus()
     }
 
@@ -273,9 +285,18 @@ class AudioFeedbackEngine(
         requestAudioFocus()
         val utteranceId = nextUtteranceId(utterancePrefix)
         pendingUtterances.add(utteranceId)
+        if (utterancePrefix == VLM_STREAM_PREFIX) {
+            vlmStreamInFlight.incrementAndGet()
+        }
         val result = tts?.speak(text, queueMode.toTtsQueueMode(), params, utteranceId) ?: TextToSpeech.ERROR
         if (result == TextToSpeech.ERROR) {
             pendingUtterances.remove(utteranceId)
+            if (utterancePrefix == VLM_STREAM_PREFIX) {
+                if (vlmStreamInFlight.decrementAndGet() <= 0) {
+                    vlmStreamInFlight.set(0)
+                    onVlmStreamIdle?.invoke()
+                }
+            }
         }
         Log.d(TAG, "speak result=$result, text=$text volume=$volume queue=$queueMode")
     }
@@ -325,6 +346,12 @@ class AudioFeedbackEngine(
         override fun onDone(utteranceId: String?) {
             if (utteranceId == null) return
             pendingUtterances.remove(utteranceId)
+            if (utteranceId.startsWith("$VLM_STREAM_PREFIX-")) {
+                if (vlmStreamInFlight.decrementAndGet() <= 0) {
+                    vlmStreamInFlight.set(0)
+                    onVlmStreamIdle?.invoke()
+                }
+            }
             if (pendingUtterances.isEmpty()) {
                 abandonAudioFocus()
             }
@@ -333,6 +360,12 @@ class AudioFeedbackEngine(
         override fun onError(utteranceId: String?) {
             if (utteranceId == null) return
             pendingUtterances.remove(utteranceId)
+            if (utteranceId.startsWith("$VLM_STREAM_PREFIX-")) {
+                if (vlmStreamInFlight.decrementAndGet() <= 0) {
+                    vlmStreamInFlight.set(0)
+                    onVlmStreamIdle?.invoke()
+                }
+            }
             if (pendingUtterances.isEmpty()) {
                 abandonAudioFocus()
             }
