@@ -168,11 +168,19 @@ class MainViewModel(
         _vlmUiState.value = VlmUiState.LoadingOverview("Snapshot vorbereiten...")
         viewModelScope.launch {
             val imageSettings = vlmProfile.imageSettings
+            val pipelineRunning = _isRunning.value
             val jpeg = withContext(Dispatchers.Default) {
-                provider.getLatestJpegSnapshot(
-                    maxSidePx = imageSettings.maxSidePx,
-                    quality = imageSettings.jpegQuality
-                )
+                if (pipelineRunning) {
+                    provider.getLatestJpegSnapshot(
+                        maxSidePx = imageSettings.maxSidePx,
+                        quality = imageSettings.jpegQuality
+                    )
+                } else {
+                    provider.requestFreshJpegSnapshot(
+                        maxSidePx = imageSettings.maxSidePx,
+                        quality = imageSettings.jpegQuality
+                    )
+                }
             }
             if (jpeg == null) {
                 AppLogger.e("VLM", "Kein JPEG-Snapshot verfuegbar")

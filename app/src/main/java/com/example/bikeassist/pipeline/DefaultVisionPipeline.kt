@@ -10,10 +10,16 @@ import com.example.bikeassist.ml.Detector
 import com.example.bikeassist.processing.Preprocessor
 import com.example.bikeassist.processing.TrafficLightPhaseClassifier
 import com.example.bikeassist.util.AppLogger
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
@@ -42,6 +48,7 @@ class DefaultVisionPipeline(
     private var lastProcessedAt: Long = 0L
     private val latestBitmap = AtomicReference<Bitmap?>(null)
     private val latestBitmapUpdatedAt = AtomicLong(0L)
+    private val snapshotMutex = Mutex()
 
     private val frameListener = object : FrameListener {
         override fun onFrame(image: ImageProxy) {
@@ -100,6 +107,47 @@ class DefaultVisionPipeline(
             return null
         }
         AppLogger.d("VLM", "Snapshot requested (ageMs=$ageMs, size=${source.width}x${source.height})")
+        return compressJpeg(source, maxSidePx, quality)
+    }
+
+    override suspend fun requestFreshJpegSnapshot(
+        maxSidePx: Int,
+        quality: Int,
+        timeoutMs: Long
+    ): ByteArray? = snapshotMutex.withLock {
+        if (running) {
+            return@withLock getLatestJpegSnapshot(maxSidePx, quality)
+        }
+        val deferred = CompletableDeferred<ByteArray?>()
+        val previousListener = cameraFrameSource.frameListener
+        val oneShotListener = object : FrameListener {
+            override fun onFrame(image: ImageProxy) {
+                if (deferred.isCompleted) return
+                try {
+                    val now = System.currentTimeMillis()
+                    cameraFrameSource.lastRotationDegrees = image.imageInfo.rotationDegrees
+                    val bitmap = preprocessor.preprocess(image)
+                    latestBitmap.set(bitmap)
+                    latestBitmapUpdatedAt.set(now)
+                    deferred.complete(compressJpeg(bitmap, maxSidePx, quality))
+                } catch (ex: Exception) {
+                    deferred.complete(null)
+                }
+            }
+        }
+        withContext(Dispatchers.Main) {
+            cameraFrameSource.frameListener = oneShotListener
+            cameraFrameSource.start()
+        }
+        val result = withTimeoutOrNull(timeoutMs) { deferred.await() }
+        withContext(Dispatchers.Main) {
+            cameraFrameSource.frameListener = previousListener
+            cameraFrameSource.stop()
+        }
+        return@withLock result
+    }
+
+    private fun compressJpeg(source: Bitmap, maxSidePx: Int, quality: Int): ByteArray? {
         val safeMaxSide = maxSidePx.coerceAtLeast(256)
         val safeQuality = quality.coerceIn(30, 95)
         val scaled = scaleToMaxSide(source, safeMaxSide)
