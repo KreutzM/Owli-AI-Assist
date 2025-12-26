@@ -17,6 +17,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - VLM-Overlay zeigt das zuletzt verwendete Snapshot-Bild als Hintergrund (50% Helligkeit).
 - Neue Vorlese-Profile in `app/src/main/assets/vlm-profiles.json`.
 - Navigation Compose und Material Icons fuer die neue UI-Navigation.
+- Optionales `auto_scan`-Feld im VLM-Profil-Schema (Loader/Model).
 
 ### Changed
 - VLM-Profile auf neues Schema mit token_policy, parameter_overrides und defaults umgestellt.

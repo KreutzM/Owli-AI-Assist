@@ -211,6 +211,7 @@ object VlmProfileLoader {
         val tokenPolicy = parseTokenPolicy(obj.optJSONObject("token_policy"), defaults.tokenPolicy, obj)
         val parameterOverrides = parseParameterOverrides(obj.optJSONObject("parameter_overrides"), defaults.parameterOverrides, obj)
         val capabilities = parseCapabilities(obj.optJSONObject("capabilities"), defaults.capabilities)
+        val autoScan = parseAutoScan(obj.optJSONObject("auto_scan"))
         val streamingEnabled = if (obj.has("streaming_enabled")) {
             obj.optBoolean("streaming_enabled", defaults.streamingEnabled)
         } else {
@@ -229,7 +230,8 @@ object VlmProfileLoader {
             tokenPolicy = tokenPolicy,
             parameterOverrides = parameterOverrides,
             capabilities = capabilities,
-            streamingEnabled = streamingEnabled
+            streamingEnabled = streamingEnabled,
+            autoScan = autoScan
         )
     }
 
@@ -303,6 +305,18 @@ object VlmProfileLoader {
             supportsVision = supportsVision,
             supportsReasoning = supportsReasoning,
             supportsJson = supportsJson
+        )
+    }
+
+    private fun parseAutoScan(obj: JSONObject?): VlmAutoScanConfig? {
+        if (obj == null) return null
+        val enabledByDefault = obj.optBoolean("enabled_by_default", false)
+        val intervalMs = obj.optLong("interval_ms", 2000L)
+        val speakFreeEveryMs = obj.optLong("speak_free_every_ms", 10000L)
+        return VlmAutoScanConfig(
+            enabledByDefault = enabledByDefault,
+            intervalMs = intervalMs,
+            speakFreeEveryMs = speakFreeEveryMs
         )
     }
 

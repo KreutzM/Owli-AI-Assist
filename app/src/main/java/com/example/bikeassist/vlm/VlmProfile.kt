@@ -25,6 +25,12 @@ data class VlmParameterOverrides(
     val reasoningEffort: String? = null
 )
 
+data class VlmAutoScanConfig(
+    val enabledByDefault: Boolean = false,
+    val intervalMs: Long = 2000L,
+    val speakFreeEveryMs: Long = 10000L
+)
+
 data class VlmProfile(
     val id: String,
     val label: String,
@@ -38,5 +44,6 @@ data class VlmProfile(
     val tokenPolicy: VlmTokenPolicy,
     val parameterOverrides: VlmParameterOverrides,
     val capabilities: VlmCapabilities,
-    val streamingEnabled: Boolean = false
+    val streamingEnabled: Boolean = false,
+    val autoScan: VlmAutoScanConfig? = null
 )
