@@ -26,6 +26,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - Diagnostics nutzt jetzt LocalClipboard (suspend API) statt LocalClipboardManager.
 - Default-VLM-Profil auf nano-fast-blind gesetzt.
 - Rueck-Button schliesst Overlays, Close-Buttons wurden entfernt.
+- UI-Navigation via NavHost mit TopAppBar und Overflow-Menue eingefuehrt.
 
 ### Fixed
 - GPT-5 Reasoning-only Antworten: automatische Retries mit hoeherem Token-Budget und Final-Only Hinweis.

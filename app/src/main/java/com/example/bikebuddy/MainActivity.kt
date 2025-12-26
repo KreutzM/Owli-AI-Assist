@@ -5,7 +5,6 @@ import android.content.ClipData
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.os.Bundle
-import androidx.activity.compose.BackHandler
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -84,6 +83,9 @@ import com.example.bikeassist.vlm.VlmProfileLoader
 import com.example.bikeassist.vlm.VlmProfilesConfig
 import com.example.bikeassist.vlm.VlmUiState
 import com.example.bikebuddy.ui.theme.BikeBuddyTheme
+import com.example.bikebuddy.ui.AppTopBar
+import com.example.bikebuddy.ui.navigation.AppNavHost
+import com.example.bikebuddy.ui.navigation.AppRoute
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
@@ -92,6 +94,8 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
 
 class MainActivity : ComponentActivity() {
 
@@ -127,10 +131,6 @@ class MainActivity : ComponentActivity() {
     private var lastStreamingText = ""
     private var streamingTtsEnabled: Boolean = AppSettingsDefaults.streamingVlmTtsEnabled
     private lateinit var activeVlmProfile: VlmProfile
-    private val showSettings = mutableStateOf(false)
-    private val showDiagnostics = mutableStateOf(false)
-    private val showVlm = mutableStateOf(false)
-    private val showVlmProfiles = mutableStateOf(false)
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
@@ -157,94 +157,44 @@ class MainActivity : ComponentActivity() {
         observeSettings()
         setContent {
             BikeBuddyTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    val sceneState by mainViewModel.sceneState.collectAsState()
-                    val isRunning by mainViewModel.isRunning.collectAsState()
-                    val lastError by mainViewModel.lastError.collectAsState()
-                    val status by mainViewModel.status.collectAsState()
-                    val settings by settingsViewModel.settings.collectAsState()
-                    val vlmState by mainViewModel.vlmUiState.collectAsState()
-                    val activeVlmProfile = vlmProfilesConfig.resolve(settings.vlmProfileId)
-                    val showSettingsState = remember { showSettings }
-                    val showDiagnosticsState = remember { showDiagnostics }
-                    val showVlmState = remember { showVlm }
-                    val showVlmProfilesState = remember { showVlmProfiles }
+                val navController = rememberNavController()
+                val navBackStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = AppRoute.fromRoute(navBackStackEntry?.destination?.route)
+                val canNavigateBack = navController.previousBackStackEntry != null
 
-                    BackHandler(
-                        enabled = showVlmProfilesState.value ||
-                            showVlmState.value ||
-                            showDiagnosticsState.value ||
-                            showSettingsState.value
-                    ) {
-                        when {
-                            showVlmProfilesState.value -> showVlmProfilesState.value = false
-                            showVlmState.value -> {
-                                showVlmState.value = false
-                                mainViewModel.closeVlm()
+                Scaffold(
+                    modifier = Modifier.fillMaxSize(),
+                    topBar = {
+                        AppTopBar(
+                            title = currentRoute.title,
+                            canNavigateBack = canNavigateBack,
+                            showVlmAction = currentRoute == AppRoute.Home,
+                            onNavigateBack = { navController.popBackStack() },
+                            onOpenVlm = {
+                                navController.navigate(AppRoute.Vlm.route) { launchSingleTop = true }
+                            },
+                            onOpenSettings = {
+                                navController.navigate(AppRoute.Settings.route) { launchSingleTop = true }
+                            },
+                            onOpenDiagnostics = {
+                                navController.navigate(AppRoute.Diagnostics.route) { launchSingleTop = true }
+                            },
+                            onOpenAbout = {
+                                navController.navigate(AppRoute.About.route) { launchSingleTop = true }
                             }
-                            showDiagnosticsState.value -> showDiagnosticsState.value = false
-                            showSettingsState.value -> showSettingsState.value = false
-                        }
+                        )
                     }
-
-                    DemoScreen(
-                        isRunning = isRunning,
-                        sceneMessage = sceneState?.primaryMessage,
-                        detections = sceneState?.detections.orEmpty(),
-                        lastError = lastError,
-                        statusMessage = status,
-                        detectionsCount = sceneState?.detections?.size ?: 0,
-                        hazardLevel = sceneState?.overallHazardLevel?.name ?: "NONE",
-                        trafficLights = sceneState?.trafficLights.orEmpty(),
-                        blindViewPreview = if (settings.showBlindViewPreview) sceneState?.blindViewUtterancePreview else null,
-                        showOverlay = settings.showOverlay,
-                        showLabels = settings.showOverlayLabels,
-                        onStart = { onUserStart() },
-                        onStop = { onUserStop() },
-                        onOpenSettings = { showSettingsState.value = true },
-                        onOpenDiagnostics = { showDiagnosticsState.value = true },
-                        onOpenVlm = {
-                            showVlmState.value = true
-                            mainViewModel.enterVlmMode()
-                        },
+                ) { innerPadding ->
+                    AppNavHost(
+                        navController = navController,
+                        contentPadding = innerPadding,
+                        mainViewModel = mainViewModel,
+                        settingsViewModel = settingsViewModel,
                         cameraFrameSource = cameraFrameSource,
-                        rotationDegrees = cameraFrameSource.lastRotationDegrees,
-                        modifier = Modifier.padding(innerPadding)
+                        vlmProfilesConfig = vlmProfilesConfig,
+                        onStart = { onUserStart() },
+                        onStop = { onUserStop() }
                     )
-
-                    if (showSettingsState.value) {
-                        SettingsScreen(
-                            settings = settings,
-                            activeVlmProfileLabel = activeVlmProfile.label,
-                            onOpenVlmProfiles = { showVlmProfilesState.value = true },
-                            onUpdate = { update -> settingsViewModel.update { update(it) } },
-                            onReset = { settingsViewModel.reset() }
-                        )
-                    }
-                    if (showDiagnosticsState.value) {
-                        DiagnosticsScreen(
-                            settings = settings
-                        )
-                    }
-                    if (showVlmState.value) {
-                        VlmOverlay(
-                            state = vlmState,
-                            onNewScene = { mainViewModel.enterVlmMode() },
-                            onAsk = { question -> mainViewModel.askVlm(question) }
-                        )
-                    }
-                    if (showVlmProfilesState.value) {
-                        VlmProfileScreen(
-                            profiles = vlmProfilesConfig.profiles,
-                            activeProfileId = activeVlmProfile.id,
-                            onSelect = { profile ->
-                                settingsViewModel.update {
-                                    it.copy(vlmProfileId = profile.id, vlmProfileIdUserSet = true)
-                                }
-                                showVlmProfilesState.value = false
-                            }
-                        )
-                    }
                 }
             }
         }
