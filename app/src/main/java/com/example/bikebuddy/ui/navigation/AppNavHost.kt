@@ -39,6 +39,7 @@ fun AppNavHost(
     val status by mainViewModel.status.collectAsState()
     val settings by settingsViewModel.settings.collectAsState()
     val vlmState by mainViewModel.vlmUiState.collectAsState()
+    val isAutoScanRunning by mainViewModel.isAutoScanRunning.collectAsState()
     val activeVlmProfile = vlmProfilesConfig.resolve(settings.vlmProfileId)
 
     NavHost(
@@ -87,9 +88,13 @@ fun AppNavHost(
             }
             VlmScreen(
                 state = vlmState,
-                onNewScene = { mainViewModel.enterVlmMode() },
+                onNewScene = { mainViewModel.requestNewScene() },
                 onAsk = { question -> mainViewModel.askVlm(question) },
-                cameraFrameSource = cameraFrameSource
+                cameraFrameSource = cameraFrameSource,
+                autoScanAvailable = activeVlmProfile.autoScan != null,
+                isAutoScanRunning = isAutoScanRunning,
+                onStartAutoScan = { mainViewModel.startAutoScan() },
+                onStopAutoScan = { mainViewModel.stopAutoScan() }
             )
         }
         composable(AppRoute.VlmProfiles.route) {

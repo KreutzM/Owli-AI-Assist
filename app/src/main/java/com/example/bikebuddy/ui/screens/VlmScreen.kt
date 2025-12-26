@@ -6,9 +6,11 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.weight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
@@ -41,7 +43,11 @@ fun VlmScreen(
     state: VlmUiState,
     onNewScene: () -> Unit,
     onAsk: (String) -> Unit,
-    cameraFrameSource: CameraFrameSource
+    cameraFrameSource: CameraFrameSource,
+    autoScanAvailable: Boolean,
+    isAutoScanRunning: Boolean,
+    onStartAutoScan: () -> Unit,
+    onStopAutoScan: () -> Unit
 ) {
     val scrollState = rememberScrollState()
     val isBusy = state is VlmUiState.LoadingOverview || state is VlmUiState.Asking
@@ -85,7 +91,28 @@ fun VlmScreen(
                 .verticalScroll(scrollState),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Button(onClick = onNewScene, enabled = !isBusy) { Text("Neue Szene") }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Button(onClick = onNewScene, enabled = !isBusy) { Text("Neue Szene") }
+                Spacer(modifier = Modifier.weight(1f))
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Button(
+                        onClick = onStartAutoScan,
+                        enabled = autoScanAvailable && !isAutoScanRunning
+                    ) {
+                        Text("Start")
+                    }
+                    Button(
+                        onClick = onStopAutoScan,
+                        enabled = isAutoScanRunning
+                    ) {
+                        Text("Stop")
+                    }
+                }
+            }
             when (state) {
                 is VlmUiState.Inactive -> {
                     Text("Bereit. Tippe auf 'Neue Szene'.")
