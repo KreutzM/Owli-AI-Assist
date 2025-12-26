@@ -28,6 +28,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - Rueck-Button schliesst Overlays, Close-Buttons wurden entfernt.
 - UI-Navigation via NavHost mit TopAppBar und Overflow-Menue eingefuehrt.
 - Screens in eigene Dateien migriert (Home/Settings/Diagnostics/VLM/Profiles/About), Home-Controls reduziert.
+- Home-Buttons fuer Settings/Diag/VLM entfernt (Zugriff ueber TopAppBar).
 
 ### Fixed
 - GPT-5 Reasoning-only Antworten: automatische Retries mit hoeherem Token-Budget und Final-Only Hinweis.
