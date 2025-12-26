@@ -2,7 +2,6 @@ package com.example.bikebuddy.ui.navigation
 
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -16,10 +15,12 @@ import com.example.bikeassist.camera.CameraFrameSource
 import com.example.bikeassist.settings.SettingsViewModel
 import com.example.bikeassist.ui.MainViewModel
 import com.example.bikeassist.vlm.VlmProfilesConfig
-import com.example.bikebuddy.DemoScreen
-import com.example.bikebuddy.DiagnosticsScreen
-import com.example.bikebuddy.SettingsScreen
-import com.example.bikebuddy.VlmOverlay
+import com.example.bikebuddy.ui.screens.AboutScreen
+import com.example.bikebuddy.ui.screens.DiagnosticsScreen
+import com.example.bikebuddy.ui.screens.HomeScreen
+import com.example.bikebuddy.ui.screens.SettingsScreen
+import com.example.bikebuddy.ui.screens.VlmProfilesScreen
+import com.example.bikebuddy.ui.screens.VlmScreen
 
 @Composable
 fun AppNavHost(
@@ -46,7 +47,7 @@ fun AppNavHost(
         modifier = Modifier.padding(contentPadding)
     ) {
         composable(AppRoute.Home.route) {
-            DemoScreen(
+            HomeScreen(
                 isRunning = isRunning,
                 sceneMessage = sceneState?.primaryMessage,
                 detections = sceneState?.detections.orEmpty(),
@@ -60,9 +61,6 @@ fun AppNavHost(
                 showLabels = settings.showOverlayLabels,
                 onStart = onStart,
                 onStop = onStop,
-                onOpenSettings = { navController.navigate(AppRoute.Settings.route) },
-                onOpenDiagnostics = { navController.navigate(AppRoute.Diagnostics.route) },
-                onOpenVlm = { navController.navigate(AppRoute.Vlm.route) },
                 cameraFrameSource = cameraFrameSource,
                 rotationDegrees = cameraFrameSource.lastRotationDegrees,
                 modifier = Modifier
@@ -87,14 +85,14 @@ fun AppNavHost(
             DisposableEffect(Unit) {
                 onDispose { mainViewModel.closeVlm() }
             }
-            VlmOverlay(
+            VlmScreen(
                 state = vlmState,
                 onNewScene = { mainViewModel.enterVlmMode() },
                 onAsk = { question -> mainViewModel.askVlm(question) }
             )
         }
         composable(AppRoute.VlmProfiles.route) {
-            com.example.bikebuddy.VlmProfileScreen(
+            VlmProfilesScreen(
                 profiles = vlmProfilesConfig.profiles,
                 activeProfileId = activeVlmProfile.id,
                 onSelect = { profile ->
@@ -106,7 +104,7 @@ fun AppNavHost(
             )
         }
         composable(AppRoute.About.route) {
-            Text("About")
+            AboutScreen()
         }
     }
 }

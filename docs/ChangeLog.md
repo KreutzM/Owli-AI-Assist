@@ -27,6 +27,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - Default-VLM-Profil auf nano-fast-blind gesetzt.
 - Rueck-Button schliesst Overlays, Close-Buttons wurden entfernt.
 - UI-Navigation via NavHost mit TopAppBar und Overflow-Menue eingefuehrt.
+- Screens in eigene Dateien migriert (Home/Settings/Diagnostics/VLM/Profiles/About), Home-Controls reduziert.
 
 ### Fixed
 - GPT-5 Reasoning-only Antworten: automatische Retries mit hoeherem Token-Budget und Final-Only Hinweis.
