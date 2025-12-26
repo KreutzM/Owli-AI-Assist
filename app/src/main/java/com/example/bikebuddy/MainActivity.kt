@@ -5,6 +5,7 @@ import android.content.ClipData
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
 import android.os.Bundle
+import androidx.activity.compose.BackHandler
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -165,8 +166,26 @@ class MainActivity : ComponentActivity() {
                     val vlmState by mainViewModel.vlmUiState.collectAsState()
                     val activeVlmProfile = vlmProfilesConfig.resolve(settings.vlmProfileId)
                     val showSettingsState = remember { showSettings }
+                    val showDiagnosticsState = remember { showDiagnostics }
                     val showVlmState = remember { showVlm }
                     val showVlmProfilesState = remember { showVlmProfiles }
+
+                    BackHandler(
+                        enabled = showVlmProfilesState.value ||
+                            showVlmState.value ||
+                            showDiagnosticsState.value ||
+                            showSettingsState.value
+                    ) {
+                        when {
+                            showVlmProfilesState.value -> showVlmProfilesState.value = false
+                            showVlmState.value -> {
+                                showVlmState.value = false
+                                mainViewModel.closeVlm()
+                            }
+                            showDiagnosticsState.value -> showDiagnosticsState.value = false
+                            showSettingsState.value -> showSettingsState.value = false
+                        }
+                    }
 
                     DemoScreen(
                         isRunning = isRunning,
@@ -183,7 +202,7 @@ class MainActivity : ComponentActivity() {
                         onStart = { onUserStart() },
                         onStop = { onUserStop() },
                         onOpenSettings = { showSettingsState.value = true },
-                        onOpenDiagnostics = { showDiagnostics.value = true },
+                        onOpenDiagnostics = { showDiagnosticsState.value = true },
                         onOpenVlm = {
                             showVlmState.value = true
                             mainViewModel.enterVlmMode()
@@ -199,25 +218,19 @@ class MainActivity : ComponentActivity() {
                             activeVlmProfileLabel = activeVlmProfile.label,
                             onOpenVlmProfiles = { showVlmProfilesState.value = true },
                             onUpdate = { update -> settingsViewModel.update { update(it) } },
-                            onClose = { showSettingsState.value = false },
                             onReset = { settingsViewModel.reset() }
                         )
                     }
-                    if (showDiagnostics.value) {
+                    if (showDiagnosticsState.value) {
                         DiagnosticsScreen(
-                            settings = settings,
-                            onClose = { showDiagnostics.value = false }
+                            settings = settings
                         )
                     }
                     if (showVlmState.value) {
                         VlmOverlay(
                             state = vlmState,
                             onNewScene = { mainViewModel.enterVlmMode() },
-                            onAsk = { question -> mainViewModel.askVlm(question) },
-                            onClose = {
-                                showVlmState.value = false
-                                mainViewModel.closeVlm()
-                            }
+                            onAsk = { question -> mainViewModel.askVlm(question) }
                         )
                     }
                     if (showVlmProfilesState.value) {
@@ -229,8 +242,7 @@ class MainActivity : ComponentActivity() {
                                     it.copy(vlmProfileId = profile.id, vlmProfileIdUserSet = true)
                                 }
                                 showVlmProfilesState.value = false
-                            },
-                            onClose = { showVlmProfilesState.value = false }
+                            }
                         )
                     }
                 }
@@ -706,7 +718,6 @@ fun SettingsScreen(
     activeVlmProfileLabel: String,
     onOpenVlmProfiles: () -> Unit,
     onUpdate: (((AppSettings) -> AppSettings)) -> Unit,
-    onClose: () -> Unit,
     onReset: () -> Unit
 ) {
     Scaffold(
@@ -721,7 +732,6 @@ fun SettingsScreen(
                 Text("Einstellungen", style = MaterialTheme.typography.titleMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                     Button(onClick = onReset) { Text("Reset") }
-                    Button(onClick = onClose) { Text("Schliessen") }
                 }
             }
         }
@@ -872,8 +882,7 @@ fun SettingsScreen(
 fun VlmProfileScreen(
     profiles: List<VlmProfile>,
     activeProfileId: String,
-    onSelect: (VlmProfile) -> Unit,
-    onClose: () -> Unit
+    onSelect: (VlmProfile) -> Unit
 ) {
     Scaffold(
         topBar = {
@@ -885,7 +894,6 @@ fun VlmProfileScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text("VLM Profile", style = MaterialTheme.typography.titleMedium)
-                Button(onClick = onClose) { Text("Schliessen") }
             }
         }
     ) { innerPadding ->
@@ -988,8 +996,7 @@ private fun SettingSwitch(
 
 @Composable
 fun DiagnosticsScreen(
-    settings: AppSettings,
-    onClose: () -> Unit
+    settings: AppSettings
 ) {
     val context = LocalContext.current
     val clipboard = LocalClipboard.current
@@ -1015,7 +1022,6 @@ fun DiagnosticsScreen(
                         }
                         Toast.makeText(context, "Debug Report kopiert", Toast.LENGTH_SHORT).show()
                     }) { Text("Copy") }
-                    Button(onClick = onClose) { Text("Schließen") }
                 }
             }
         }
@@ -1060,8 +1066,7 @@ fun DiagnosticsScreen(
 fun VlmOverlay(
     state: VlmUiState,
     onNewScene: () -> Unit,
-    onAsk: (String) -> Unit,
-    onClose: () -> Unit
+    onAsk: (String) -> Unit
 ) {
     val scrollState = rememberScrollState()
     val isBusy = state is VlmUiState.LoadingOverview || state is VlmUiState.Asking
@@ -1094,7 +1099,6 @@ fun VlmOverlay(
                 Text("VLM", style = MaterialTheme.typography.titleMedium)
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(onClick = onNewScene, enabled = !isBusy) { Text("Neue Szene") }
-                    Button(onClick = onClose) { Text("Schliessen") }
                 }
             }
         }

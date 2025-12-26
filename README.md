@@ -46,8 +46,9 @@ BikeBuddy ist eine Android-Demo-App fuer ein Fahrrad-Assistenzsystem mit On-Devi
 5. BlindView-Preview zeigt die aktuelle Ansage (Debug).
 6. Settings (Button) oeffnen -> Parameter anpassen; Reset setzt Defaults.
 7. Diagnostics (Button) oeffnen -> Status ansehen, Report kopieren.
-8. Stop-Button -> Pipeline stoppt, Overlay/State wird zurueckgesetzt.
-9. VLM -> Profil auswaehlen (Settings), Szene beschreiben lassen, Follow-up fragen.
+8. Rueck-Button schliesst Unterfenster (Settings/Diag/VLM); App-Ende erst im Hauptfenster.
+9. Stop-Button -> Pipeline stoppt, Overlay/State wird zurueckgesetzt.
+10. VLM -> Profil auswaehlen (Settings), Szene beschreiben lassen, Follow-up fragen.
 
 ## Konfiguration
 - Settings via DataStore (persistiert): Detector/Tracking/BlindView/TTS/Debug/Pipeline-Intervall; Reset im Settings-Screen

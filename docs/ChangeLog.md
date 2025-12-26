@@ -24,6 +24,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - On-Device TTS wird bei aktivem VLM-Streaming unterdrueckt (Warnungen werden verworfen).
 - Diagnostics nutzt jetzt LocalClipboard (suspend API) statt LocalClipboardManager.
 - Default-VLM-Profil auf nano-fast-blind gesetzt.
+- Rueck-Button schliesst Overlays, Close-Buttons wurden entfernt.
 
 ### Fixed
 - GPT-5 Reasoning-only Antworten: automatische Retries mit hoeherem Token-Budget und Final-Only Hinweis.
