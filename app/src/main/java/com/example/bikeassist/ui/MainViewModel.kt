@@ -150,6 +150,10 @@ class MainViewModel(
     }
 
     fun enterVlmMode() {
+        requestNewScene()
+    }
+
+    fun requestNewScene() {
         AppLogger.i(
             "VLM",
             "enterVlmMode started profile=${vlmProfile.id} model=${vlmProfile.modelId} " +
