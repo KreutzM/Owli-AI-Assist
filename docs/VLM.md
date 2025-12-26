@@ -58,6 +58,7 @@ Die Datei enthaelt globale Defaults und eine Liste von Profilen:
 - `streaming_enabled`: optional, aktiviert SSE-Streaming im VLM-Mode
 - `parameter_overrides`: z.B. `temperature`
 - `capabilities`: `supports_vision`, `supports_reasoning`, `supports_json`
+- `auto_scan`: optional, aktiviert Autoscan-Controls im VLM-Screen (`enabled_by_default`, `interval_ms`, `speak_free_every_ms`)
 
 ## 3) Policy-Familien
 
@@ -92,7 +93,13 @@ Wenn `streaming_enabled=true`, werden Antworten per SSE gestreamt:
 - Abschluss kommt mit `onComplete` (finaler Text + usage/finish_reason).
 Wenn Streaming aus ist, verhaelt sich die App wie bisher.
 
-## 5) Response-Parsing
+## 7) Autoscan (optional)
+
+Wenn ein Profil `auto_scan` setzt, zeigt der VLM-Screen Start/Stop an und triggert
+periodisch denselben "Neue Szene"-Pfad. Autoscan startet nie automatisch, auch wenn
+`enabled_by_default=true`. `speak_free_every_ms` wird aktuell nur gespeichert.
+
+## 8) Response-Parsing
 
 - `finalAnswer` kommt **nur** aus `message.content` (oder kompatiblen Feldern wie
   `message.output_text`).
@@ -100,7 +107,7 @@ Wenn Streaming aus ist, verhaelt sich die App wie bisher.
 - UI/TTS verwenden ausschliesslich `finalAnswer`.
 - `usage` (prompt/completion/reasoning Tokens) wird geloggt.
 
-## 7) Neue Modelle hinzufuegen
+## 9) Neue Modelle hinzufuegen
 
 1. Profil in `vlm-profiles.json` ergaenzen (neue `id`, `model_id`).
 2. Optional `family`, `token_policy`, `parameter_overrides` definieren.

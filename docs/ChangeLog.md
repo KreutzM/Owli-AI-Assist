@@ -35,6 +35,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - Home-Buttons fuer Settings/Diag/VLM entfernt (Zugriff ueber TopAppBar).
 - VLM: Neue Szene-Trigger in `MainViewModel.requestNewScene()` zentralisiert.
 - VLM: Neue Szene-Requests werden vor Parallelzugriffen geschuetzt.
+- Doku: VLM-Autoscan in `docs/VLM.md`, `docs/VLM-Mode.md` und `README.md` beschrieben.
 
 ### Fixed
 - GPT-5 Reasoning-only Antworten: automatische Retries mit hoeherem Token-Budget und Final-Only Hinweis.

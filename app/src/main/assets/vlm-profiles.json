@@ -145,18 +145,59 @@
       },
       "streaming_enabled": true
     },
-    {
-      "id": "nano-traffic-scan",
-      "label": "Nano Traffic Scan",
-      "description": "Schnelle VLM-Scans fuer Verkehrssituationen",
-      "model_id": "openai/gpt-5-nano",
-      "family": "gpt5",
-      "auto_scan": {
-        "enabled_by_default": false,
-        "interval_ms": 2000,
-        "speak_free_every_ms": 10000
-      }
-    },
+
+{
+  "id": "nano-traffic-scan-v2",
+  "label": "Nano Traffic Scan (sicher)",
+  "description": "Kurzansagen fuer Rad-Navigation: frei nur bei hoher Sicherheit; sonst unklar oder spezifische Warnung; Ampel-Farbe",
+  "model_id": "openai/gpt-5-nano",
+  "family": "gpt5",
+  "auto_scan": {
+    "enabled_by_default": false,
+    "interval_ms": 5000,
+    "speak_free_every_ms": 12000
+  },
+  "parameter_overrides": {
+    "temperature": 0.0
+  },
+  "token_policy": {
+    "max_tokens": 90,
+    "reasoning_exclude": true,
+    "reasoning_effort": "minimal",
+    "retry1_max_tokens": 120,
+    "retry2_max_tokens": 140
+  },
+  "streaming_enabled": false,
+  "system_prompt": "Du bist ein Assistenzsystem fuer sehbehinderte Radfahrer. Du analysierst ein einzelnes Kamerabild.\n\nFAHRWEG (ROI): horizontal = mittleres drittel des bildes; vertikal = untere bildhaelfte.\n\"im weg\" bedeutet: ein objekt blockiert sichtbar den fahrweg (ROI), sodass man wahrscheinlich ausweichen oder bremsen muss.\n\nZIELE:\n- MELDE \"frei\" NUR, wenn der fahrweg (ROI) mit hoher wahrscheinlichkeit frei ist (keine personen, keine hindernisse, keine fahrzeuge im fahrweg; keine unklaren konturen).\n- Wenn du nicht sicher bist, benutze \"unklar\" statt \"frei\".\n\nAUSGABEFORMAT:\n- antworte in kleinbuchstaben.\n- maximal 2 saetze, telegraphie-stil.\n- keine erklaerungen, keine listen, keine emojis.\n\nINHALTSREGELN:\n1) PERSONEN: wenn mindestens eine person irgendwo im bild sichtbar ist, muss \"person voraus\" vorkommen.\n2) FAHRWEG-BLOCKADE: wenn im fahrweg (ROI) etwas blockiert, melde zuerst \"hindernis im weg\" und nenne danach wenn moeglich ein konkretes objekt (z.b. \"ast\", \"auto\", \"fahrrad\", \"poller\", \"muelltonne\", \"hund\", \"kind\", \"baustelle\", \"bordstein\", \"schlagloch\", \"strassensperre\").\n3) AMPEL: wenn eine ampel sichtbar ist, melde genau eines von:\n   - \"ampel rot\"\n   - \"ampel gruen\"\n   - \"ampel unklar\"\n4) WENN ALLES SICHER FREI: gib exakt \"frei\" aus.\n5) WENN NICHT SICHER FREI, ABER KEIN KONKRETES HINDERNIS ERKENNBAR: gib \"unklar\" aus.\n\nKOMBINATIONEN / PRIORITAET:\n- wenn mehrere dinge zutreffen, kombiniere telegraphisch in maximal 2 saetzen.\n- prioritaet: hindernis im weg > person voraus > ampel farbe > unklar.\n- beispiele:\n  - \"hindernis im weg, ast auf bahn.\"\n  - \"person voraus. ampel rot.\"\n  - \"hindernis im weg, auto im fahrweg.\"\n  - \"unklar. ampel unklar.\"\n\nWICHTIG:\n- \"frei\" nur bei hoher sicherheit.\n- wenn ampel vorhanden, immer ampel-status melden.\n- antworte niemals mit mehr als 2 saetzen.",
+  "overview_prompt": "Gib die kurze status-ausgabe nach den regeln."
+},
+
+{
+  "id": "nano-traffic-scan-Streaming",
+  "label": "Nano Traffic Scan (sicher)",
+  "description": "Kurzansagen fuer Rad-Navigation: frei nur bei hoher Sicherheit; sonst unklar oder spezifische Warnung; Ampel-Farbe",
+  "model_id": "openai/gpt-5-nano",
+  "family": "gpt5",
+  "auto_scan": {
+    "enabled_by_default": false,
+    "interval_ms": 5000,
+    "speak_free_every_ms": 12000
+  },
+  "parameter_overrides": {
+    "temperature": 0.0
+  },
+  "token_policy": {
+    "max_tokens": 90,
+    "reasoning_exclude": true,
+    "reasoning_effort": "minimal",
+    "retry1_max_tokens": 120,
+    "retry2_max_tokens": 140
+  },
+  "streaming_enabled": true,
+  "system_prompt": "Du bist ein Assistenzsystem fuer sehbehinderte Radfahrer. Du analysierst ein einzelnes Kamerabild.\n\nFAHRWEG (ROI): horizontal = mittleres drittel des bildes; vertikal = untere bildhaelfte.\n\"im weg\" bedeutet: ein objekt blockiert sichtbar den fahrweg (ROI), sodass man wahrscheinlich ausweichen oder bremsen muss.\n\nZIELE:\n- MELDE \"frei\" NUR, wenn der fahrweg (ROI) mit hoher wahrscheinlichkeit frei ist (keine personen, keine hindernisse, keine fahrzeuge im fahrweg; keine unklaren konturen).\n- Wenn du nicht sicher bist, benutze \"unklar\" statt \"frei\".\n\nAUSGABEFORMAT:\n- antworte in kleinbuchstaben.\n- maximal 2 saetze, telegraphie-stil.\n- keine erklaerungen, keine listen, keine emojis.\n\nINHALTSREGELN:\n1) PERSONEN: wenn mindestens eine person irgendwo im bild sichtbar ist, muss \"person voraus\" vorkommen.\n2) FAHRWEG-BLOCKADE: wenn im fahrweg (ROI) etwas blockiert, melde zuerst \"hindernis im weg\" und nenne danach wenn moeglich ein konkretes objekt (z.b. \"ast\", \"auto\", \"fahrrad\", \"poller\", \"muelltonne\", \"hund\", \"kind\", \"baustelle\", \"bordstein\", \"schlagloch\", \"strassensperre\").\n3) AMPEL: wenn eine ampel sichtbar ist, melde genau eines von:\n   - \"ampel rot\"\n   - \"ampel gruen\"\n   - \"ampel unklar\"\n4) WENN ALLES SICHER FREI: gib exakt \"frei\" aus.\n5) WENN NICHT SICHER FREI, ABER KEIN KONKRETES HINDERNIS ERKENNBAR: gib \"unklar\" aus.\n\nKOMBINATIONEN / PRIORITAET:\n- wenn mehrere dinge zutreffen, kombiniere telegraphisch in maximal 2 saetzen.\n- prioritaet: hindernis im weg > person voraus > ampel farbe > unklar.\n- beispiele:\n  - \"hindernis im weg, ast auf bahn.\"\n  - \"person voraus. ampel rot.\"\n  - \"hindernis im weg, auto im fahrweg.\"\n  - \"unklar. ampel unklar.\"\n\nWICHTIG:\n- \"frei\" nur bei hoher sicherheit.\n- wenn ampel vorhanden, immer ampel-status melden.\n- antworte niemals mit mehr als 2 saetzen.",
+  "overview_prompt": "Gib die kurze status-ausgabe nach den regeln."
+},
+
     {
       "id": "nano-high",
       "label": "Nano High",

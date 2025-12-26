@@ -11,6 +11,11 @@
 3. Antwort als Freitext anzeigen (Raw-Debug-Mode).
 4. Follow-up "Frage stellen" nutzt dieselbe Session-History.
 
+## Autoscan (optional)
+- Wenn das aktive Profil `auto_scan` definiert, zeigt der VLM-Screen Start/Stop.
+- Start triggert periodisch denselben "Neue Szene"-Pfad (kein Parallel-Request).
+- Stop wird beim Verlassen des VLM-Screens automatisch ausgefuehrt.
+
 ## JSON-Schema (Antwort)
 Der JSON-Modus ist aktuell deaktiviert. Das Schema bleibt fuer eine spaetere Reaktivierung vorgesehen.
 
