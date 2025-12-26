@@ -146,6 +146,18 @@
       "streaming_enabled": true
     },
     {
+      "id": "nano-traffic-scan",
+      "label": "Nano Traffic Scan",
+      "description": "Schnelle VLM-Scans fuer Verkehrssituationen",
+      "model_id": "openai/gpt-5-nano",
+      "family": "gpt5",
+      "auto_scan": {
+        "enabled_by_default": false,
+        "interval_ms": 2000,
+        "speak_free_every_ms": 10000
+      }
+    },
+    {
       "id": "nano-high",
       "label": "Nano High",
       "description": "Reasoning medium, detailreicher",

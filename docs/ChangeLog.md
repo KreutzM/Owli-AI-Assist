@@ -20,6 +20,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - Optionales `auto_scan`-Feld im VLM-Profil-Schema (Loader/Model).
 - VLM Autoscan-Status + Timer-Job im `MainViewModel`.
 - VLM-Screen zeigt Autoscan Start/Stop Controls.
+- Beispielprofil `nano-traffic-scan` mit `auto_scan` in `vlm-profiles.json`.
 
 ### Changed
 - VLM-Profile auf neues Schema mit token_policy, parameter_overrides und defaults umgestellt.
