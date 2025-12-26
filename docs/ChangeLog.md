@@ -18,6 +18,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - Neue Vorlese-Profile in `app/src/main/assets/vlm-profiles.json`.
 - Navigation Compose und Material Icons fuer die neue UI-Navigation.
 - Optionales `auto_scan`-Feld im VLM-Profil-Schema (Loader/Model).
+- VLM Autoscan-Status + Timer-Job im `MainViewModel`.
 
 ### Changed
 - VLM-Profile auf neues Schema mit token_policy, parameter_overrides und defaults umgestellt.
@@ -31,6 +32,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - Screens in eigene Dateien migriert (Home/Settings/Diagnostics/VLM/Profiles/About), Home-Controls reduziert.
 - Home-Buttons fuer Settings/Diag/VLM entfernt (Zugriff ueber TopAppBar).
 - VLM: Neue Szene-Trigger in `MainViewModel.requestNewScene()` zentralisiert.
+- VLM: Neue Szene-Requests werden vor Parallelzugriffen geschuetzt.
 
 ### Fixed
 - GPT-5 Reasoning-only Antworten: automatische Retries mit hoeherem Token-Budget und Final-Only Hinweis.

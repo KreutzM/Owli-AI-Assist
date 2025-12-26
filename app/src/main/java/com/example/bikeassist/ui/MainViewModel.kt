@@ -24,8 +24,11 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.util.concurrent.atomic.AtomicBoolean
 
 class MainViewModel(
     detectorInfo: String = "",
@@ -52,6 +55,9 @@ class MainViewModel(
     private val _vlmUiState = MutableStateFlow<VlmUiState>(VlmUiState.Inactive)
     val vlmUiState: StateFlow<VlmUiState> = _vlmUiState
 
+    private val _isAutoScanRunning = MutableStateFlow(false)
+    val isAutoScanRunning: StateFlow<Boolean> = _isAutoScanRunning
+
     private var collectJob: Job? = null
     private var pipeline: VisionPipeline? = null
     private var snapshotProvider: SnapshotProvider? = null
@@ -62,6 +68,8 @@ class MainViewModel(
     private var vlmOverviewPrompt: String = VlmConfig.DEFAULT_OVERVIEW_PROMPT
     private var vlmProfile: VlmProfile = VlmProfileLoader.fallbackProfiles().first()
     private val useStructuredVlmParsing = false
+    private var autoScanJob: Job? = null
+    private val vlmRequestInFlight = AtomicBoolean(false)
 
     fun setPipeline(handle: VisionPipelineHandle) {
         // stop old pipeline if running
@@ -154,6 +162,59 @@ class MainViewModel(
     }
 
     fun requestNewScene() {
+        if (isVlmBusy()) {
+            AppLogger.d("VLM", "Neue Szene uebersprungen: VLM ist beschaeftigt")
+            return
+        }
+        if (!vlmRequestInFlight.compareAndSet(false, true)) {
+            AppLogger.d("VLM", "Neue Szene uebersprungen: Request bereits aktiv")
+            return
+        }
+        viewModelScope.launch {
+            try {
+                performNewSceneRequest()
+            } finally {
+                vlmRequestInFlight.set(false)
+            }
+        }
+    }
+
+    fun startAutoScan() {
+        val autoScan = vlmProfile.autoScan ?: run {
+            AppLogger.w("VLM", "Autoscan angefordert, aber Profil hat kein auto_scan")
+            return
+        }
+        if (autoScanJob?.isActive == true) return
+        val intervalMs = autoScan.intervalMs.takeIf { it > 0 } ?: 2000L
+        _isAutoScanRunning.value = true
+        autoScanJob = viewModelScope.launch {
+            try {
+                while (isActive) {
+                    requestNewScene()
+                    delay(intervalMs)
+                }
+            } finally {
+                _isAutoScanRunning.value = false
+            }
+        }
+    }
+
+    fun stopAutoScan() {
+        autoScanJob?.cancel()
+        autoScanJob = null
+        _isAutoScanRunning.value = false
+    }
+
+    private fun isVlmBusy(): Boolean {
+        return when (_vlmUiState.value) {
+            is VlmUiState.LoadingOverview,
+            is VlmUiState.Asking,
+            is VlmUiState.Streaming -> true
+            else -> false
+        }
+    }
+
+    private suspend fun performNewSceneRequest() {
         AppLogger.i(
             "VLM",
             "enterVlmMode started profile=${vlmProfile.id} model=${vlmProfile.modelId} " +
@@ -170,123 +231,121 @@ class MainViewModel(
             return
         }
         _vlmUiState.value = VlmUiState.LoadingOverview("Snapshot vorbereiten...")
-        viewModelScope.launch {
-            val imageSettings = vlmProfile.imageSettings
-            val pipelineRunning = _isRunning.value
-            val jpeg = withContext(Dispatchers.Default) {
-                if (pipelineRunning) {
-                    provider.getLatestJpegSnapshot(
-                        maxSidePx = imageSettings.maxSidePx,
-                        quality = imageSettings.jpegQuality
-                    )
-                } else {
-                    provider.requestFreshJpegSnapshot(
-                        maxSidePx = imageSettings.maxSidePx,
-                        quality = imageSettings.jpegQuality
-                    )
-                }
+        val imageSettings = vlmProfile.imageSettings
+        val pipelineRunning = _isRunning.value
+        val jpeg = withContext(Dispatchers.Default) {
+            if (pipelineRunning) {
+                provider.getLatestJpegSnapshot(
+                    maxSidePx = imageSettings.maxSidePx,
+                    quality = imageSettings.jpegQuality
+                )
+            } else {
+                provider.requestFreshJpegSnapshot(
+                    maxSidePx = imageSettings.maxSidePx,
+                    quality = imageSettings.jpegQuality
+                )
             }
-            if (jpeg == null) {
-                AppLogger.e("VLM", "Kein JPEG-Snapshot verfuegbar")
-                _vlmUiState.value = VlmUiState.Error("Kein Kamerabild verfuegbar.")
-                return@launch
-            }
-            _vlmUiState.value = VlmUiState.LoadingOverview("VLM anfragen...", snapshotBytes = jpeg)
-            val session = VlmSession(snapshotBytes = jpeg, messageHistory = mutableListOf())
-            val messages = buildOverviewMessages(session)
-            try {
-                val result = if (vlmProfile.streamingEnabled && !useStructuredVlmParsing) {
-                    val buffer = StringBuilder()
-                    val callback = object : VlmStreamingCallback {
-                        override fun onDelta(textDelta: String) {
-                            if (textDelta.isBlank()) return
-                            buffer.append(textDelta)
-                            _vlmUiState.value = VlmUiState.Streaming(
-                                partialText = buffer.toString(),
-                                updatedAt = System.currentTimeMillis(),
-                                snapshotBytes = jpeg
-                            )
-                        }
-
-                        override fun onComplete(
-                            finalText: String,
-                            usage: com.example.bikeassist.vlm.VlmUsage?,
-                            finishReason: String?,
-                            nativeFinishReason: String?
-                        ) = Unit
-
-                        override fun onError(error: Throwable) {
-                            AppLogger.e(error, "VLM: Streaming error (Overview)")
-                        }
+        }
+        if (jpeg == null) {
+            AppLogger.e("VLM", "Kein JPEG-Snapshot verfuegbar")
+            _vlmUiState.value = VlmUiState.Error("Kein Kamerabild verfuegbar.")
+            return
+        }
+        _vlmUiState.value = VlmUiState.LoadingOverview("VLM anfragen...", snapshotBytes = jpeg)
+        val session = VlmSession(snapshotBytes = jpeg, messageHistory = mutableListOf())
+        val messages = buildOverviewMessages(session)
+        try {
+            val result = if (vlmProfile.streamingEnabled && !useStructuredVlmParsing) {
+                val buffer = StringBuilder()
+                val callback = object : VlmStreamingCallback {
+                    override fun onDelta(textDelta: String) {
+                        if (textDelta.isBlank()) return
+                        buffer.append(textDelta)
+                        _vlmUiState.value = VlmUiState.Streaming(
+                            partialText = buffer.toString(),
+                            updatedAt = System.currentTimeMillis(),
+                            snapshotBytes = jpeg
+                        )
                     }
-                    withContext(Dispatchers.IO) {
-                        vlmClient.chatStreaming(messages, callback)
-                    }
-                } else {
-                    withContext(Dispatchers.IO) {
-                        vlmClient.chat(messages)
+
+                    override fun onComplete(
+                        finalText: String,
+                        usage: com.example.bikeassist.vlm.VlmUsage?,
+                        finishReason: String?,
+                        nativeFinishReason: String?
+                    ) = Unit
+
+                    override fun onError(error: Throwable) {
+                        AppLogger.e(error, "VLM: Streaming error (Overview)")
                     }
                 }
+                withContext(Dispatchers.IO) {
+                    vlmClient.chatStreaming(messages, callback)
+                }
+            } else {
+                withContext(Dispatchers.IO) {
+                    vlmClient.chat(messages)
+                }
+            }
+            if (result.isReasoningOnly) {
+                AppLogger.w("VLM", "VLM: Antwort enthaelt nur Reasoning (Overview)")
+                _vlmUiState.value = VlmUiState.Error(
+                    "VLM lieferte nur Reasoning ohne Ergebnis.",
+                    snapshotBytes = jpeg
+                )
+                return
+            }
+            if (result.assistantContent.isBlank()) {
+                AppLogger.w("VLM", "VLM: Leere Antwort (Overview)")
+                _vlmUiState.value = VlmUiState.Error("VLM-Antwort war leer.", snapshotBytes = jpeg)
+                return
+            }
+            if (useStructuredVlmParsing) {
                 if (result.isReasoningOnly) {
-                    AppLogger.w("VLM", "VLM: Antwort enthaelt nur Reasoning (Overview)")
+                    AppLogger.e("VLM", "VLM lieferte nur Thinking ohne Ergebnis (Overview)")
                     _vlmUiState.value = VlmUiState.Error(
-                        "VLM lieferte nur Reasoning ohne Ergebnis.",
+                        "VLM lieferte nur Thinking ohne Ergebnis.",
                         snapshotBytes = jpeg
                     )
-                    return@launch
+                    return
                 }
-                if (result.assistantContent.isBlank()) {
-                    AppLogger.w("VLM", "VLM: Leere Antwort (Overview)")
-                    _vlmUiState.value = VlmUiState.Error("VLM-Antwort war leer.", snapshotBytes = jpeg)
-                    return@launch
-                }
-                if (useStructuredVlmParsing) {
-                    if (result.isReasoningOnly) {
-                        AppLogger.e("VLM", "VLM lieferte nur Thinking ohne Ergebnis (Overview)")
-                        _vlmUiState.value = VlmUiState.Error(
-                            "VLM lieferte nur Thinking ohne Ergebnis.",
-                            snapshotBytes = jpeg
-                        )
-                        return@launch
-                    }
-                    val parsed = VlmSceneDescription.parse(result.assistantContent)
-                    if (parsed.isSuccess) {
-                        lastVlmDescription = parsed.getOrNull()
-                        session.messageHistory.add(
-                            VlmChatMessage(role = "assistant", content = listOf(VlmContentPart.Text(result.assistantContent)))
-                        )
-                        vlmSession = session
-                        _vlmUiState.value = VlmUiState.OverviewReady(
-                            lastVlmDescription!!,
-                            System.currentTimeMillis(),
-                            snapshotBytes = jpeg
-                        )
-                    } else {
-                        _vlmUiState.value = VlmUiState.Error(
-                            "VLM-Antwort konnte nicht gelesen werden.",
-                            snapshotBytes = jpeg
-                        )
-                    }
-                } else {
-                    val raw = result.assistantContent.trim()
-                    lastVlmDescription = null
+                val parsed = VlmSceneDescription.parse(result.assistantContent)
+                if (parsed.isSuccess) {
+                    lastVlmDescription = parsed.getOrNull()
                     session.messageHistory.add(
                         VlmChatMessage(role = "assistant", content = listOf(VlmContentPart.Text(result.assistantContent)))
                     )
                     vlmSession = session
-                    _vlmUiState.value = VlmUiState.OverviewReadyRaw(
-                        raw,
+                    _vlmUiState.value = VlmUiState.OverviewReady(
+                        lastVlmDescription!!,
                         System.currentTimeMillis(),
                         snapshotBytes = jpeg
                     )
+                } else {
+                    _vlmUiState.value = VlmUiState.Error(
+                        "VLM-Antwort konnte nicht gelesen werden.",
+                        snapshotBytes = jpeg
+                    )
                 }
-            } catch (ex: Exception) {
-                AppLogger.e(ex, "VLM: Fehler bei enterVlmMode (Overview-Request)")
-                _vlmUiState.value = VlmUiState.Error(
-                    ex.message ?: "Unbekannter VLM-Fehler",
+            } else {
+                val raw = result.assistantContent.trim()
+                lastVlmDescription = null
+                session.messageHistory.add(
+                    VlmChatMessage(role = "assistant", content = listOf(VlmContentPart.Text(result.assistantContent)))
+                )
+                vlmSession = session
+                _vlmUiState.value = VlmUiState.OverviewReadyRaw(
+                    raw,
+                    System.currentTimeMillis(),
                     snapshotBytes = jpeg
                 )
             }
+        } catch (ex: Exception) {
+            AppLogger.e(ex, "VLM: Fehler bei enterVlmMode (Overview-Request)")
+            _vlmUiState.value = VlmUiState.Error(
+                ex.message ?: "Unbekannter VLM-Fehler",
+                snapshotBytes = jpeg
+            )
         }
     }
 
@@ -408,6 +467,7 @@ class MainViewModel(
     }
 
     fun closeVlm() {
+        stopAutoScan()
         _vlmUiState.value = VlmUiState.Inactive
         vlmSession = null
         lastVlmDescription = null
@@ -419,6 +479,7 @@ class MainViewModel(
     }
 
     fun applyVlmProfile(profile: VlmProfile) {
+        stopAutoScan()
         vlmProfile = profile
         vlmSystemPrompt = profile.systemPrompt.ifBlank { VlmConfig.DEFAULT_SYSTEM_PROMPT }
         vlmOverviewPrompt = profile.overviewPrompt.ifBlank { VlmConfig.DEFAULT_OVERVIEW_PROMPT }
