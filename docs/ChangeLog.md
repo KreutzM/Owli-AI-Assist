@@ -38,6 +38,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - VLM kann bei gestoppter Pipeline ein frisches Snapshot anfordern (One-Shot Kamera).
 - One-Shot Snapshot startet/stoppt CameraX auf dem Main-Thread (Fix fuer Crash in Background-Thread).
 - Build-Fixes fuer Navigation TopAppBar Opt-In und BackStack State-Delegate.
+- VLM-Snapshot funktioniert jetzt auch im eigenen Screen durch persistente Camera-Preview-Anbindung.
 
 ---
 

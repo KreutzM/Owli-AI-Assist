@@ -88,7 +88,8 @@ fun AppNavHost(
             VlmScreen(
                 state = vlmState,
                 onNewScene = { mainViewModel.enterVlmMode() },
-                onAsk = { question -> mainViewModel.askVlm(question) }
+                onAsk = { question -> mainViewModel.askVlm(question) },
+                cameraFrameSource = cameraFrameSource
             )
         }
         composable(AppRoute.VlmProfiles.route) {

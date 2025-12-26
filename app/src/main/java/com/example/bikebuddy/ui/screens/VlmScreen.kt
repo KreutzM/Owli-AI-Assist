@@ -28,8 +28,11 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.unit.dp
+import com.example.bikeassist.camera.CameraFrameSource
 import com.example.bikeassist.vlm.VlmUiState
+import com.example.bikebuddy.ui.components.CameraPreview
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -37,7 +40,8 @@ import kotlinx.coroutines.withContext
 fun VlmScreen(
     state: VlmUiState,
     onNewScene: () -> Unit,
-    onAsk: (String) -> Unit
+    onAsk: (String) -> Unit,
+    cameraFrameSource: CameraFrameSource
 ) {
     val scrollState = rememberScrollState()
     val isBusy = state is VlmUiState.LoadingOverview || state is VlmUiState.Asking
@@ -59,6 +63,12 @@ fun VlmScreen(
         }
     }
     Box(modifier = Modifier.fillMaxSize()) {
+        CameraPreview(
+            cameraFrameSource = cameraFrameSource,
+            modifier = Modifier
+                .matchParentSize()
+                .alpha(0f)
+        )
         backgroundBitmap?.let { image ->
             Image(
                 bitmap = image,

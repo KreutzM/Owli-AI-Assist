@@ -1,6 +1,5 @@
 package com.example.bikebuddy.ui.screens
 
-import androidx.camera.view.PreviewView
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -23,10 +22,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.viewinterop.AndroidView
 import com.example.bikeassist.camera.CameraFrameSource
 import com.example.bikeassist.domain.TrafficLightObservation
 import com.example.bikeassist.ml.Detection
+import com.example.bikebuddy.ui.components.CameraPreview
 import com.example.bikebuddy.ui.theme.BikeBuddyTheme
 
 @Composable
@@ -64,7 +63,7 @@ fun HomeScreen(
                     hazardLevel = hazardLevel,
                     detectionsCount = detectionsCount,
                     message = sceneMessage,
-                    rotationText = rotationDegrees?.let { "${it}°" },
+                    rotationText = rotationDegrees?.let { "${it}deg" },
                     trafficLights = trafficLights,
                     blindViewPreview = blindViewPreview,
                     modifier = Modifier
@@ -88,24 +87,6 @@ fun HomeScreen(
                 .padding(16.dp)
         )
     }
-}
-
-@Composable
-fun CameraPreview(
-    cameraFrameSource: CameraFrameSource,
-    modifier: Modifier = Modifier
-) {
-    AndroidView(
-        modifier = modifier,
-        factory = { context ->
-            PreviewView(context).also { previewView ->
-                cameraFrameSource.bindPreviewSurface(previewView.surfaceProvider)
-            }
-        },
-        update = { previewView ->
-            cameraFrameSource.bindPreviewSurface(previewView.surfaceProvider)
-        }
-    )
 }
 
 @Composable
