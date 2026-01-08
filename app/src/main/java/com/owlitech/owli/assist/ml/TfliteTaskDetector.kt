@@ -2,6 +2,7 @@ package com.owlitech.owli.assist.ml
 
 import android.content.Context
 import android.graphics.Bitmap
+import androidx.core.graphics.createBitmap
 import org.tensorflow.lite.support.image.TensorImage
 import org.tensorflow.lite.task.core.BaseOptions
 import org.tensorflow.lite.task.vision.detector.Detection as TaskDetection
@@ -29,7 +30,7 @@ class TfliteTaskDetector(
 
     override fun warmup() {
         // Optional: kleiner Dummy-Run mit 1x1 Bitmap, falls nÃ¶tig
-        val dummy = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888)
+        val dummy = createBitmap(1, 1, Bitmap.Config.ARGB_8888)
         detect(dummy)
     }
 

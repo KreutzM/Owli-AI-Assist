@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Matrix
 import android.util.Log
 import androidx.camera.core.ImageProxy
+import androidx.core.graphics.scale
 
 class DefaultPreprocessor(
     private val targetWidth: Int? = null,
@@ -25,7 +26,7 @@ class DefaultPreprocessor(
         }
 
         if (targetWidth != null && targetHeight != null && (bmp.width != targetWidth || bmp.height != targetHeight)) {
-            bmp = Bitmap.createScaledBitmap(bmp, targetWidth, targetHeight, true)
+            bmp = bmp.scale(targetWidth, targetHeight, true)
         }
 
         val end = System.nanoTime()

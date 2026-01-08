@@ -3,6 +3,7 @@ package com.owlitech.owli.assist.processing
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.util.Log
+import androidx.core.graphics.scale
 import com.owlitech.owli.assist.domain.TrafficLightObservation
 import com.owlitech.owli.assist.domain.TrafficLightPhase
 import com.owlitech.owli.assist.ml.BoundingBox
@@ -54,7 +55,7 @@ class HsvTrafficLightPhaseClassifier(
             return emptyList()
         }
 
-        val scaled = Bitmap.createScaledBitmap(roi, roiSize, roiSize, true)
+        val scaled = roi.scale(roiSize, roiSize, true)
         val (phase, conf, redTop, greenBottom) = scorePhaseZoned(scaled)
         val observation = TrafficLightObservation(
             bbox = primary.bbox,

@@ -2,6 +2,7 @@ package com.owlitech.owli.assist.pipeline
 
 import android.graphics.Bitmap
 import androidx.camera.core.ImageProxy
+import androidx.core.graphics.scale
 import com.owlitech.owli.assist.camera.CameraFrameSource
 import com.owlitech.owli.assist.camera.FrameListener
 import com.owlitech.owli.assist.domain.SceneAnalyzer
@@ -169,6 +170,6 @@ class DefaultVisionPipeline(
         val scale = maxSidePx.toFloat() / maxSide.toFloat()
         val targetW = (width * scale).toInt().coerceAtLeast(1)
         val targetH = (height * scale).toInt().coerceAtLeast(1)
-        return Bitmap.createScaledBitmap(bitmap, targetW, targetH, true)
+        return bitmap.scale(targetW, targetH, true)
     }
 }

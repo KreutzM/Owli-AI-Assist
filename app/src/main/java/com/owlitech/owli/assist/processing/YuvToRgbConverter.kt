@@ -2,6 +2,7 @@ package com.owlitech.owli.assist.processing
 
 import android.graphics.Bitmap
 import androidx.camera.core.ImageProxy
+import androidx.core.graphics.createBitmap
 
 /**
  * Konvertiert YUV_420_888 nach ARGB_8888 ohne JPEG-Roundtrip.
@@ -68,7 +69,7 @@ class YuvToRgbConverter : AutoCloseable {
     private fun ensureBuffer(width: Int, height: Int) {
         if (buffer == null || bufferWidth != width || bufferHeight != height) {
             buffer?.recycle()
-            buffer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            buffer = createBitmap(width, height, Bitmap.Config.ARGB_8888)
             bufferWidth = width
             bufferHeight = height
         }
