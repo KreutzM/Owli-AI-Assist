@@ -160,7 +160,7 @@ class OpenRouterProvider(
                 if (data == "[DONE]") {
                     break
                 }
-            val event = VlmSseParser.parseEvent(data) ?: continue
+                val event = VlmSseParser.parseEvent(data) ?: continue
                 if (requestId == null && event.requestId != null) {
                     requestId = event.requestId
                 }
