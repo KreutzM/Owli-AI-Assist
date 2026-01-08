@@ -1,262 +1,130 @@
-# Agents.md – Projektsteuerung für Codex (GPT-5.1-Codex-max)
+# AGENTS.md – Owli-AI Assist (Android)
 
-Dieses Dokument dient Codex als **zentrale Steuerungsdatei** für dieses Repository.
-Codex soll `Agents.md` beim Start im Projektordner lesen und sein Verhalten daran ausrichten.
+Diese Datei ist die **Single Source of Truth** für Codex-CLI-Arbeit in diesem Repo: Setup, Regeln, Checks, Doku-Pflege.
 
-Die Regeln gelten für **jede Codex-Interaktion in diesem Projekt**, es sei denn, der Nutzer überschreibt sie im Prompt ausdrücklich.
-
----
-
-## 1. Projektüberblick
-
-Dies ist ein Android-Projekt zur Entwicklung eines **AI-/CV-basierten Fahrrad-Assistenzsystems** für sehbehinderte Radfahrer.
-
-* Plattform: Android (Smartphone), Entwicklung mit Android Studio.
-* Domäne: Computer Vision (z. B. YOLO-Modelle, TFLite/LiteRT/ONNX), Vision-Pipeline, akustische Ausgabe.
-* Architektur-Referenzen:
-
-  * `docs/System-Architektur.md`
-  * `docs/System-Spezifikation.md`
-  * `docs/Coding-Guidelines.md`
-  * `docs/Prompts-Codex-CLI.md`
-
-Diese Dokumente sind **verbindliche Projektstandards**. Codex soll sich immer daran orientieren.
+## Projekt-Identität (fix)
+- **Produkt/Brand (sichtbar):** Owli-AI
+- **App (diese Repo-Instanz):** Owli-AI Assist
+- **applicationId / namespace (Gradle):** `com.owlitech.owli.assist`
+- **Code-Root-Package:** `com.owlitech.owli.assist.*`
+- Historische Begriffe (BikeBuddy/BikeAssist/BlindView) können im Repo vorkommen und sollen bei passenden Refactors **konsistent auf Owli-AI / Owli-AI Assist** umgestellt werden – **wenn** der Nutzer es beauftragt.
 
 ---
 
-## 2. Rollen von Codex
+## 1) Arbeitsmodus
 
-Codex übernimmt in diesem Projekt drei Rollen. Der Nutzer muss die Rolle nicht explizit nennen, Codex soll jedoch anhand der Anfrage die passende Rolle wählen.
+### Autonomie (wenig Nachfragen)
+- Standardannahme: Der Nutzer möchte, dass Codex **30+ Minuten selbständig** arbeiten kann.
+- Stelle nur Rückfragen, wenn du **blockiert** bist (z.B. fehlende Datei, uneindeutiger Zielwert, gefährlicher Befehl außerhalb Workspace).
+- Triff bei kleinen Detailentscheidungen sinnvolle Defaults und dokumentiere sie kurz in der Batch-Zusammenfassung.
 
-### 2.1 Architecture-Agent
+### Kleine, sichere Änderungen
+- Arbeite in **kleinen Batches** (max. ~200 Zeilen Diff pro Batch, wenn möglich).
+- Nach jedem Batch:
+  1) `git diff` zeigen
+  2) Build/Test-Check ausführen (siehe „Checks“)
+  3) **Docs aktualisieren** (README/CHANGELOG/docs)
+  4) Kurze Zusammenfassung (3–7 Bulletpoints)
 
-**Aufgabe:**
-
-* Architektur- und Designfragen analysieren.
-* Vor- und Nachteile von Ansätzen erklären.
-* Implementierungspläne (Milestones, Tasks) vorschlagen.
-
-**Regeln:**
-
-* Keine Dateien anlegen, ändern oder löschen.
-* Keine Shell-Kommandos ausführen.
-* Nur erklärender Text, Diagramm-Beschreibungen, Pläne, Checklisten.
-
----
-
-### 2.2 Code-Agent
-
-**Aufgabe:**
-
-* Kotlin-/Gradle-/Konfigurationsdateien erstellen oder ändern.
-* Klassen, Interfaces und Module gemäß Architektur implementieren.
-* Refactoring bestehender Implementierungen.
-
-**Regeln:**
-
-* Architektur und Spezifikation aus `docs/*.md` strikt beachten.
-* Nur Dateien bearbeiten, die im Prompt **explizit** genannt werden oder logisch direkt dazugehören (z. B. passende Testdatei oder Interface).
-* Keine weitreichenden Refactorings über mehrere Subsysteme, wenn der Nutzer nur eine kleine Änderung angefragt hat.
-* Kein produktiver Code im Testpaket und umgekehrt.
-* regelmäßige Git-Commits durchführen (zuvor /docs/Changelog.md aktualisieren)
+### Keine unnötige Format-/Churn-Änderungen
+- Kein großflächiges Reformatting „nebenbei“.
+- Bei Rename/Move: **`git mv`** bevorzugen (History erhalten).
 
 ---
 
-### 2.3 Test-Agent
+## 2) Windows 10 (PowerShell) – verbindliche Konventionen
 
-**Aufgabe:**
+### Gradle Wrapper
+- Verwende unter PowerShell **immer** `gradlew.bat` (nicht `./gradlew`).
+- Beispiele:
+  - `gradlew.bat test`
+  - `gradlew.bat assembleDebug`
 
-* Unit-Tests und gegebenenfalls Instrumentation-Tests vorschlagen oder erstellen.
-* Mock-/Fake-Klassen für Tests generieren.
-
-**Regeln:**
-
-* Produktivcode nur lesen, nicht verändern (außer der Nutzer fordert ausdrücklich eine kleine Anpassung für bessere Testbarkeit an).
-* Testdateien klar im Test-Quellbaum platzieren (z. B. `src/test/java/...`).
-
----
-
-## 3. Verhaltensregeln für Codex
-
-Diese Regeln sind für alle Rollen verbindlich, sofern nicht anders angegeben.
-
-### 3.1 Datei-Änderungen
-
-Codex darf Dateien **nur** anlegen, bearbeiten oder löschen, wenn:
-
-* Der Nutzer dies ausdrücklich wünscht **und**
-* Pfad und Dateiname klar sind oder aus der Projektstruktur eindeutig hervorgehen.
-
-Zusätzliche Regeln:
-
-* Keine Änderungen in Build-Output-Verzeichnissen (`build/`, `.gradle/`, `app/build/`).
-* `.git/` und IDE-Metadaten (`.idea/`, `*.iml`) sind tabu.
-* Projekt-Dokumente in `docs/` dürfen angepasst werden, wenn der Nutzer dies explizit anfragt (z. B. Erweiterung der Spezifikation).
-
-Wenn Codex unsicher ist, welche Datei gemeint ist, soll es **nachfragen**, bevor es etwas ändert.
+### Pfade & Shell
+- Verwende Windows-Pfade robust (keine Bash-Only Syntax).
+- Bevorzuge `git grep` statt `grep`.
 
 ---
 
-### 3.2 Shell-Kommandos
+## 3) Setup & Checks (genau so ausführen) (genau so ausführen)
 
-Codex kann Shell-Kommandos nutzen, um Builds/Tests auszuführen oder Repo-Zustand zu prüfen.
+> Codex soll zuerst feststellen, ob es in **WSL/Linux** oder **Windows (PowerShell)** läuft und dann den passenden Wrapper nutzen.
 
-**Ohne explizite Rückfrage erlaubt:**
+### Minimal (immer nach Code-Änderungen)
+- WSL/Linux/macOS:
+  - `./gradlew test`
+  - `./gradlew assembleDebug`
+- Windows/PowerShell:
+  - `gradlew.bat test`
+  - `gradlew.bat assembleDebug`
 
-* `pwd`, `ls`, `dir`
-* `git status`, `git diff`
-* `./gradlew tasks`
-* `./gradlew assembleDebug`
-* `./gradlew test`
-* `git add`, `git commit`
-
-**Nur mit klarer Bestätigung des Nutzers:**
-
-* `git push`, `git checkout`, `git merge`, `git rebase`
-* Kommandos mit potenziell destruktiver Wirkung (`rm`, `mv`, `cp` außerhalb klarer Projektdateien)
-* `adb`-Befehle (Install/Uninstall/Logs)
-
-**Nie ohne ausdrückliche, konkrete Erlaubnis:**
-
-* Dateien löschen, die nicht im Prompt erwähnt werden.
-* Branches überschreiben oder neu schreiben (`--force`).
-* Remote-Repositories verändern.
-
-Codex soll wichtige Befehle **vorher im Klartext nennen** und eine kurze Begründung geben, bevor es um Erlaubnis fragt.
+### Optional (wenn Build/CI/Release betroffen)
+- WSL/Linux/macOS: `./gradlew lintDebug`
+- Windows: `gradlew.bat lintDebug`
 
 ---
 
-### 3.3 Stil- und Architekturregeln
+## 4) Doku-Pflege ist Pflicht (nach JEDEM Code-Change)
 
-* Kotlin-Code folgt `docs/Coding-Guidelines.md`.
-* Modulare Schichten wie in `docs/System-Architektur.md` beschrieben beachten:
+Nach **jeder** Code-Änderung (Refactor, Bugfix, Feature) muss Codex **in derselben Änderung** prüfen und bei Bedarf aktualisieren:
+- `README.md`
+- `CHANGELOG.md`
+- `docs/*.md` (alle relevanten Dateien)
 
-  * UI-Schicht kennt nur Domänenmodelle (`SceneState`, etc.).
-  * Domain-Schicht ist frei von Android-spezifischen Klassen.
-  * ML- und Processing-Schichten sind möglichst Android-arm.
-
-Threading-Regeln:
-
-* Keine ML-Inferenz oder teure Bildverarbeitung auf dem Main-Thread.
-* UI-Updates nur auf dem Main-Thread.
-
-Codex soll bei Änderungen kurz prüfen, ob:
-
-* LifeCycle und Ressourcen (CameraX, TTS, Detector) korrekt gehandhabt werden.
-* Die Änderungen mit der VisionPipeline-Architektur kompatibel sind.
+Regeln:
+- Doku muss **konsistent** sein (Namen, Packages, Screens, Setup-Commands, Feature-Beschreibung).
+- Wenn Terminologie umgestellt wird (BikeBuddy/BikeAssist → Owli-AI), muss die Doku das widerspiegeln.
+- Keine „leeren“ Changelog-Einträge: nur wenn sich Nutzer-/Dev-relevantes Verhalten, Setup oder Architektur ändert.
 
 ---
 
-### 3.4 Kommentare & Lesbarkeit
-
-* Öffentliche Klassen, Interfaces und komplexe Methoden sollten knappe KDoc-Kommentare enthalten.
-* Kommentare sind vorzugsweise auf Deutsch, insbesondere wenn sie Use-Case-spezifisch sind.
-* Kein „Kommentar-Spam“ – nur dort kommentieren, wo es das Verständnis verbessert.
-
----
-
-## 4. Git-Regeln
-
-### 4.1 Branching
-
-* Entwicklung findet auf Feature-Branches statt, z. B.:
-
-  * `feat/vision-pipeline`
-  * `feat/camera-source`
-  * `fix/scene-analyzer`
-
-Codex darf Branch-Namen vorschlagen, aber Branches nur erstellen oder wechseln, wenn der Nutzer es ausdrücklich erlaubt.
-
-### 4.2 Commits
-
-* Commit-Messages folgen dem Muster:
-
-  ```
-  <type>: <kurze Beschreibung>
-  ```
-
-  **types:**
-
-  * `feat`: neue Features
-  * `fix`: Fehlerbehebungen
-  * `refactor`: interne Umstrukturierungen ohne Feature-Änderung
-  * `test`: Tests oder Testinfrastruktur
-  * `chore`: Build-/Tooling-/Meta-Aufgaben
-
-* Codex darf Vorschläge für Commit-Messages machen und Commits ausführen.
+## 5) Security / Secrets (hart)
+- **Keine Secrets** in Repo-Dateien (auch nicht „nur testweise“).
+- `local.properties` darf **niemals getrackt** sein.
+- Wenn ein Secret (z.B. `OPENROUTER_API_KEY`) im Repo war: Nutzer auf **Key-Rotation** hinweisen.
 
 ---
 
-## 5. Grenzen der Automatisierung
+## 6) Was Codex ohne Rückfrage darf
+- Lesen/Analysieren von Dateien im Workspace
+- Ausführen von:
+  - `git status`, `git diff`, `git grep`
+  - Gradle Checks aus Abschnitt „Setup & Checks“
+  - einfache Diagnose-Commands (`pwd`, `ls`)
 
-Codex soll **nicht** eigenmächtig:
-
-* Grundlegende Architekturentscheidungen ändern (Schichten, Hauptmodule), es sei denn, der Nutzer bittet ausdrücklich darum.
-* Neue externe Libraries hinzufügen, ohne Notwendigkeit zu begründen.
-* Emulator oder Geräte ohne Absprache steuern.
-* CI-/Deployment-Konfigurationen anlegen oder ändern, ohne dass dies angefragt wurde.
-
-Wenn eine Anfrage zu riskant oder zu unklar ist, soll Codex:
-
-* die Risiken benennen,
-* Alternativen vorschlagen,
-* und um Präzisierung bitten.
+## 7) Was Codex nur nach expliziter Freigabe darf
+- `git commit`, `git push`, `git rebase/merge`, Branch-Wechsel
+- Löschen größerer Bereiche / riskante Moves außerhalb klarer Pfade
+- Neue Dependencies / Plugin-Upgrades / Kotlin-/AGP-/Gradle-Versionssprünge
+- Architektur-Umbauten (z.B. Multi-Module Split) – nur wenn Nutzer das beauftragt
 
 ---
 
-## 6. Empfohlener Initial-Prompt für Codex in diesem Projekt
-
-Wenn Codex zum ersten Mal in diesem Repo gestartet wird, ist folgender Prompt empfehlenswert:
-
-```text
-Du bist GPT-5.2-Codex und arbeitest als Code-/Architecture-Agent für dieses Android-Projekt.
-Bitte beachte die Richtlinien in:
-- docs/System-Architektur.md
-- docs/System-Spezifikation.md
-- docs/Coding-Guidelines.md
-- docs/Prompts-Codex-CLI.md
-- docs/*.md
-- Agents.md
-
-1. Lies diese Dokumente und fasse in 7 Bulletpoints zusammen, wie du Architektur, Zielsetzung und wichtigste technischen Leitplanken verstehst.
-2. Schlage mir anschließend 5 konkrete nächste Entwicklungsschritte (Milestones) vor.
-
-Führe zunächst **keine** Änderungen am Dateisystem und **keine** Shell-Kommandos aus. Antworte nur mit Text.
-```
+## 8) Android-spezifische Leitplanken
+- Keine teure Arbeit auf dem Main Thread (Camera/ML/TTS müssen lifecycle-sicher bleiben).
+- Compose/UI bleibt „dünn“; Pipeline/ML/IO bleibt in separaten Schichten.
+- `applicationId` ist stabil (Play-Store Identität); UI-Name wird über `app_name`/Store gepflegt.
+- Beim Package-Rename immer prüfen:
+  - `AndroidManifest.xml`
+  - Theme-Namen/Refs
+  - `BuildConfig`-Imports
+  - Tests (`ExampleInstrumentedTest` packageName)
 
 ---
 
-## 7. Pflege dieses Dokuments
+## 9) Typischer Codex-Flow (empfohlen)
+1) **Inventory**: relevante Dateien/Touchpoints nennen, Plan in 5–10 Bulletpoints.
+2) Batchweise implementieren.
+3) Nach jedem Batch: diff + Checks.
+4) Zum Schluss: Rest-Suche (`git grep`) nach alten Namen/Packages und Doku-Update.
 
-`Agents.md` ist Teil des Repos und darf von Codex **nur auf ausdrückliche Anweisung** des Nutzers verändert werden.
+---
 
-Änderungen an `Agents.md` sollten im Commit-Text deutlich gemacht werden, z. B.:
+## 10) Repo-Dateien, die Codex als „Leitdokumente“ behandeln soll
+- `README.md`
+- `CHANGELOG.md`
+- `docs/*.md`
+- Diese `AGENTS.md`
 
-* `chore: update codex agent rules`
+Codex soll bei Widersprüchen **den Nutzer fragen** oder einen klaren Vorschlag machen, welche Quelle „gewinnt“.
 
-Damit bleibt nachvollziehbar, wann und warum sich die Arbeitsweise von Codex im Projekt geändert hat.
-
-## 8. Changelog & Versionierung
-
-- Das zentrale Änderungsprotokoll liegt in `docs/ChangeLog.md`.
-- Versionierung folgt grob dem SemVer-Schema: MAJOR.MINOR.PATCH.
-
-Codex soll:
-
-1. Auf Anweisung wie  
-   _"Aktualisiere die ChangeLog.md für den aktuellen Stand und schlage eine neue Version vor"_  
-   die Änderungen seit dem letzten Git-Tag zusammenfassen und unter `[Unreleased]` eintragen.
-
-2. Auf Anweisung wie  
-   _"Bereite Release Version X.Y.Z vor"_  
-   folgende Schritte vorschlagen und (nur wenn ausdrücklich erlaubt) ausführen:
-   - `docs/ChangeLog.md`:
-     - Abschnitt `[Unreleased]` in `[X.Y.Z] – <heutiges Datum>` umbenennen.
-     - Falls sinnvoll, einen neuen leeren `[Unreleased]`-Block anlegen.
-   - Git-Befehle vorschlagen:
-     - `git add docs/ChangeLog.md`
-     - `git commit -m "chore: update changelog for X.Y.Z"`
-     - `git tag -a vX.Y.Z -m "Release X.Y.Z"`
-
-3. `git add`, `git commit` und `git tag` **nur ausführen**, wenn der Prompt explizit sagt,
-   dass diese Befehle ausgeführt werden sollen. Ansonsten nur als Vorschlag ausgeben.

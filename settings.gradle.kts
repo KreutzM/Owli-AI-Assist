@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "BikeBuddy"
+rootProject.name = "Owli-AI"
 include(":app")

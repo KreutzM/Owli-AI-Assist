@@ -1,3 +1,6 @@
-Token usage: total=1.316.644 input=1.179.404 (+ 26.787.072 cached) output=137.240 (reasoning 80.064)
-To continue this session, run codex resume 019b5708-6602-79e1-af0b-ef6f8d5cd571
-PS D:\Codex\BlindView>
+  1. Set ANDROID_HOME or add sdk.dir to local.properties, then re‑run gradlew.bat test and gradlew.bat assembleDebug.
+  2. If you want the branding strings in UI adjusted further (e.g., replace remaining “BlindView” labels), tell me the
+     preferred wording.
+Token usage: total=186.015 input=160.787 (+ 4.031.744 cached) output=25.228 (reasoning 16.448)
+To continue this session, run codex resume 019b9ea3-34fa-74c2-8554-9544a48f0acb
+

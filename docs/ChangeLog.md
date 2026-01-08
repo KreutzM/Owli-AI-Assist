@@ -1,4 +1,4 @@
-# ChangeLog – BikeBuddy / BikeAssist
+# ChangeLog – Owli-AI / Owli-AI Assist
 
 Dieses Dokument beschreibt die Entwicklungs-Historie der App.
 
@@ -23,6 +23,8 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - Beispielprofil `nano-traffic-scan` mit `auto_scan` in `vlm-profiles.json`.
 
 ### Changed
+- Namespace/applicationId auf `com.owlitech.owli.assist` umgestellt; App-Theme/Compose-Theme auf Owli benannt.
+- Branding in UI/Diagnostics/OpenRouter-Headern sowie `rootProject.name` auf Owli-AI angepasst.
 - VLM-Profile auf neues Schema mit token_policy, parameter_overrides und defaults umgestellt.
 - OpenRouter-Parsing nutzt nur message.content fuer UI/TTS; Reasoning bleibt Debug/Telemetry.
 - AudioFeedbackEngine nutzt AudioFocus/AudioAttributes und TTS-Prewarm fuer stabileres Streaming.
@@ -169,7 +171,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 ## [0.1.0] – 2025-12-10
 
 ### Added
-- Initiales Android-Projekt angelegt (BikeBuddy-Template).
+- Initiales Android-Projekt angelegt (Owli-AI Assist-Template).
 - Architektur-Skelette für Camera, Pipeline, Processing, ML, Domain, Audio, Util.
 - Basis-Dependencies für Compose, CameraX, Coroutines, TFLite.
 

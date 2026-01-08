@@ -15,11 +15,11 @@ val openRouterKey = (localProperties.getProperty("OPENROUTER_API_KEY") ?: "").tr
 val openRouterKeyEscaped = openRouterKey.replace("\\", "\\\\").replace("\"", "\\\"")
 
 android {
-    namespace = "com.example.bikebuddy"
+    namespace = "com.owlitech.owli.assist"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.example.bikebuddy"
+        applicationId = "com.owlitech.owli.assist"
         minSdk = 26
         targetSdk = 36
         versionCode = 1

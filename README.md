@@ -1,6 +1,6 @@
-# BikeBuddy / BikeAssist
+# Owli-AI Assist
 
-BikeBuddy ist eine Android-Demo-App fuer ein Fahrrad-Assistenzsystem mit On-Device-Computer-Vision. Die App nutzt CameraX fuer die Live-Preview, eine Vision-Pipeline (Preprocessing -> Detector -> SceneAnalyzer/BlindView) und gibt Warnungen bzw. BlindView-Ansagen per TTS aus. Als Beispielmodell ist EfficientDet-Lite2 (COCO) eingebunden; bei fehlendem Modell faellt die App auf einen FakeDetector zurueck.
+Owli-AI Assist ist eine Android-Demo-App fuer ein Fahrrad-Assistenzsystem mit On-Device-Computer-Vision. Die App nutzt CameraX fuer die Live-Preview, eine Vision-Pipeline (Preprocessing -> Detector -> SceneAnalyzer/BlindView) und gibt Warnungen bzw. BlindView-Ansagen per TTS aus. Als Beispielmodell ist EfficientDet-Lite2 (COCO) eingebunden; bei fehlendem Modell faellt die App auf einen FakeDetector zurueck.
 
 ## Funktionsumfang
 - Live-Kamera-Preview (CameraX) mit Bounding-Box-Overlay
@@ -36,7 +36,7 @@ BikeBuddy ist eine Android-Demo-App fuer ein Fahrrad-Assistenzsystem mit On-Devi
 1. Repository oeffnen.
 2. Modell ablegen: `app/src/main/assets/models/efficientdet_lite2_int8.tflite`
 3. Labels liegen unter `app/src/main/assets/models/labels.txt` (COCO-80).
-4. Build: `./gradlew :app:assembleDebug`
+4. Build (PowerShell/Windows): `gradlew.bat :app:assembleDebug`
 5. Installieren und starten (ADB/Android Studio).
 
 ## Bedienung
