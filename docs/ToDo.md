@@ -31,7 +31,7 @@ Status: `[x]` erledigt, `[ ]` offen
 - [x] `domain/HazardModels` (HazardLevel, HazardType, Direction, HazardEvent).
 - [x] `domain/SceneState`.
 - [x] `domain/SceneAnalyzer` Interface + `DefaultSceneAnalyzer`.
-- [x] BlindView: Announce-/Speech-Planner, Uhrzeit/Distanz-Mapping, DE-Labels, IoU-Tracker (EMA/Confidence/Max-Age/Min-Hits).
+- [x] OwliAI: Announce-/Speech-Planner, Uhrzeit/Distanz-Mapping, DE-Labels, IoU-Tracker (EMA/Confidence/Max-Age/Min-Hits).
 - [x] `audio/AudioFeedbackEngine` mit Cooldown/Speech-Rate/Spam-Schutz.
 
 ## UI & App-Orchestrierung

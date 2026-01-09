@@ -83,14 +83,14 @@ Format (angelehnt an Keep a Changelog / SemVer):
 ## [0.3.0] – 2025-12-14
 
 ### Added
-- BlindView-Ansagepfad mit AnnouncePlanner, SpeechPlanner und Utterance-Formatter (Uhrzeit/Distanz, DE-Labels).
+- OwliAI-Ansagepfad mit AnnouncePlanner, SpeechPlanner und Utterance-Formatter (Uhrzeit/Distanz, DE-Labels).
 - IoU-Tracker erweitert (minConfidenceTrack, consecutiveHits, maxTracks) zur Stabilisierung von Position/Confidence.
 - Bounding-Box-Overlay zeigt optional Labels + Confidence (Toggle in Settings).
-- DataStore-basiertes Settings-Menü (Detector/Tracking/BlindView/TTS/Debug/Pipeline) mit Reset-to-Defaults.
+- DataStore-basiertes Settings-Menü (Detector/Tracking/OwliAI/TTS/Debug/Pipeline) mit Reset-to-Defaults.
 - Diagnostics-Screen mit Live-Metriken (Pipeline/FPS/Detector/TTS/Tracking) und Copy-to-Clipboard Debug-Report.
 
 ### Changed
-- BlindView-Preview entkoppelt von TTS-Cooldowns (nur Formatter, kein Hash/Gating).
+- OwliAI-Preview entkoppelt von TTS-Cooldowns (nur Formatter, kein Hash/Gating).
 - AudioFeedbackEngine setzt/aktualisiert Speech-Rate (konfigurierbar, Spam-Protection bleibt erhalten).
 - Pipeline/Lifecycle: Auto-Restart nach Rotation oder Settings-Änderungen, wenn vorher aktiv.
 - Tracking-Filter gegen False Positives (Confidence-EMA, Decay, BBox-Smoothing, Max-Age).

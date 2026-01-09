@@ -54,7 +54,7 @@ Bitte bei Code-Generierung diese Struktur verwenden (oder konsistent erweitern).
 2. **VisionPipeline** nimmt Frames entgegen, begrenzt die Framerate (z.B. 1â€“5 FPS) und verarbeitet Frames sequentiell.
 3. **Preprocessor** konvertiert `ImageProxy` in Modell-Input (`FloatArray` oder `ByteBuffer`).
 4. **Detector** fÃ¼hrt das ML-Modell aus und gibt eine Liste von `Detection`-Objekten zurÃ¼ck.
-5. **SceneAnalyzer** interpretiert `Detection`-Listen und erzeugt eine domÃ¤nenspezifische `SceneState`-ReprÃ¤sentation (z.B. Hazard-Level, Warntext, BlindView-Items).
+5. **SceneAnalyzer** interpretiert `Detection`-Listen und erzeugt eine domÃ¤nenspezifische `SceneState`-ReprÃ¤sentation (z.B. Hazard-Level, Warntext, OwliAI-Items).
 6. **UI** beobachtet `SceneState` und zeigt Debug-Infos (Overlays) an.
 7. **AudioFeedbackEngine** beobachtet `SceneState` und erzeugt gesprochene Warnungen/TÃ¶ne.
 
@@ -359,7 +359,7 @@ class MainViewModel(
     * Kamerapreview (z.B. `AndroidView` mit `PreviewView`).
     * Overlay-Layer fÃ¼r Bounding Boxes (Debug).
     * Textanzeige fÃ¼r `primaryMessage` / Status.
-    * Settings-Screen fÃ¼r Detector/BlindView/TTS/Debug/Pipeline-Parameter (DataStore-basiert, Reset mÃ¶glich).
+    * Settings-Screen fÃ¼r Detector/OwliAI/TTS/Debug/Pipeline-Parameter (DataStore-basiert, Reset mÃ¶glich).
 
 Lifecycle-Regeln:
 
@@ -424,14 +424,14 @@ Diese Architektur dient als Zielbild. Codex soll alle Implementierungen mÃ¶gli
 
 ---
 
-## 14. BlindView-Hinweise
+## 14. OwliAI-Hinweise
 
-* BlindView nutzt einen IoU-basierten Lightweight-Tracker pro Label (EMA-BBox/Confidence, Max-Age, minConsecutiveHits), um Position/Uhrzeit pro Objekt zu stabilisieren.
+* OwliAI nutzt einen IoU-basierten Lightweight-Tracker pro Label (EMA-BBox/Confidence, Max-Age, minConsecutiveHits), um Position/Uhrzeit pro Objekt zu stabilisieren.
 * Announce-Planer aggregiert Objekte nach Label/Uhrzeit/Distanz, sortiert NEAR->MID->FAR und links->rechts; Speech-Planer/Cooldown verhindert Spam.
 * TTS-Sprechrate ist konfigurierbar (z.B. 2.0) und unabhaengig von den Speak-Intervallen/Cooldowns.
 
 ## 15. Settings, Debug & Diagnostics (aktuell)
 
-* Persistente Settings per DataStore (Detector/Tracking/BlindView/TTS/Debug/Pipeline-Intervall) mit Reset-to-Defaults.
-* UI-Toggles: Overlay, Overlay-Labels (BBox + Confidence), BlindView-Preview.
+* Persistente Settings per DataStore (Detector/Tracking/OwliAI/TTS/Debug/Pipeline-Intervall) mit Reset-to-Defaults.
+* UI-Toggles: Overlay, Overlay-Labels (BBox + Confidence), OwliAI-Preview.
 * Diagnostics-Screen zeigt Pipeline/Detector/Tracking/TTS-Status (FPS, Intervall, Thresholds, AutoStart) und kann einen Debug-Report ins Clipboard kopieren.
