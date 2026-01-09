@@ -35,7 +35,7 @@ Owli-AI Assist ist eine Android-App fuer blinde Nutzer als AI Assistenz-App mit 
 ## Installation & Build
 1. Repository oeffnen.
 2. Modell ablegen: `app/src/main/assets/models/efficientdet_lite2_int8.tflite`
-  --> getModel.sh l?dt es automatisch aus dem Web.
+  --> getModel.sh laedt es automatisch aus dem Web.
 3. OpenRouter API-Key in `local.properties` setzen: `OPENROUTER_API_KEY=...` (nicht committen).
 4. Labels liegen unter `app/src/main/assets/models/labels.txt` (COCO-80).
 5. Build (PowerShell/Windows): `gradlew.bat :app:assembleDebug`
