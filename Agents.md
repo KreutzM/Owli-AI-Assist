@@ -23,7 +23,7 @@ Diese Datei ist die **Single Source of Truth** für Codex-CLI-Arbeit in diesem R
 - Nach jedem Batch:
   1) `git diff` zeigen
   2) Build/Test-Check ausführen (siehe „Checks“)
-  3) **Docs aktualisieren** (README/CHANGELOG/docs)
+  3) **Docs aktualisieren** (README/CHANGELOG/docs). Hinweis: - Docs niemals mit BOM oder CRLF neu schreiben; UTF-8 ohne BOM + LF beibehalten.
   4) Kurze Zusammenfassung (3–7 Bulletpoints)
 
 ### Keine unnötige Format-/Churn-Änderungen

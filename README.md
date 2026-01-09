@@ -35,9 +35,11 @@ Owli-AI Assist ist eine Android-Demo-App fuer ein Fahrrad-Assistenzsystem mit On
 ## Installation & Build
 1. Repository oeffnen.
 2. Modell ablegen: `app/src/main/assets/models/efficientdet_lite2_int8.tflite`
-3. Labels liegen unter `app/src/main/assets/models/labels.txt` (COCO-80).
-4. Build (PowerShell/Windows): `gradlew.bat :app:assembleDebug`
-5. Installieren und starten (ADB/Android Studio).
+  --> getModel.sh l?dt es automatisch aus dem Web.
+3. OpenRouter API-Key in `local.properties` setzen: `OPENROUTER_API_KEY=...` (nicht committen).
+4. Labels liegen unter `app/src/main/assets/models/labels.txt` (COCO-80).
+5. Build (PowerShell/Windows): `gradlew.bat :app:assembleDebug`
+6. Installieren und starten (ADB/Android Studio).
 
 ## Bedienung
 1. App starten, Kamera-Permission erlauben.
