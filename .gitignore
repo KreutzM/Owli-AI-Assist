@@ -26,3 +26,5 @@ local.properties
 /.gradle-user/
 /.kotlin
 /tmp
+*.apk
+
