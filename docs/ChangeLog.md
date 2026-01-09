@@ -25,6 +25,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 ### Changed
 - Namespace/applicationId auf `com.owlitech.owli.assist` umgestellt; App-Theme/Compose-Theme auf Owli benannt.
 - Branding in UI/Diagnostics/OpenRouter-Headern sowie `rootProject.name` auf Owli-AI angepasst.
+- Doku: App als AI Assistenz-App fuer blinde Nutzer beschrieben (keine Demo-App).
 - VLM-Profile auf neues Schema mit token_policy, parameter_overrides und defaults umgestellt.
 - OpenRouter-Parsing nutzt nur message.content fuer UI/TTS; Reasoning bleibt Debug/Telemetry.
 - AudioFeedbackEngine nutzt AudioFocus/AudioAttributes und TTS-Prewarm fuer stabileres Streaming.

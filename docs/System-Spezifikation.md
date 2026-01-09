@@ -1,4 +1,4 @@
-# System-Spezifikation – Fahrrad-Assistenzsystem (AI/CV für sehbehinderte Radfahrer)
+# System-Spezifikation – AI Assistenz-App (AI/CV fuer blinde Nutzer)
 
 Diese Spezifikation beschreibt **umfangreiche funktionale und nicht-funktionale Anforderungen** der geplanten Android-App. Sie dient ChatGPT5.1-Codex-max als Referenz für alle Implementierungen.
 
@@ -6,7 +6,7 @@ Diese Spezifikation beschreibt **umfangreiche funktionale und nicht-funktionale 
 
 ## 1. Zielsetzung
 
-Die App soll sehbehinderten Radfahrern eine **assistive, echtzeitfähige Risikoerkennung** bieten, indem die Smartphone- oder Zusatzkamera den Fahrweg analysiert und relevante Gefahren akustisch meldet.
+Die App soll blinden Nutzern eine **assistive, echtzeitfaehige Risikoerkennung** bieten, indem die Smartphone- oder Zusatzkamera die Umgebung analysiert und relevante Gefahren akustisch meldet.
 
 Die App ist **kein Sicherheits- oder Medizinprodukt**, sondern ein technischer Assistent.
 
@@ -14,10 +14,10 @@ Die App ist **kein Sicherheits- oder Medizinprodukt**, sondern ein technischer A
 
 ## 2. Kernfunktionen
 
-### 2.1 Objekterkennung im Fahrweg
+### 2.1 Objekterkennung im Sichtfeld
 
 * Erkennen von **Fußgängern**.
-* Erkennen von **Fahrzeugen** (Autos, Fahrräder, Motorräder, Busse, Lieferwagen).
+* Erkennen von **Fahrzeugen** (Autos, Motorraeder, Busse, Lieferwagen).
 * Erkennen von **statischen Hindernissen** (z. B. Pfosten, Poller, Steine, Äste, Baustellenobjekte).
 * Optional später: Erkennen von **Verkehrszeichen**.
 
@@ -62,7 +62,7 @@ Die App ist **kein Sicherheits- oder Medizinprodukt**, sondern ein technischer A
 
 ### 3.1 Primäre Nutzer
 
-* **Sehbehinderte Radfahrer**, die zusätzliche Orientierungshilfe benötigen.
+* **Blinde Nutzer**, die zusaetzliche Orientierungshilfe benoetigen.
 
 ### 3.2 Sekundäre Nutzer
 
@@ -105,7 +105,7 @@ Die App ist **kein Sicherheits- oder Medizinprodukt**, sondern ein technischer A
 
 ### 5.3 Hazard-Logik
 
-* Ein Hindernis im **unteren Drittel** des Bildes (Fahrweg) gilt als potenziell gefährlich.
+* Ein Hindernis im **unteren Drittel** des Bildes (Sichtfeld) gilt als potenziell gefährlich.
 * Objekte im mittleren Drittel liefern Warnungen.
 * Ampelstatus überschreibt andere Warnungen, wenn eine rote Ampel im Sichtfeld ist.
 
@@ -167,7 +167,7 @@ Die App ist **kein Sicherheits- oder Medizinprodukt**, sondern ein technischer A
 
 ### 7.3 Alternative Feedbackkanäle
 
-* Haptische Feedbackmodule am Lenker
+* Haptische Feedbackmodule am Koerper
 * Panoramische Audiowiedergabe
 
 ### 7.4 Mehr Kamera-Modi

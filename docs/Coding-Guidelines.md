@@ -1,6 +1,6 @@
-# Coding-Guidelines â€“ Fahrrad-Assistenz-App
+# Coding-Guidelines â€“ AI Assistenz-App
 
-Diese Richtlinien definieren Stil, Struktur und technische Konventionen fÃ¼r den Code der Fahrrad-Assistenz-App.
+Diese Richtlinien definieren Stil, Struktur und technische Konventionen fÃ¼r den Code der AI Assistenz-App.
 ChatGPT5.1-Codex-max soll sich bei allen Code-Generierungen so gut wie mÃ¶glich daran orientieren.
 
 ---

@@ -1,4 +1,4 @@
-# System-Architektur â€“ Fahrrad-Assistenz-App (CV fÃ¼r sehbehinderte Radfahrer)
+# System-Architektur - AI Assistenz-App (CV fuer blinde Nutzer)
 
 Diese Datei beschreibt die Ziel-Architektur der Android-App, damit ChatGPT5.1-Codex-max (Ã¼ber Codex-CLI) konsistenten, erweiterbaren Code erzeugen kann.
 
@@ -8,14 +8,14 @@ Bitte bei allen Code-Generierungen diese Architektur, Paketstruktur und Begriffe
 
 ## 1. Ziel und Rahmen
 
-Die App ist ein **Fahrrad-Assistenzsystem** fÃ¼r sehbehinderte Radfahrer:
+Die App ist eine **AI Assistenz-App** fÃ¼r blinde Nutzer:
 
-* Das Smartphone ist am Lenker montiert, die Kamera zeigt nach vorn.
+* Das Smartphone ist am Koerper oder in der Hand, die Kamera zeigt nach vorn.
 * Pro Zeiteinheit (z.B. 1â€“5 FPS) werden Kamerabilder analysiert.
 * Die App erkennt:
 
-  * FuÃŸgÃ¤nger und andere Fahrzeuge (FahrrÃ¤der, Autos, Busse â€¦) im Fahrweg
-  * Hindernisse im Fahrweg (z.B. Ã„ste, Steine, Objekte)
+  * FuÃŸgÃ¤nger und andere Fahrzeuge (Motorraeder, Autos, Busse â€¦) im Sichtfeld
+  * Hindernisse im Sichtfeld (z.B. Ã„ste, Steine, Objekte)
   * Ampeln und ggf. deren Status (rot/grÃ¼n)
 * Der Nutzer erhÃ¤lt **akustische** (und optional haptische) Warnungen.
 
@@ -297,7 +297,7 @@ interface SceneAnalyzer {
 
 * Implementierung enthÃ¤lt Heuristiken:
 
-  * Auswahl relevanter Objekte im Fahrweg (z.B. mittleres Drittel, unteres Drittel des Bildes)
+  * Auswahl relevanter Objekte im Sichtfeld (z.B. mittleres Drittel, unteres Drittel des Bildes)
   * SchÃ¤tzung Richtung (links/rechts/zentral) anhand BBox
   * Zusammenfassung zu `HazardEvent`-Liste und `primaryMessage`.
 

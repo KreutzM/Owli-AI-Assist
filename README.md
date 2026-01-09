@@ -1,6 +1,6 @@
 # Owli-AI Assist
 
-Owli-AI Assist ist eine Android-Demo-App fuer ein Fahrrad-Assistenzsystem mit On-Device-Computer-Vision. Die App nutzt CameraX fuer die Live-Preview, eine Vision-Pipeline (Preprocessing -> Detector -> SceneAnalyzer/OwliAI) und gibt Warnungen bzw. OwliAI-Ansagen per TTS aus. Als Beispielmodell ist EfficientDet-Lite2 (COCO) eingebunden; bei fehlendem Modell faellt die App auf einen FakeDetector zurueck.
+Owli-AI Assist ist eine Android-App fuer blinde Nutzer als AI Assistenz-App mit On-Device-Computer-Vision. Die App nutzt CameraX fuer die Live-Preview, eine Vision-Pipeline (Preprocessing -> Detector -> SceneAnalyzer/OwliAI) und gibt Warnungen bzw. OwliAI-Ansagen per TTS aus. Als Beispielmodell ist EfficientDet-Lite2 (COCO) eingebunden; bei fehlendem Modell faellt die App auf einen FakeDetector zurueck.
 
 ## Funktionsumfang
 - Live-Kamera-Preview (CameraX) mit Bounding-Box-Overlay
