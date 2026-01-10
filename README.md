@@ -56,6 +56,7 @@ Owli-AI Assist ist eine Android-App fuer blinde Nutzer als AI Assistenz-App mit 
 
 ## Konfiguration
 - Settings via DataStore (persistiert): Detector/Tracking/OwliAI/TTS/Debug/Pipeline-Intervall; Reset im Settings-Screen
+- Sprache: System/Deutsch/English im Settings-Screen (Default: Systemsprache)
 - Detector: `TfliteDetectorOptions` (Threads, NNAPI), Pfad: `models/efficientdet_lite2_int8.tflite` (aus Settings steuerbar)
 - OwliAI: Konfiguration (minConfidence, minConfidenceTrack, IoU-Threshold, bboxSmoothingAlpha, minConsecutiveHits, maxDetectionsPerFrame, maxTracks, Speak-Intervalle, TTS-Speech-Rate, Decay) via Settings anpassbar
 - Hazard (Basis): DefaultSceneAnalyzer `confidenceThreshold = 0.4`, Decay 800 ms. Mapping: Person -> Personenwarnung, Fahrzeugklassen -> Fahrzeugwarnung, Ampel -> Info.

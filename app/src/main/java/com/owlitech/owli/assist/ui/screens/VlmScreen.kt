@@ -56,6 +56,7 @@ import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
@@ -63,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalDensity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import com.owlitech.owli.assist.R
 import com.owlitech.owli.assist.camera.CameraFrameSource
 import com.owlitech.owli.assist.vlm.VlmUiState
 import com.owlitech.owli.assist.ui.components.CameraPreview
@@ -123,6 +125,19 @@ fun VlmScreen(
             question = ""
         }
     }
+    val nothingRecognizedText = stringResource(R.string.vlm_snackbar_nothing_recognized)
+    val pleaseWaitText = stringResource(R.string.vlm_snackbar_please_wait)
+    val sentText = stringResource(R.string.vlm_snackbar_sent)
+    val undoText = stringResource(R.string.vlm_snackbar_undo)
+    val noSpeechText = stringResource(R.string.vlm_speech_no_speech)
+    val speechNotAvailableText = stringResource(R.string.vlm_speech_not_available)
+    val voicePrompt = stringResource(R.string.vlm_voice_prompt)
+    val newSceneLabel = stringResource(R.string.vlm_action_new_scene)
+    val longPressSendLabel = stringResource(R.string.vlm_voice_long_press_send)
+    val sendMessageLabel = stringResource(R.string.vlm_send_message)
+    val voiceInputLabel = stringResource(R.string.vlm_voice_input)
+    val voiceListeningLabel = stringResource(R.string.vlm_voice_listening)
+    val voiceAutoSendLabel = stringResource(R.string.vlm_voice_listening_auto_send)
     val speechLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -137,13 +152,13 @@ fun VlmScreen(
             autoSendOnVoiceResult = false
             if (trimmed.length < 2) {
                 coroutineScope.launch {
-                    snackbarHostState.showSnackbar(message = "Nichts erkannt")
+                    snackbarHostState.showSnackbar(message = nothingRecognizedText)
                 }
             } else if (isBusy) {
                 val current = question.trim()
                 question = if (current.isBlank()) trimmed else "$current $trimmed"
                 coroutineScope.launch {
-                    snackbarHostState.showSnackbar(message = "Bitte warten")
+                    snackbarHostState.showSnackbar(message = pleaseWaitText)
                 }
             } else {
                 pendingAutoSendText = trimmed
@@ -151,8 +166,8 @@ fun VlmScreen(
                 sendQuestion()
                 coroutineScope.launch {
                     val resultAction = snackbarHostState.showSnackbar(
-                        message = "Gesendet",
-                        actionLabel = "Rueckgaengig"
+                        message = sentText,
+                        actionLabel = undoText
                     )
                     if (resultAction == androidx.compose.material3.SnackbarResult.ActionPerformed) {
                         question = pendingAutoSendText.orEmpty()
@@ -167,7 +182,7 @@ fun VlmScreen(
                 question = if (current.isBlank()) trimmed else "$current $trimmed"
                 speechError = null
             } else {
-                speechError = "Keine Sprache erkannt"
+                speechError = noSpeechText
             }
         }
         coroutineScope.launch {
@@ -187,7 +202,7 @@ fun VlmScreen(
                     RecognizerIntent.EXTRA_LANGUAGE_MODEL,
                     RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
                 )
-                putExtra(RecognizerIntent.EXTRA_PROMPT, "Spracheingabe")
+                putExtra(RecognizerIntent.EXTRA_PROMPT, voicePrompt)
             }
             isListening = true
             speechLauncher.launch(intent)
@@ -195,7 +210,7 @@ fun VlmScreen(
             isListening = false
             autoSendOnVoiceResult = false
             onVoiceInputActiveChanged(false)
-            speechError = "Spracherkennung nicht verfuegbar"
+            speechError = speechNotAvailableText
         }
     }
     Box(modifier = Modifier.fillMaxSize()) {
@@ -225,41 +240,76 @@ fun VlmScreen(
             CameraOverlayScope {
                 when (state) {
                     is VlmUiState.Inactive -> {
-                        CameraOverlayLabel("Bereit. Tippe auf 'Neue Szene'.")
+                        CameraOverlayLabel(
+                            stringResource(R.string.vlm_state_ready_format, newSceneLabel)
+                        )
                     }
                     is VlmUiState.LoadingOverview -> {
                         CameraOverlayRow {
                             CircularProgressIndicator(color = CameraOverlayDefaults.textColor)
-                            Text(state.message ?: "Lade VLM...")
+                            Text(state.message ?: stringResource(R.string.vlm_state_loading))
                         }
                     }
                     is VlmUiState.Asking -> {
                         CameraOverlayRow {
                             CircularProgressIndicator(color = CameraOverlayDefaults.textColor)
-                            Text("Sende Frage...")
+                            Text(stringResource(R.string.vlm_state_sending_question))
                         }
                     }
                     is VlmUiState.Streaming -> {
-                        CameraOverlayLabel(text = "Streaming...")
+                        CameraOverlayLabel(text = stringResource(R.string.vlm_state_streaming))
                         CameraOverlayLabel(text = state.partialText, maxLines = 6)
                     }
                     is VlmUiState.Error -> {
-                        CameraOverlayLabel(text = "Fehler: ${state.message}")
+                        CameraOverlayLabel(
+                            text = stringResource(R.string.vlm_state_error_format, state.message)
+                        )
                     }
                     is VlmUiState.OverviewReadyRaw -> {
-                        CameraOverlayLabel(text = "Antwort:")
+                        CameraOverlayLabel(text = stringResource(R.string.vlm_state_answer))
                         CameraOverlayLabel(text = state.rawText, maxLines = 8)
                     }
                     is VlmUiState.OverviewReady -> {
                         val desc = state.description
-                        val obstaclesText = if (desc.obstacles.isEmpty()) "keine" else desc.obstacles.joinToString()
-                        val landmarksText = if (desc.landmarks.isEmpty()) "keine" else desc.landmarks.joinToString()
-                        CameraOverlayLabel(text = "Kurz: ${desc.ttsOneLiner}", maxLines = 3)
-                        CameraOverlayLabel(text = "Empfehlung: ${desc.actionSuggestion}", maxLines = 3)
-                        CameraOverlayLabel(text = "Hindernisse: $obstaclesText", maxLines = 3)
-                        CameraOverlayLabel(text = "Landmarken: $landmarksText", maxLines = 3)
-                        CameraOverlayLabel(text = "Details: ${desc.readableText}", maxLines = 8)
-                        desc.overallConfidence?.let { CameraOverlayLabel(text = "Confidence: $it") }
+                        val noneText = stringResource(R.string.vlm_state_none)
+                        val obstaclesText = if (desc.obstacles.isEmpty()) {
+                            noneText
+                        } else {
+                            desc.obstacles.joinToString()
+                        }
+                        val landmarksText = if (desc.landmarks.isEmpty()) {
+                            noneText
+                        } else {
+                            desc.landmarks.joinToString()
+                        }
+                        CameraOverlayLabel(
+                            text = stringResource(R.string.vlm_state_brief_format, desc.ttsOneLiner),
+                            maxLines = 3
+                        )
+                        CameraOverlayLabel(
+                            text = stringResource(
+                                R.string.vlm_state_recommendation_format,
+                                desc.actionSuggestion
+                            ),
+                            maxLines = 3
+                        )
+                        CameraOverlayLabel(
+                            text = stringResource(R.string.vlm_state_obstacles_format, obstaclesText),
+                            maxLines = 3
+                        )
+                        CameraOverlayLabel(
+                            text = stringResource(R.string.vlm_state_landmarks_format, landmarksText),
+                            maxLines = 3
+                        )
+                        CameraOverlayLabel(
+                            text = stringResource(R.string.vlm_state_details_format, desc.readableText),
+                            maxLines = 8
+                        )
+                        desc.overallConfidence?.let {
+                            CameraOverlayLabel(
+                                text = stringResource(R.string.vlm_state_confidence_format, it)
+                            )
+                        }
                     }
                 }
             }
@@ -284,12 +334,16 @@ fun VlmScreen(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (autoScanAvailable) {
-                    val autoLabel = if (isAutoScanRunning) "Auto an" else "Auto aus"
+                    val autoLabel = if (isAutoScanRunning) {
+                        stringResource(R.string.vlm_auto_on)
+                    } else {
+                        stringResource(R.string.vlm_auto_off)
+                    }
                     FilterChip(
                         selected = isAutoScanRunning,
                         onClick = { if (isAutoScanRunning) onStopAutoScan() else onStartAutoScan() },
                         enabled = autoScanAvailable,
-                        label = { Text("Auto") },
+                        label = { Text(stringResource(R.string.vlm_auto_label)) },
                         leadingIcon = {
                             Icon(
                                 imageVector = Icons.Filled.Autorenew,
@@ -314,10 +368,10 @@ fun VlmScreen(
                             contentDescription = null
                         )
                     },
-                    text = { Text("Neue Szene") },
+                    text = { Text(newSceneLabel) },
                     expanded = true,
                     modifier = Modifier.semantics {
-                        contentDescription = "Neue Szene"
+                        contentDescription = newSceneLabel
                         if (isBusy) {
                             disabled()
                         }
@@ -350,13 +404,13 @@ fun VlmScreen(
                                     enabled = micEnabled,
                                     onClick = { startVoiceIntent(false) },
                                     onLongClick = { startVoiceIntent(true) },
-                                    onLongClickLabel = "Sofort senden"
+                                    onLongClickLabel = longPressSendLabel
                                 )
                                 .semantics {
                                     contentDescription = when {
-                                        isListening -> "Spracheingabe laeuft"
-                                        autoSendOnVoiceResult -> "Spracheingabe & sofort senden"
-                                        else -> "Spracheingabe"
+                                        isListening -> voiceListeningLabel
+                                        autoSendOnVoiceResult -> voiceAutoSendLabel
+                                        else -> voiceInputLabel
                                     }
                                 },
                             contentAlignment = Alignment.Center
@@ -366,7 +420,7 @@ fun VlmScreen(
                         OutlinedTextField(
                             value = question,
                             onValueChange = { question = it },
-                            label = { Text("Frage stellen") },
+                            label = { Text(stringResource(R.string.vlm_question_label)) },
                             modifier = Modifier.weight(1f),
                             enabled = !isBusy,
                             maxLines = 34,
@@ -379,7 +433,9 @@ fun VlmScreen(
                         )
                         IconButton(
                             onClick = { sendQuestion() },
-                            modifier = Modifier.semantics { contentDescription = "Nachricht senden" },
+                            modifier = Modifier.semantics {
+                                contentDescription = sendMessageLabel
+                            },
                             enabled = !isBusy && question.isNotBlank()
                         ) {
                             Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = null)
@@ -387,14 +443,14 @@ fun VlmScreen(
                     }
                     if (!isListening) {
                         Text(
-                            text = "Tippen: diktieren  Gedrueckt halten: sofort senden",
+                            text = stringResource(R.string.vlm_voice_hint),
                             style = MaterialTheme.typography.bodySmall,
                             modifier = Modifier.padding(start = 56.dp, bottom = 4.dp)
                         )
                     }
                     val statusText = when {
-                        isListening -> "Hoere zu..."
-                        isProcessingSpeech -> "Verarbeite..."
+                        isListening -> stringResource(R.string.vlm_voice_status_listening)
+                        isProcessingSpeech -> stringResource(R.string.vlm_voice_status_processing)
                         else -> speechError
                     }
                     if (statusText != null) {

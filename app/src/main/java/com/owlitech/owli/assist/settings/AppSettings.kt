@@ -4,6 +4,12 @@ import com.owlitech.owli.assist.blindview.BlindViewConfig
 import com.owlitech.owli.assist.pipeline.AppMode
 import com.owlitech.owli.assist.ml.TfliteDetectorOptions
 
+enum class LanguagePreference {
+    SYSTEM,
+    DE,
+    EN
+}
+
 data class AppSettings(
     val appMode: AppMode = AppSettingsDefaults.appMode,
     val vlmProfileId: String = AppSettingsDefaults.vlmProfileId,
@@ -32,7 +38,8 @@ data class AppSettings(
     val showOverlay: Boolean = AppSettingsDefaults.showOverlay,
     val showBlindViewPreview: Boolean = AppSettingsDefaults.showBlindViewPreview,
     val showOverlayLabels: Boolean = AppSettingsDefaults.showOverlayLabels,
-    val analysisIntervalMs: Long = AppSettingsDefaults.analysisIntervalMs
+    val analysisIntervalMs: Long = AppSettingsDefaults.analysisIntervalMs,
+    val languagePreference: LanguagePreference = AppSettingsDefaults.languagePreference
 ) {
     fun toDetectorOptions(): TfliteDetectorOptions {
         return TfliteDetectorOptions(
@@ -98,4 +105,5 @@ object AppSettingsDefaults {
     const val showOverlayLabels: Boolean = true
     const val analysisIntervalMs: Long = 250L
     const val confidenceDecayPerSecond: Float = 0.15f
+    val languagePreference: LanguagePreference = LanguagePreference.SYSTEM
 }

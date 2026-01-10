@@ -10,6 +10,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 ## [Unreleased]
 
 ### Added
+- Language-Setting (System/Deutsch/English) im Settings-Screen.
 - VLM policy layer mit Provider-Interface und GPT-5 Reasoning-Retries.
 - Dokumentation `docs/VLM.md` fuer Profile, Policies und Retry-Strategie.
 - StreamingTtsController fuer fruehen TTS-Start bei VLM-Streaming inkl. Chunking/Dedup.
@@ -23,6 +24,8 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - Beispielprofil `nano-traffic-scan` mit `auto_scan` in `vlm-profiles.json`.
 
 ### Changed
+- UI-Strings in Ressourcen (EN/DE) fuer i18n vorbereitet.
+- Spracheinstellung wird per AppCompat Locale beim Start/Wechsel angewendet.
 - Namespace/applicationId auf `com.owlitech.owli.assist` umgestellt; App-Theme/Compose-Theme auf Owli benannt.
 - Branding in UI/Diagnostics/OpenRouter-Headern sowie `rootProject.name` auf Owli-AI angepasst.
 - Doku: App als AI Assistenz-App fuer blinde Nutzer beschrieben (keine Demo-App).
@@ -52,6 +55,8 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - VLM: Sprachausgabe bleibt waehrend aktiver Spracheingabe pausiert.
 
 ### Fixed
+- Sprache kann jetzt per Settings sofort umgeschaltet werden (Locale-Recreate).
+- Crash beim App-Start nach Umstellung auf AppCompatActivity (Theme-Anpassung).
 - GPT-5 Reasoning-only Antworten: automatische Retries mit hoeherem Token-Budget und Final-Only Hinweis.
 - App-Start-Crash durch zu fruehe VLM-Profil-Initialisierung in MainActivity.
 - VLM Default-Profil folgt jetzt dem JSON-default, sofern kein Nutzerprofil gesetzt ist.

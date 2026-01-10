@@ -1,16 +1,19 @@
 package com.owlitech.owli.assist.ui.navigation
 
+import androidx.annotation.StringRes
+import com.owlitech.owli.assist.R
+
 sealed class AppRoute(
     val route: String,
-    val title: String
+    @StringRes val titleRes: Int
 ) {
-    data object Home : AppRoute("home", "Owli-AI")
-    data object Settings : AppRoute("settings", "Einstellungen")
-    data object VlmSettings : AppRoute("vlm_settings", "VLM Einstellungen")
-    data object Diagnostics : AppRoute("diagnostics", "Diagnostics")
-    data object Vlm : AppRoute("vlm", "VLM")
-    data object VlmProfiles : AppRoute("vlm_profiles", "VLM Profile")
-    data object About : AppRoute("about", "About")
+    data object Home : AppRoute("home", R.string.app_name)
+    data object Settings : AppRoute("settings", R.string.nav_title_settings)
+    data object VlmSettings : AppRoute("vlm_settings", R.string.nav_title_vlm_settings)
+    data object Diagnostics : AppRoute("diagnostics", R.string.nav_title_diagnostics)
+    data object Vlm : AppRoute("vlm", R.string.nav_title_vlm)
+    data object VlmProfiles : AppRoute("vlm_profiles", R.string.nav_title_vlm_profiles)
+    data object About : AppRoute("about", R.string.nav_title_about)
 
     companion object {
         fun fromRoute(route: String?): AppRoute = when (route) {

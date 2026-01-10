@@ -3,16 +3,18 @@ package com.owlitech.owli.assist
 import android.Manifest
 import android.content.pm.PackageManager
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.appcompat.app.AppCompatDelegate
+import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
+import androidx.core.os.LocaleListCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -23,6 +25,7 @@ import com.owlitech.owli.assist.camera.CameraFrameSource
 import com.owlitech.owli.assist.pipeline.VisionPipelineModule
 import com.owlitech.owli.assist.settings.AppSettings
 import com.owlitech.owli.assist.settings.AppSettingsDefaults
+import com.owlitech.owli.assist.settings.LanguagePreference
 import com.owlitech.owli.assist.settings.SettingsRepository
 import com.owlitech.owli.assist.settings.SettingsViewModel
 import com.owlitech.owli.assist.ui.MainViewModel
@@ -43,7 +46,7 @@ import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
 
-class MainActivity : ComponentActivity() {
+class MainActivity : AppCompatActivity() {
 
     private val cameraFrameSource by lazy { CameraFrameSource(this, this) }
     private val audioFeedbackEngine by lazy { AudioFeedbackEngine(this) }
@@ -113,7 +116,7 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     topBar = {
                         AppTopBar(
-                            title = currentRoute.title,
+                            titleRes = currentRoute.titleRes,
                             canNavigateBack = canNavigateBack,
                             showVlmAction = currentRoute == AppRoute.Home,
                             onNavigateBack = { navController.popBackStack() },
@@ -235,6 +238,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun applySettings(settings: AppSettings) {
+        applyLocale(settings.languagePreference)
         val migratedProfileId = when (settings.vlmProfileId) {
             "nano_safe" -> "nano-low"
             "nano_fast" -> "nano-high"
@@ -277,6 +281,20 @@ class MainActivity : ComponentActivity() {
         activeVlmProfile = vlmProfilesConfig.resolve(settings.vlmProfileId)
         mainViewModel.applyVlmProfile(activeVlmProfile)
         ensurePermissionAndAutoStart()
+    }
+
+    private fun applyLocale(preference: LanguagePreference) {
+        val targetLocales = when (preference) {
+            LanguagePreference.SYSTEM -> LocaleListCompat.getEmptyLocaleList()
+            LanguagePreference.DE -> LocaleListCompat.forLanguageTags("de")
+            LanguagePreference.EN -> LocaleListCompat.forLanguageTags("en")
+        }
+        if (AppCompatDelegate.getApplicationLocales() != targetLocales) {
+            AppCompatDelegate.setApplicationLocales(targetLocales)
+            if (!isFinishing && !isDestroyed) {
+                recreate()
+            }
+        }
     }
 
     private fun handleStreamingState(state: VlmUiState.Streaming) {

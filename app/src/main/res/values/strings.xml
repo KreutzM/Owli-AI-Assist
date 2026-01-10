@@ -1,3 +1,148 @@
 <resources>
     <string name="app_name">Owli-AI</string>
+
+    <string name="nav_title_settings">Settings</string>
+    <string name="nav_title_vlm_settings">VLM Settings</string>
+    <string name="nav_title_diagnostics">Diagnostics</string>
+    <string name="nav_title_vlm">VLM</string>
+    <string name="nav_title_vlm_profiles">VLM Profiles</string>
+    <string name="nav_title_about">About</string>
+
+    <string name="menu_back_content_description">Back</string>
+    <string name="menu_more_content_description">Menu</string>
+    <string name="menu_vlm">VLM</string>
+
+    <string name="action_start">Start</string>
+    <string name="action_stop">Stop</string>
+    <string name="home_hazard_format">Hazard: %1$s</string>
+    <string name="home_detections_format">Detections: %1$d</string>
+    <string name="home_rotation_format">Rotation: %1$ddeg</string>
+    <string name="home_traffic_light_format">TL: %1$s (conf=%2$.2f)</string>
+    <string name="home_blindview_format">BV: %1$s</string>
+    <string name="home_status_format">Status: %1$s</string>
+    <string name="home_status_running">Running</string>
+    <string name="home_status_stopped">Stopped</string>
+    <string name="home_detector_format">Detector: %1$s</string>
+    <string name="home_last_message_format">Last message: %1$s</string>
+    <string name="home_error_format">Error: %1$s</string>
+    <string name="home_blindview_preview_format">BlindView: %1$s</string>
+    <string name="home_preview_scene_message">Caution, person ahead</string>
+    <string name="home_preview_status_message">Preview (FakeDetector)</string>
+    <string name="home_preview_blindview">2 people, 11 o\'clock.</string>
+
+    <string name="hazard_level_none">None</string>
+    <string name="hazard_level_warning">Warning</string>
+    <string name="hazard_level_danger">Danger</string>
+
+    <string name="vlm_snackbar_nothing_recognized">Nothing recognized</string>
+    <string name="vlm_snackbar_please_wait">Please wait</string>
+    <string name="vlm_snackbar_sent">Sent</string>
+    <string name="vlm_snackbar_undo">Undo</string>
+    <string name="vlm_speech_no_speech">No speech recognized</string>
+    <string name="vlm_voice_prompt">Voice input</string>
+    <string name="vlm_speech_not_available">Speech recognition not available</string>
+    <string name="vlm_state_ready_format">Ready. Tap %1$s.</string>
+    <string name="vlm_state_loading">Loading VLM...</string>
+    <string name="vlm_state_sending_question">Sending question...</string>
+    <string name="vlm_state_streaming">Streaming...</string>
+    <string name="vlm_state_error_format">Error: %1$s</string>
+    <string name="vlm_state_answer">Answer:</string>
+    <string name="vlm_state_brief_format">Brief: %1$s</string>
+    <string name="vlm_state_recommendation_format">Recommendation: %1$s</string>
+    <string name="vlm_state_obstacles_format">Obstacles: %1$s</string>
+    <string name="vlm_state_landmarks_format">Landmarks: %1$s</string>
+    <string name="vlm_state_details_format">Details: %1$s</string>
+    <string name="vlm_state_confidence_format">Confidence: %1$s</string>
+    <string name="vlm_state_none">none</string>
+    <string name="vlm_auto_label">Auto</string>
+    <string name="vlm_auto_on">Auto on</string>
+    <string name="vlm_auto_off">Auto off</string>
+    <string name="vlm_action_new_scene">New scene</string>
+    <string name="vlm_voice_long_press_send">Send immediately</string>
+    <string name="vlm_voice_listening">Voice input running</string>
+    <string name="vlm_voice_listening_auto_send">Voice input and send now</string>
+    <string name="vlm_voice_input">Voice input</string>
+    <string name="vlm_question_label">Ask a question</string>
+    <string name="vlm_send_message">Send message</string>
+    <string name="vlm_voice_hint">Tap: dictate  Press and hold: send now</string>
+    <string name="vlm_voice_status_listening">Listening...</string>
+    <string name="vlm_voice_status_processing">Processing...</string>
+
+    <string name="settings_reset">Reset</string>
+    <string name="settings_reset_defaults">Reset defaults</string>
+    <string name="settings_language_title">Language</string>
+    <string name="settings_language_hint">Default: system language.</string>
+    <string name="settings_language_system">System default</string>
+    <string name="settings_language_german">German</string>
+    <string name="settings_language_english">English</string>
+    <string name="settings_detector_min_confidence">Detector min confidence</string>
+    <string name="settings_detector_min_confidence_helper">Score threshold</string>
+    <string name="settings_detector_max_results">Detector max results</string>
+    <string name="settings_detector_max_results_helper">Top-N results</string>
+    <string name="settings_detector_threads">Threads</string>
+    <string name="settings_detector_threads_helper">Interpreter threads</string>
+    <string name="settings_detector_nnapi">NNAPI</string>
+    <string name="settings_detector_nnapi_helper">Accelerator (if available)</string>
+    <string name="settings_track_min_confidence">Track min confidence</string>
+    <string name="settings_track_min_confidence_helper">Filter for false positives</string>
+    <string name="settings_iou_threshold">IoU threshold</string>
+    <string name="settings_iou_threshold_helper">Tracker matching threshold</string>
+    <string name="settings_min_hits">Min hits</string>
+    <string name="settings_min_hits_helper">Tracker stability</string>
+    <string name="settings_bbox_smoothing">BBox smoothing</string>
+    <string name="settings_bbox_smoothing_helper">EMA factor (higher = smoother)</string>
+    <string name="settings_blindview_max_items">BlindView max items</string>
+    <string name="settings_blindview_max_items_helper">Objects per announcement</string>
+    <string name="settings_tts_speech_rate">TTS speech rate</string>
+    <string name="settings_tts_speech_rate_helper">Speech speed</string>
+    <string name="settings_tts_pitch">TTS pitch</string>
+    <string name="settings_tts_pitch_helper">Voice pitch</string>
+    <string name="settings_analysis_interval">Analysis interval (ms)</string>
+    <string name="settings_analysis_interval_helper">Min gap between frames</string>
+    <string name="settings_show_overlay">Show overlay</string>
+    <string name="settings_show_overlay_labels">Overlay labels</string>
+    <string name="settings_show_overlay_labels_helper">BBox label (label + confidence)</string>
+    <string name="settings_blindview_preview">BlindView preview</string>
+    <string name="settings_slider_value_format">%1$s: %2$.2f</string>
+
+    <string name="vlm_settings_profile_title">VLM profile</string>
+    <string name="vlm_settings_select">Select</string>
+    <string name="vlm_settings_streaming_tts">Streaming TTS (VLM)</string>
+    <string name="vlm_settings_streaming_tts_helper">Earlier TTS start during streaming</string>
+
+    <string name="vlm_profile_active_suffix">(Active)</string>
+    <string name="vlm_profile_model_format">Model: %1$s</string>
+    <string name="vlm_profile_temp_na">n/a</string>
+    <string name="vlm_profile_reasoning_format">  Reasoning: %1$s</string>
+    <string name="vlm_profile_streaming_on">  Streaming: on</string>
+    <string name="vlm_profile_streaming_off">  Streaming: off</string>
+    <string name="vlm_profile_params_format">Temp: %1$s  MaxTokens: %2$d%3$s%4$s</string>
+
+    <string name="diagnostics_copy">Copy</string>
+    <string name="diagnostics_report_label">Debug Report</string>
+    <string name="diagnostics_report_copied">Debug report copied</string>
+    <string name="diagnostics_section_app">App</string>
+    <string name="diagnostics_section_pipeline">Pipeline</string>
+    <string name="diagnostics_section_detector">Detector</string>
+    <string name="diagnostics_section_blindview_tts">BlindView/TTS</string>
+    <string name="diagnostics_section_tracking">Tracking</string>
+    <string name="diagnostics_section_scene_snapshot">Scene snapshot</string>
+    <string name="diagnostics_version_format">Version: %1$s (%2$d) build=%3$s</string>
+    <string name="diagnostics_device_format">Device: %1$s Android %2$s</string>
+    <string name="diagnostics_running_format">Running: %1$s fps=%2$.2f intervalMs=%3$.1f</string>
+    <string name="diagnostics_detector_info_format">DetectorInfo: %1$s</string>
+    <string name="diagnostics_analysis_interval_format">AnalysisIntervalMs: %1$d</string>
+    <string name="diagnostics_threads_format">Threads=%1$d Score&gt;=%2$.2f MaxResults=%3$d</string>
+    <string name="diagnostics_tts_ready_format">ttsReady=%1$s speechRate=%2$.2f</string>
+    <string name="diagnostics_speak_interval_format">speakInterval=%1$d repeatInterval=%2$d maxItems=%3$d</string>
+    <string name="diagnostics_tracking_format">iou=%1$.2f trackMaxAgeMs=%2$d minHits=%3$d</string>
+    <string name="diagnostics_overlay_format">overlay=%1$s labels=%2$s preview=%3$s</string>
+    <string name="diagnostics_detections_format">detectionsRaw=%1$d detectionsStable=%2$d</string>
+    <string name="diagnostics_top_labels_format">topLabels=%1$s</string>
+    <string name="diagnostics_last_preview_format">lastPreview=%1$s</string>
+    <string name="diagnostics_last_preview_missing">-</string>
+
+    <string name="about_title">Owli-AI / Owli-AI Assist</string>
+    <string name="about_version_format">Version: %1$s (%2$d)</string>
+    <string name="about_build_format">Build: %1$s</string>
 </resources>

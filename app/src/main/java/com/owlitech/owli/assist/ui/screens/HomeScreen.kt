@@ -24,9 +24,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import com.owlitech.owli.assist.R
 import com.owlitech.owli.assist.camera.CameraFrameSource
 import com.owlitech.owli.assist.domain.TrafficLightObservation
 import com.owlitech.owli.assist.ml.Detection
@@ -72,7 +74,7 @@ fun HomeScreen(
                             hazardLevel = hazardLevel,
                             detectionsCount = detectionsCount,
                             message = sceneMessage,
-                            rotationText = rotationDegrees?.let { "${it}deg" },
+                            rotationDegrees = rotationDegrees,
                             trafficLights = trafficLights,
                             blindViewPreview = blindViewPreview,
                             modifier = Modifier
@@ -94,6 +96,9 @@ fun HomeScreen(
             )
         }
         val isStart = !isRunning
+        val startLabel = stringResource(R.string.action_start)
+        val stopLabel = stringResource(R.string.action_stop)
+        val actionLabel = if (isStart) startLabel else stopLabel
         ExtendedFloatingActionButton(
             onClick = { if (isStart) onStart() else onStop() },
             icon = {
@@ -102,12 +107,12 @@ fun HomeScreen(
                     contentDescription = null
                 )
             },
-            text = { Text(if (isStart) "Start" else "Stop") },
+            text = { Text(actionLabel) },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .navigationBarsPadding()
                 .padding(16.dp)
-                .semantics { contentDescription = if (isStart) "Start" else "Stop" }
+                .semantics { contentDescription = actionLabel }
         )
     }
 }
@@ -117,7 +122,7 @@ fun SceneOverlay(
     hazardLevel: String,
     detectionsCount: Int,
     message: String?,
-    rotationText: String?,
+    rotationDegrees: Int?,
     trafficLights: List<TrafficLightObservation>,
     blindViewPreview: String?,
     modifier: Modifier = Modifier
@@ -126,18 +131,24 @@ fun SceneOverlay(
         modifier = modifier,
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
-        CameraOverlayLabel(text = "Hazard: $hazardLevel")
-        CameraOverlayLabel(text = "Detections: $detectionsCount")
-        rotationText?.let { CameraOverlayLabel(text = "Rot: $it") }
+        CameraOverlayLabel(text = stringResource(R.string.home_hazard_format, hazardLevel))
+        CameraOverlayLabel(text = stringResource(R.string.home_detections_format, detectionsCount))
+        rotationDegrees?.let { CameraOverlayLabel(text = stringResource(R.string.home_rotation_format, it)) }
         val primaryTl = trafficLights.maxByOrNull { it.confidence }
         primaryTl?.let {
-            CameraOverlayLabel(text = "TL: ${it.phase} (conf=${"%.2f".format(it.confidence)})")
+            CameraOverlayLabel(
+                text = stringResource(
+                    R.string.home_traffic_light_format,
+                    it.phase,
+                    it.confidence
+                )
+            )
         }
         message?.let {
             CameraOverlayLabel(text = it, maxLines = 3)
         }
         blindViewPreview?.let {
-            CameraOverlayLabel(text = "BV: $it", maxLines = 2)
+            CameraOverlayLabel(text = stringResource(R.string.home_blindview_format, it), maxLines = 2)
         }
     }
 }
@@ -230,12 +241,22 @@ fun ControlPanel(
     blindViewPreview: String?,
     modifier: Modifier = Modifier
 ) {
+    val statusLabel = if (isRunning) {
+        stringResource(R.string.home_status_running)
+    } else {
+        stringResource(R.string.home_status_stopped)
+    }
     Column(modifier = modifier) {
-        Text(text = "Status: ${if (isRunning) "Laeuft" else "Gestoppt"}")
-        Text(text = "Detector: $statusMessage")
-        sceneMessage?.let { Text(text = "Letzte Meldung: $it") }
-        lastError?.let { Text(text = "Fehler: $it", color = MaterialTheme.colorScheme.error) }
-        blindViewPreview?.let { Text(text = "BlindView: $it") }
+        Text(text = stringResource(R.string.home_status_format, statusLabel))
+        Text(text = stringResource(R.string.home_detector_format, statusMessage))
+        sceneMessage?.let { Text(text = stringResource(R.string.home_last_message_format, it)) }
+        lastError?.let {
+            Text(
+                text = stringResource(R.string.home_error_format, it),
+                color = MaterialTheme.colorScheme.error
+            )
+        }
+        blindViewPreview?.let { Text(text = stringResource(R.string.home_blindview_preview_format, it)) }
         Spacer(modifier = Modifier.height(72.dp))
     }
 }
@@ -245,10 +266,10 @@ fun PreviewControlPanel() {
     OwliTheme {
         ControlPanel(
             isRunning = true,
-            sceneMessage = "Achtung, Person voraus",
+            sceneMessage = stringResource(R.string.home_preview_scene_message),
             lastError = null,
-            statusMessage = "Preview (FakeDetector)",
-            blindViewPreview = "2 Personen, 11 Uhr."
+            statusMessage = stringResource(R.string.home_preview_status_message),
+            blindViewPreview = stringResource(R.string.home_preview_blindview)
         )
     }
 }

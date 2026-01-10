@@ -7,15 +7,21 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import com.owlitech.owli.assist.R
 import com.owlitech.owli.assist.settings.AppSettings
+import com.owlitech.owli.assist.settings.LanguagePreference
 
 @Composable
 fun SettingsScreen(
@@ -34,110 +40,114 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End
         ) {
-            Button(onClick = onReset) { Text("Reset") }
+            Button(onClick = onReset) { Text(stringResource(R.string.settings_reset)) }
         }
+        LanguageSetting(
+            selected = settings.languagePreference,
+            onSelected = { pref -> onUpdate { it.copy(languagePreference = pref) } }
+        )
         SettingSlider(
-            label = "Detector minConfidence",
+            label = stringResource(R.string.settings_detector_min_confidence),
             value = settings.detectorMinConfidence,
             valueRange = 0.05f..0.95f,
             steps = 9,
             onValueChange = { v -> onUpdate { it.copy(detectorMinConfidence = v) } },
-            helper = "Score-Threshold"
+            helper = stringResource(R.string.settings_detector_min_confidence_helper)
         )
         SettingIntSlider(
-            label = "Detector maxResults",
+            label = stringResource(R.string.settings_detector_max_results),
             value = settings.detectorMaxResults,
             valueRange = 1..10,
             onValueChange = { v -> onUpdate { it.copy(detectorMaxResults = v) } },
-            helper = "Top-N Ergebnisse"
+            helper = stringResource(R.string.settings_detector_max_results_helper)
         )
         SettingIntSlider(
-            label = "Threads",
+            label = stringResource(R.string.settings_detector_threads),
             value = settings.detectorNumThreads,
             valueRange = 1..4,
             onValueChange = { v -> onUpdate { it.copy(detectorNumThreads = v) } },
-            helper = "Interpreter Threads"
+            helper = stringResource(R.string.settings_detector_threads_helper)
         )
         SettingSwitch(
-            label = "NNAPI",
+            label = stringResource(R.string.settings_detector_nnapi),
             checked = settings.detectorUseNnapi,
             onCheckedChange = { v -> onUpdate { it.copy(detectorUseNnapi = v) } },
-            helper = "Beschleuniger (wenn verfuegbar)"
+            helper = stringResource(R.string.settings_detector_nnapi_helper)
         )
         SettingSlider(
-            label = "Track minConfidence",
+            label = stringResource(R.string.settings_track_min_confidence),
             value = settings.minConfidenceTrack,
             valueRange = 0.1f..0.95f,
             steps = 8,
             onValueChange = { v -> onUpdate { it.copy(minConfidenceTrack = v) } },
-            helper = "Filter gegen False Positives"
+            helper = stringResource(R.string.settings_track_min_confidence_helper)
         )
         SettingSlider(
-            label = "IoU Threshold",
+            label = stringResource(R.string.settings_iou_threshold),
             value = settings.iouThreshold,
             valueRange = 0.1f..0.9f,
             steps = 8,
             onValueChange = { v -> onUpdate { it.copy(iouThreshold = v) } },
-            helper = "Matching-Schwelle Tracker"
+            helper = stringResource(R.string.settings_iou_threshold_helper)
         )
         SettingIntSlider(
-            label = "Min Hits",
+            label = stringResource(R.string.settings_min_hits),
             value = settings.minConsecutiveHits,
             valueRange = 1..5,
             onValueChange = { v -> onUpdate { it.copy(minConsecutiveHits = v) } },
-            helper = "Stabilitaet Tracker"
+            helper = stringResource(R.string.settings_min_hits_helper)
         )
         SettingSlider(
-            label = "BBox Glaettung",
+            label = stringResource(R.string.settings_bbox_smoothing),
             value = settings.bboxSmoothingAlpha,
             valueRange = 0f..1f,
             steps = 9,
             onValueChange = { v -> onUpdate { it.copy(bboxSmoothingAlpha = v) } },
-            helper = "EMA-Anteil (hoeher = glatter)"
+            helper = stringResource(R.string.settings_bbox_smoothing_helper)
         )
         SettingIntSlider(
-            label = "BlindView max Items",
+            label = stringResource(R.string.settings_blindview_max_items),
             value = settings.maxItemsSpoken,
             valueRange = 1..12,
             onValueChange = { v -> onUpdate { it.copy(maxItemsSpoken = v) } },
-            helper = "Anzahl Objekte pro Ansage"
+            helper = stringResource(R.string.settings_blindview_max_items_helper)
         )
         SettingSlider(
-            label = "TTS Speech Rate",
+            label = stringResource(R.string.settings_tts_speech_rate),
             value = settings.ttsSpeechRate,
             valueRange = 0.5f..3.0f,
             steps = 10,
             onValueChange = { v -> onUpdate { it.copy(ttsSpeechRate = v) } },
-            helper = "Sprechgeschwindigkeit"
+            helper = stringResource(R.string.settings_tts_speech_rate_helper)
         )
         SettingSlider(
-            label = "TTS Pitch",
+            label = stringResource(R.string.settings_tts_pitch),
             value = settings.ttsPitch,
             valueRange = 0.5f..2.0f,
             steps = 6,
             onValueChange = { v -> onUpdate { it.copy(ttsPitch = v) } },
-            helper = "Stimmhoehe"
+            helper = stringResource(R.string.settings_tts_pitch_helper)
         )
         SettingIntSlider(
-            label = "Analysis Interval (ms)",
+            label = stringResource(R.string.settings_analysis_interval),
             value = settings.analysisIntervalMs.toInt(),
             valueRange = 150..1000,
             onValueChange = { v -> onUpdate { it.copy(analysisIntervalMs = v.toLong()) } },
-            helper = "Min Abstand zwischen Frames"
+            helper = stringResource(R.string.settings_analysis_interval_helper)
         )
         SettingSwitch(
-            label = "Overlay anzeigen",
+            label = stringResource(R.string.settings_show_overlay),
             checked = settings.showOverlay,
             onCheckedChange = { v -> onUpdate { it.copy(showOverlay = v) } }
         )
         SettingSwitch(
-            label = "Overlay Labels",
+            label = stringResource(R.string.settings_show_overlay_labels),
             checked = settings.showOverlayLabels,
             onCheckedChange = { v -> onUpdate { it.copy(showOverlayLabels = v) } },
-            helper = "BBox-Beschriftung (Label + Confidence)"
+            helper = stringResource(R.string.settings_show_overlay_labels_helper)
         )
         SettingSwitch(
-            label = "BlindView Preview",
+            label = stringResource(R.string.settings_blindview_preview),
             checked = settings.showBlindViewPreview,
             onCheckedChange = { v -> onUpdate { it.copy(showBlindViewPreview = v) } }
         )
@@ -145,7 +155,7 @@ fun SettingsScreen(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End
         ) {
-            Button(onClick = onReset) { Text("Reset Defaults") }
+            Button(onClick = onReset) { Text(stringResource(R.string.settings_reset_defaults)) }
         }
     }
 }
@@ -160,7 +170,7 @@ private fun SettingSlider(
     helper: String? = null
 ) {
     Column {
-        Text(text = "$label: ${"%.2f".format(value)}")
+        Text(text = stringResource(R.string.settings_slider_value_format, label, value))
         androidx.compose.material3.Slider(
             value = value,
             onValueChange = onValueChange,
@@ -206,5 +216,39 @@ private fun SettingSwitch(
             helper?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         }
         androidx.compose.material3.Switch(checked = checked, onCheckedChange = onCheckedChange)
+    }
+}
+
+@Composable
+private fun LanguageSetting(
+    selected: LanguagePreference,
+    onSelected: (LanguagePreference) -> Unit
+) {
+    val options = listOf(
+        LanguagePreference.SYSTEM to stringResource(R.string.settings_language_system),
+        LanguagePreference.DE to stringResource(R.string.settings_language_german),
+        LanguagePreference.EN to stringResource(R.string.settings_language_english)
+    )
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text(stringResource(R.string.settings_language_title), style = MaterialTheme.typography.titleSmall)
+        Text(stringResource(R.string.settings_language_hint), style = MaterialTheme.typography.bodySmall)
+        options.forEach { (option, label) ->
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .selectable(
+                        selected = option == selected,
+                        onClick = { onSelected(option) },
+                        role = Role.RadioButton
+                    ),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                RadioButton(selected = option == selected, onClick = null)
+                Text(label, modifier = Modifier.padding(start = 8.dp))
+            }
+        }
     }
 }

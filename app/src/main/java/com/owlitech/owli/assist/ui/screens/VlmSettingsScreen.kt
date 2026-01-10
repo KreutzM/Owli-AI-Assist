@@ -14,7 +14,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.owlitech.owli.assist.R
 import com.owlitech.owli.assist.settings.AppSettings
 
 @Composable
@@ -39,16 +41,16 @@ fun VlmSettingsScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column {
-                Text("VLM Profil", style = MaterialTheme.typography.titleSmall)
+                Text(stringResource(R.string.vlm_settings_profile_title), style = MaterialTheme.typography.titleSmall)
                 Text(activeVlmProfileLabel, style = MaterialTheme.typography.bodySmall)
             }
-            Button(onClick = onOpenVlmProfiles) { Text("Auswaehlen") }
+            Button(onClick = onOpenVlmProfiles) { Text(stringResource(R.string.vlm_settings_select)) }
         }
         SettingSwitch(
-            label = "Streaming TTS (VLM)",
+            label = stringResource(R.string.vlm_settings_streaming_tts),
             checked = settings.streamingVlmTtsEnabled,
             onCheckedChange = { v -> onUpdate { it.copy(streamingVlmTtsEnabled = v) } },
-            helper = "Frueher TTS-Start bei Streaming"
+            helper = stringResource(R.string.vlm_settings_streaming_tts_helper)
         )
     }
 }

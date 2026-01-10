@@ -11,11 +11,14 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.compose.ui.unit.dp
+import com.owlitech.owli.assist.R
 import com.owlitech.owli.assist.camera.CameraFrameSource
+import com.owlitech.owli.assist.domain.HazardLevel
 import com.owlitech.owli.assist.settings.SettingsViewModel
 import com.owlitech.owli.assist.ui.MainViewModel
 import com.owlitech.owli.assist.vlm.VlmProfilesConfig
@@ -47,6 +50,11 @@ fun AppNavHost(
     val vlmState by mainViewModel.vlmUiState.collectAsState()
     val isAutoScanRunning by mainViewModel.isAutoScanRunning.collectAsState()
     val activeVlmProfile = vlmProfilesConfig.resolve(settings.vlmProfileId)
+    val hazardLabel = when (sceneState?.overallHazardLevel) {
+        HazardLevel.WARNING -> stringResource(R.string.hazard_level_warning)
+        HazardLevel.DANGER -> stringResource(R.string.hazard_level_danger)
+        HazardLevel.NONE, null -> stringResource(R.string.hazard_level_none)
+    }
     val layoutDirection = LocalLayoutDirection.current
     val defaultPadding = PaddingValues(
         start = contentPadding.calculateLeftPadding(layoutDirection),
@@ -75,7 +83,7 @@ fun AppNavHost(
                     lastError = lastError,
                     statusMessage = status,
                     detectionsCount = sceneState?.detections?.size ?: 0,
-                    hazardLevel = sceneState?.overallHazardLevel?.name ?: "NONE",
+                    hazardLevel = hazardLabel,
                     trafficLights = sceneState?.trafficLights.orEmpty(),
                     blindViewPreview = if (settings.showBlindViewPreview) sceneState?.blindViewUtterancePreview else null,
                     showOverlay = settings.showOverlay,

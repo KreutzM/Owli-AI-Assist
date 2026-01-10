@@ -50,6 +50,7 @@ class SettingsRepository(private val context: Context) {
             prefs[PrefKeys.showBlindViewPreview] = updated.showBlindViewPreview
             prefs[PrefKeys.showOverlayLabels] = updated.showOverlayLabels
             prefs[PrefKeys.analysisIntervalMs] = updated.analysisIntervalMs
+            prefs[PrefKeys.languagePreference] = updated.languagePreference.name
         }
     }
 
@@ -89,6 +90,7 @@ private object PrefKeys {
     val showBlindViewPreview = booleanPreferencesKey("showBlindViewPreview")
     val showOverlayLabels = booleanPreferencesKey("showOverlayLabels")
     val analysisIntervalMs = longPreferencesKey("analysisIntervalMs")
+    val languagePreference = stringPreferencesKey("languagePreference")
 }
 
 private fun androidx.datastore.preferences.core.Preferences.toSettings(): AppSettings {
@@ -123,6 +125,9 @@ private fun androidx.datastore.preferences.core.Preferences.toSettings(): AppSet
         showOverlay = this[PrefKeys.showOverlay] ?: AppSettingsDefaults.showOverlay,
         showBlindViewPreview = this[PrefKeys.showBlindViewPreview] ?: AppSettingsDefaults.showBlindViewPreview,
         showOverlayLabels = this[PrefKeys.showOverlayLabels] ?: AppSettingsDefaults.showOverlayLabels,
-        analysisIntervalMs = this[PrefKeys.analysisIntervalMs] ?: AppSettingsDefaults.analysisIntervalMs
+        analysisIntervalMs = this[PrefKeys.analysisIntervalMs] ?: AppSettingsDefaults.analysisIntervalMs,
+        languagePreference = LanguagePreference.valueOf(
+            this[PrefKeys.languagePreference] ?: AppSettingsDefaults.languagePreference.name
+        )
     )
 }
