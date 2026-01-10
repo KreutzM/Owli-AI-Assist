@@ -39,7 +39,7 @@ Status: `[x]` erledigt, `[ ]` offen
 - [ ] Test-Fakes (`FakeDetector`, `FakeCameraFrameSource`) im Test-Quellbaum.
 - [x] `ui/MainViewModel` (start/stop, StateFlow, Auto-Start nach Rotation).
 - [x] UI-Komponenten: `SceneOverlay` (BBox/Status) inkl. Overlay-Labels (Label + Confidence) per Toggle.
-- [x] UI-Komponenten: `ControlPanel` (Start/Stop/Status).
+- [x] UI-Komponenten: `ControlPanel` (Status).
 - [x] `MainActivity`-Integration: CameraX-Preview + Pipeline + Audio-Hooks + Lifecycle + Auto-Restart bei Rotation/Settings-Ã„nderung.
 - [x] Settings-Screen (DataStore) mit Reset-to-Defaults und Debug-Toggles.
 - [x] Diagnostics-Screen (Live-Metriken, Copy-to-Clipboard Report).

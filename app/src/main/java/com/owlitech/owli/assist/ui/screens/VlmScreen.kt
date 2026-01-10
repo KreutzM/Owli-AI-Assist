@@ -8,13 +8,22 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -28,6 +37,9 @@ import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.disabled
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.owlitech.owli.assist.camera.CameraFrameSource
 import com.owlitech.owli.assist.vlm.VlmUiState
@@ -69,110 +81,147 @@ fun VlmScreen(
             backgroundBitmap = decoded?.asImageBitmap()
         }
     }
-    Box(modifier = Modifier.fillMaxSize()) {
-        CameraPreview(
-            cameraFrameSource = cameraFrameSource,
-            modifier = Modifier
-                .matchParentSize()
-                .alpha(0f)
-        )
-        backgroundBitmap?.let { image ->
-            Image(
-                bitmap = image,
-                contentDescription = null,
-                modifier = Modifier.matchParentSize(),
-                contentScale = ContentScale.Crop,
-                colorFilter = dimFilter
-            )
-        }
-        Column(
-            modifier = Modifier
-                .padding(12.dp)
-                .fillMaxSize()
-                .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        floatingActionButton = {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier
+                    .navigationBarsPadding()
+                    .padding(16.dp),
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Button(onClick = onNewScene, enabled = !isBusy) { Text("Neue Szene") }
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(
-                        onClick = onStartAutoScan,
-                        enabled = autoScanAvailable && !isAutoScanRunning
-                    ) {
-                        Text("Start")
-                    }
-                    Button(
-                        onClick = onStopAutoScan,
-                        enabled = isAutoScanRunning
-                    ) {
-                        Text("Stop")
-                    }
+                if (autoScanAvailable) {
+                    val autoLabel = if (isAutoScanRunning) "Auto an" else "Auto aus"
+                    FilterChip(
+                        selected = isAutoScanRunning,
+                        onClick = { if (isAutoScanRunning) onStopAutoScan() else onStartAutoScan() },
+                        enabled = autoScanAvailable,
+                        label = { Text("Auto") },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Autorenew,
+                                contentDescription = null
+                            )
+                        },
+                        modifier = Modifier.semantics { contentDescription = autoLabel }
+                    )
                 }
-            }
-            CameraOverlayScope {
-                when (state) {
-                    is VlmUiState.Inactive -> {
-                        CameraOverlayLabel("Bereit. Tippe auf 'Neue Szene'.")
-                    }
-                    is VlmUiState.LoadingOverview -> {
-                        CameraOverlayRow {
-                            CircularProgressIndicator(color = CameraOverlayDefaults.textColor)
-                            Text(state.message ?: "Lade VLM...")
+                ExtendedFloatingActionButton(
+                    onClick = {
+                        if (!isBusy) {
+                            if (isAutoScanRunning) {
+                                onStopAutoScan()
+                            }
+                            onNewScene()
+                        }
+                    },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Filled.Add,
+                            contentDescription = null
+                        )
+                    },
+                    text = { Text("Neue Szene") },
+                    expanded = true,
+                    modifier = Modifier.semantics {
+                        contentDescription = "Neue Szene"
+                        if (isBusy) {
+                            disabled()
                         }
                     }
-                    is VlmUiState.Asking -> {
-                        CameraOverlayRow {
-                            CircularProgressIndicator(color = CameraOverlayDefaults.textColor)
-                            Text("Sende Frage...")
-                        }
-                    }
-                    is VlmUiState.Streaming -> {
-                        CameraOverlayLabel(text = "Streaming...")
-                        CameraOverlayLabel(text = state.partialText, maxLines = 6)
-                    }
-                    is VlmUiState.Error -> {
-                        CameraOverlayLabel(text = "Fehler: ${state.message}")
-                    }
-                    is VlmUiState.OverviewReadyRaw -> {
-                        CameraOverlayLabel(text = "Antwort:")
-                        CameraOverlayLabel(text = state.rawText, maxLines = 8)
-                    }
-                    is VlmUiState.OverviewReady -> {
-                        val desc = state.description
-                        val obstaclesText = if (desc.obstacles.isEmpty()) "keine" else desc.obstacles.joinToString()
-                        val landmarksText = if (desc.landmarks.isEmpty()) "keine" else desc.landmarks.joinToString()
-                        CameraOverlayLabel(text = "Kurz: ${desc.ttsOneLiner}", maxLines = 3)
-                        CameraOverlayLabel(text = "Empfehlung: ${desc.actionSuggestion}", maxLines = 3)
-                        CameraOverlayLabel(text = "Hindernisse: $obstaclesText", maxLines = 3)
-                        CameraOverlayLabel(text = "Landmarken: $landmarksText", maxLines = 3)
-                        CameraOverlayLabel(text = "Details: ${desc.readableText}", maxLines = 8)
-                        desc.overallConfidence?.let { CameraOverlayLabel(text = "Confidence: $it") }
-                    }
-                }
+                )
             }
-
-            OutlinedTextField(
-                value = question,
-                onValueChange = { question = it },
-                label = { Text("Frage stellen") },
-                modifier = Modifier.fillMaxWidth(),
-                enabled = !isBusy
+        }
+    ) { innerPadding ->
+        Box(modifier = Modifier.fillMaxSize()) {
+            CameraPreview(
+                cameraFrameSource = cameraFrameSource,
+                modifier = Modifier
+                    .matchParentSize()
+                    .alpha(0f)
             )
-            Button(
-                onClick = {
-                    val text = question.trim()
-                    if (text.isNotEmpty()) {
-                        onAsk(text)
-                        question = ""
-                    }
-                },
-                enabled = !isBusy && question.isNotBlank()
+            backgroundBitmap?.let { image ->
+                Image(
+                    bitmap = image,
+                    contentDescription = null,
+                    modifier = Modifier.matchParentSize(),
+                    contentScale = ContentScale.Crop,
+                    colorFilter = dimFilter
+                )
+            }
+            Column(
+                modifier = Modifier
+                    .padding(innerPadding)
+                    .navigationBarsPadding()
+                    .imePadding()
+                    .padding(12.dp)
+                    .padding(bottom = 88.dp)
+                    .fillMaxSize()
+                    .verticalScroll(scrollState),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
-                Text("Senden")
+                CameraOverlayScope {
+                    when (state) {
+                        is VlmUiState.Inactive -> {
+                            CameraOverlayLabel("Bereit. Tippe auf 'Neue Szene'.")
+                        }
+                        is VlmUiState.LoadingOverview -> {
+                            CameraOverlayRow {
+                                CircularProgressIndicator(color = CameraOverlayDefaults.textColor)
+                                Text(state.message ?: "Lade VLM...")
+                            }
+                        }
+                        is VlmUiState.Asking -> {
+                            CameraOverlayRow {
+                                CircularProgressIndicator(color = CameraOverlayDefaults.textColor)
+                                Text("Sende Frage...")
+                            }
+                        }
+                        is VlmUiState.Streaming -> {
+                            CameraOverlayLabel(text = "Streaming...")
+                            CameraOverlayLabel(text = state.partialText, maxLines = 6)
+                        }
+                        is VlmUiState.Error -> {
+                            CameraOverlayLabel(text = "Fehler: ${state.message}")
+                        }
+                        is VlmUiState.OverviewReadyRaw -> {
+                            CameraOverlayLabel(text = "Antwort:")
+                            CameraOverlayLabel(text = state.rawText, maxLines = 8)
+                        }
+                        is VlmUiState.OverviewReady -> {
+                            val desc = state.description
+                            val obstaclesText = if (desc.obstacles.isEmpty()) "keine" else desc.obstacles.joinToString()
+                            val landmarksText = if (desc.landmarks.isEmpty()) "keine" else desc.landmarks.joinToString()
+                            CameraOverlayLabel(text = "Kurz: ${desc.ttsOneLiner}", maxLines = 3)
+                            CameraOverlayLabel(text = "Empfehlung: ${desc.actionSuggestion}", maxLines = 3)
+                            CameraOverlayLabel(text = "Hindernisse: $obstaclesText", maxLines = 3)
+                            CameraOverlayLabel(text = "Landmarken: $landmarksText", maxLines = 3)
+                            CameraOverlayLabel(text = "Details: ${desc.readableText}", maxLines = 8)
+                            desc.overallConfidence?.let { CameraOverlayLabel(text = "Confidence: $it") }
+                        }
+                    }
+                }
+
+                OutlinedTextField(
+                    value = question,
+                    onValueChange = { question = it },
+                    label = { Text("Frage stellen") },
+                    modifier = Modifier.fillMaxWidth(),
+                    enabled = !isBusy
+                )
+                Button(
+                    onClick = {
+                        val text = question.trim()
+                        if (text.isNotEmpty()) {
+                            onAsk(text)
+                            question = ""
+                        }
+                    },
+                    enabled = !isBusy && question.isNotBlank()
+                ) {
+                    Text("Senden")
+                }
             }
         }
     }

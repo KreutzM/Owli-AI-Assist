@@ -3,16 +3,20 @@ package com.owlitech.owli.assist.ui.screens
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.Canvas
-import androidx.compose.material3.Button
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Stop
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -20,6 +24,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import com.owlitech.owli.assist.camera.CameraFrameSource
 import com.owlitech.owli.assist.domain.TrafficLightObservation
@@ -48,44 +54,60 @@ fun HomeScreen(
     rotationDegrees: Int?,
     modifier: Modifier = Modifier
 ) {
-    Column(
-        modifier = modifier.fillMaxSize(),
-        verticalArrangement = Arrangement.SpaceBetween
-    ) {
-        Box(modifier = Modifier.weight(1f)) {
-            CameraPreview(cameraFrameSource = cameraFrameSource, modifier = Modifier.fillMaxSize())
-            if (showOverlay) {
-                CameraOverlayScope {
-                    DetectionOverlay(
-                        detections = detections,
-                        showLabels = showLabels,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                    SceneOverlay(
-                        hazardLevel = hazardLevel,
-                        detectionsCount = detectionsCount,
-                        message = sceneMessage,
-                        rotationText = rotationDegrees?.let { "${it}deg" },
-                        trafficLights = trafficLights,
-                        blindViewPreview = blindViewPreview,
-                        modifier = Modifier
-                            .align(Alignment.TopStart)
-                            .padding(12.dp)
-                    )
+    Box(modifier = modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Box(modifier = Modifier.weight(1f)) {
+                CameraPreview(cameraFrameSource = cameraFrameSource, modifier = Modifier.fillMaxSize())
+                if (showOverlay) {
+                    CameraOverlayScope {
+                        DetectionOverlay(
+                            detections = detections,
+                            showLabels = showLabels,
+                            modifier = Modifier.fillMaxSize()
+                        )
+                        SceneOverlay(
+                            hazardLevel = hazardLevel,
+                            detectionsCount = detectionsCount,
+                            message = sceneMessage,
+                            rotationText = rotationDegrees?.let { "${it}deg" },
+                            trafficLights = trafficLights,
+                            blindViewPreview = blindViewPreview,
+                            modifier = Modifier
+                                .align(Alignment.TopStart)
+                                .padding(12.dp)
+                        )
+                    }
                 }
             }
+            ControlPanel(
+                isRunning = isRunning,
+                sceneMessage = sceneMessage,
+                lastError = lastError,
+                statusMessage = statusMessage,
+                blindViewPreview = blindViewPreview,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+            )
         }
-        ControlPanel(
-            isRunning = isRunning,
-            sceneMessage = sceneMessage,
-            lastError = lastError,
-            statusMessage = statusMessage,
-            onStart = onStart,
-            onStop = onStop,
-            blindViewPreview = blindViewPreview,
+        val isStart = !isRunning
+        ExtendedFloatingActionButton(
+            onClick = { if (isStart) onStart() else onStop() },
+            icon = {
+                Icon(
+                    imageVector = if (isStart) Icons.Filled.PlayArrow else Icons.Filled.Stop,
+                    contentDescription = null
+                )
+            },
+            text = { Text(if (isStart) "Start" else "Stop") },
             modifier = Modifier
-                .fillMaxWidth()
+                .align(Alignment.BottomEnd)
+                .navigationBarsPadding()
                 .padding(16.dp)
+                .semantics { contentDescription = if (isStart) "Start" else "Stop" }
         )
     }
 }
@@ -205,30 +227,16 @@ fun ControlPanel(
     sceneMessage: String?,
     lastError: String?,
     statusMessage: String,
-    onStart: () -> Unit,
-    onStop: () -> Unit,
     blindViewPreview: String?,
     modifier: Modifier = Modifier
 ) {
     Column(modifier = modifier) {
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Button(onClick = onStart, enabled = !isRunning, modifier = Modifier.weight(1f)) {
-                Text(text = "Start")
-            }
-            Button(onClick = onStop, enabled = isRunning, modifier = Modifier.weight(1f)) {
-                Text(text = "Stop")
-            }
-        }
-        Spacer(modifier = Modifier.height(8.dp))
         Text(text = "Status: ${if (isRunning) "Laeuft" else "Gestoppt"}")
         Text(text = "Detector: $statusMessage")
         sceneMessage?.let { Text(text = "Letzte Meldung: $it") }
         lastError?.let { Text(text = "Fehler: $it", color = MaterialTheme.colorScheme.error) }
         blindViewPreview?.let { Text(text = "BlindView: $it") }
+        Spacer(modifier = Modifier.height(72.dp))
     }
 }
 
@@ -240,8 +248,6 @@ fun PreviewControlPanel() {
             sceneMessage = "Achtung, Person voraus",
             lastError = null,
             statusMessage = "Preview (FakeDetector)",
-            onStart = {},
-            onStop = {},
             blindViewPreview = "2 Personen, 11 Uhr."
         )
     }

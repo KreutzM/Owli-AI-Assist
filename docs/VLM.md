@@ -58,7 +58,7 @@ Die Datei enthaelt globale Defaults und eine Liste von Profilen:
 - `streaming_enabled`: optional, aktiviert SSE-Streaming im VLM-Mode
 - `parameter_overrides`: z.B. `temperature`
 - `capabilities`: `supports_vision`, `supports_reasoning`, `supports_json`
-- `auto_scan`: optional, aktiviert Autoscan-Controls im VLM-Screen (`enabled_by_default`, `interval_ms`, `speak_free_every_ms`)
+- `auto_scan`: optional, aktiviert Auto-Toggle im VLM-Screen (`enabled_by_default`, `interval_ms`, `speak_free_every_ms`)
 
 ## 3) Policy-Familien
 
@@ -95,9 +95,10 @@ Wenn Streaming aus ist, verhaelt sich die App wie bisher.
 
 ## 7) Autoscan (optional)
 
-Wenn ein Profil `auto_scan` setzt, zeigt der VLM-Screen Start/Stop an und triggert
+Wenn ein Profil `auto_scan` setzt, zeigt der VLM-Screen einen Auto-Toggle an und triggert
 periodisch denselben "Neue Szene"-Pfad. Autoscan startet nie automatisch, auch wenn
 `enabled_by_default=true`. `speak_free_every_ms` wird aktuell nur gespeichert.
+Manueller "Neue Szene"-Trigger schaltet Auto aus.
 
 ## 8) Response-Parsing
 

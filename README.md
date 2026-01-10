@@ -14,7 +14,7 @@ Owli-AI Assist ist eine Android-App fuer blinde Nutzer als AI Assistenz-App mit 
 - Diagnostics-Screen mit Live-Metriken und Copy-to-Clipboard Debug-Report
 - Start/Stop der Pipeline; Decay-Logik fuer Hazards; Auto-Restart nach Rotation/Settings-Aenderung
 - VLM-On-Demand (OpenRouter) mit Profil-Auswahl; Antworten im Raw-Debug-Mode
-- VLM-Autoscan (Start/Stop) fuer Profile mit `auto_scan`
+- VLM-Autoscan (Auto-Toggle) fuer Profile mit `auto_scan`
 
 ## Architektur (kurz)
 - `camera`: CameraFrameSource (CameraX Preview + ImageAnalysis)
@@ -43,15 +43,15 @@ Owli-AI Assist ist eine Android-App fuer blinde Nutzer als AI Assistenz-App mit 
 
 ## Bedienung
 1. App starten, Kamera-Permission erlauben.
-2. Start-Button druecken -> Pipeline startet, Preview erscheint (nach Rotation auto-restart).
+2. Start/Stop-Toggle unten rechts nutzen -> Pipeline startet/stoppt, Preview erscheint (nach Rotation auto-restart).
 3. Status-Anzeige zeigt, ob RealDetector aktiv ist oder Fallback (FakeDetector).
 4. Bounding-Box-Overlay zeigt erkannte Objekte; optional Labels/Confidence via Toggle (Settings).
 5. OwliAI-Preview zeigt die aktuelle Ansage (Debug).
 6. Overflow-Menue (TopAppBar) -> Settings/Diagnostics/About oeffnen.
 7. VLM ueber TopAppBar -> Szene beschreiben lassen, Follow-up fragen; Profil-Auswahl in Settings.
-   Autoscan Start/Stop erscheint im VLM-Screen, wenn das Profil `auto_scan` definiert.
+   Auto-Toggle erscheint im VLM-Screen, wenn das Profil `auto_scan` definiert. Manuelle "Neue Szene" schaltet Auto aus.
 8. Rueck-Button schliesst Unterfenster (Settings/Diag/VLM); App-Ende erst im Hauptfenster.
-9. Stop-Button -> Pipeline stoppt, Overlay/State wird zurueckgesetzt.
+9. Stop via Toggle -> Pipeline stoppt, Overlay/State wird zurueckgesetzt.
 
 ## Konfiguration
 - Settings via DataStore (persistiert): Detector/Tracking/OwliAI/TTS/Debug/Pipeline-Intervall; Reset im Settings-Screen
