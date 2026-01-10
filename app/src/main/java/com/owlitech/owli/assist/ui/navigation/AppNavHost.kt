@@ -19,6 +19,7 @@ import com.owlitech.owli.assist.ui.screens.AboutScreen
 import com.owlitech.owli.assist.ui.screens.DiagnosticsScreen
 import com.owlitech.owli.assist.ui.screens.HomeScreen
 import com.owlitech.owli.assist.ui.screens.SettingsScreen
+import com.owlitech.owli.assist.ui.screens.VlmSettingsScreen
 import com.owlitech.owli.assist.ui.screens.VlmProfilesScreen
 import com.owlitech.owli.assist.ui.screens.VlmScreen
 
@@ -70,10 +71,16 @@ fun AppNavHost(
         composable(AppRoute.Settings.route) {
             SettingsScreen(
                 settings = settings,
-                activeVlmProfileLabel = activeVlmProfile.label,
-                onOpenVlmProfiles = { navController.navigate(AppRoute.VlmProfiles.route) },
                 onUpdate = { update -> settingsViewModel.update { update(it) } },
                 onReset = { settingsViewModel.reset() }
+            )
+        }
+        composable(AppRoute.VlmSettings.route) {
+            VlmSettingsScreen(
+                settings = settings,
+                activeVlmProfileLabel = activeVlmProfile.label,
+                onOpenVlmProfiles = { navController.navigate(AppRoute.VlmProfiles.route) },
+                onUpdate = { update -> settingsViewModel.update { update(it) } }
             )
         }
         composable(AppRoute.Diagnostics.route) {

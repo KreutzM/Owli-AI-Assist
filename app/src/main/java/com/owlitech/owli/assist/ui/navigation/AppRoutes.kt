@@ -6,6 +6,7 @@ sealed class AppRoute(
 ) {
     data object Home : AppRoute("home", "Owli-AI")
     data object Settings : AppRoute("settings", "Einstellungen")
+    data object VlmSettings : AppRoute("vlm_settings", "VLM Einstellungen")
     data object Diagnostics : AppRoute("diagnostics", "Diagnostics")
     data object Vlm : AppRoute("vlm", "VLM")
     data object VlmProfiles : AppRoute("vlm_profiles", "VLM Profile")
@@ -14,6 +15,7 @@ sealed class AppRoute(
     companion object {
         fun fromRoute(route: String?): AppRoute = when (route) {
             Settings.route -> Settings
+            VlmSettings.route -> VlmSettings
             Diagnostics.route -> Diagnostics
             Vlm.route -> Vlm
             VlmProfiles.route -> VlmProfiles

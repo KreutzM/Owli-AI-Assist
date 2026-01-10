@@ -43,6 +43,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - VLM: Manueller "Neue Szene"-Trigger schaltet Auto aus.
 - VLM: Eingabebereich hat jetzt einen dunklen Hintergrund fuer bessere Lesbarkeit.
 - VLM: Hintergrundbild nur leicht gedimmt (0.85) fuer bessere Szenen-Visibilitaet.
+- Menue: VLM Settings als eigener Eintrag, Profilwahl dort gebuendelt.
 
 ### Fixed
 - GPT-5 Reasoning-only Antworten: automatische Retries mit hoeherem Token-Budget und Final-Only Hinweis.

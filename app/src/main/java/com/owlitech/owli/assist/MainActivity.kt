@@ -122,6 +122,9 @@ class MainActivity : ComponentActivity() {
                             onOpenSettings = {
                                 navController.navigate(AppRoute.Settings.route) { launchSingleTop = true }
                             },
+                            onOpenVlmSettings = {
+                                navController.navigate(AppRoute.VlmSettings.route) { launchSingleTop = true }
+                            },
                             onOpenDiagnostics = {
                                 navController.navigate(AppRoute.Diagnostics.route) { launchSingleTop = true }
                             },
@@ -352,4 +355,3 @@ class MainActivity : ComponentActivity() {
         return streamingTtsEnabled && activeVlmProfile.streamingEnabled
     }
 }
-

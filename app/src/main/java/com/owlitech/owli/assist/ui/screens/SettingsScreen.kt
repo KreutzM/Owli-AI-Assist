@@ -20,8 +20,6 @@ import com.owlitech.owli.assist.settings.AppSettings
 @Composable
 fun SettingsScreen(
     settings: AppSettings,
-    activeVlmProfileLabel: String,
-    onOpenVlmProfiles: () -> Unit,
     onUpdate: (((AppSettings) -> AppSettings)) -> Unit,
     onReset: () -> Unit
 ) {
@@ -119,25 +117,6 @@ fun SettingsScreen(
             steps = 6,
             onValueChange = { v -> onUpdate { it.copy(ttsPitch = v) } },
             helper = "Stimmhoehe"
-        )
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 4.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column {
-                Text("VLM Profil", style = MaterialTheme.typography.titleSmall)
-                Text(activeVlmProfileLabel, style = MaterialTheme.typography.bodySmall)
-            }
-            Button(onClick = onOpenVlmProfiles) { Text("Auswaehlen") }
-        }
-        SettingSwitch(
-            label = "Streaming TTS (VLM)",
-            checked = settings.streamingVlmTtsEnabled,
-            onCheckedChange = { v -> onUpdate { it.copy(streamingVlmTtsEnabled = v) } },
-            helper = "Frueher TTS-Start bei Streaming"
         )
         SettingIntSlider(
             label = "Analysis Interval (ms)",

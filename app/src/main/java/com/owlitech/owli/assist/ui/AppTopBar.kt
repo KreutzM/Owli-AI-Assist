@@ -26,6 +26,7 @@ fun AppTopBar(
     onNavigateBack: () -> Unit,
     onOpenVlm: () -> Unit,
     onOpenSettings: () -> Unit,
+    onOpenVlmSettings: () -> Unit,
     onOpenDiagnostics: () -> Unit,
     onOpenAbout: () -> Unit
 ) {
@@ -54,6 +55,13 @@ fun AppTopBar(
                     onClick = {
                         menuExpanded = false
                         onOpenSettings()
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text("VLM Settings") },
+                    onClick = {
+                        menuExpanded = false
+                        onOpenVlmSettings()
                     }
                 )
                 DropdownMenuItem(

@@ -112,6 +112,6 @@ Manueller "Neue Szene"-Trigger schaltet Auto aus.
 
 1. Profil in `vlm-profiles.json` ergaenzen (neue `id`, `model_id`).
 2. Optional `family`, `token_policy`, `parameter_overrides` definieren.
-3. App starten und Profil im Settings-Screen auswaehlen.
+3. App starten und Profil im VLM-Settings-Screen auswaehlen.
 
 Keine Codeaenderung erforderlich, solange das Profilschema korrekt ist.
