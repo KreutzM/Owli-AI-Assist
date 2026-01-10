@@ -20,6 +20,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -32,11 +33,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.draw.alpha
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
@@ -68,7 +71,7 @@ fun VlmScreen(
     var backgroundBitmap by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
     val dimFilter = remember {
         ColorFilter.colorMatrix(
-            ColorMatrix().apply { setToScale(0.5f, 0.5f, 0.5f, 1f) }
+            ColorMatrix().apply { setToScale(0.85f, 0.85f, 0.85f, 1f) }
         )
     }
     LaunchedEffect(state.snapshotBytes) {
@@ -203,24 +206,35 @@ fun VlmScreen(
                     }
                 }
 
-                OutlinedTextField(
-                    value = question,
-                    onValueChange = { question = it },
-                    label = { Text("Frage stellen") },
-                    modifier = Modifier.fillMaxWidth(),
-                    enabled = !isBusy
-                )
-                Button(
-                    onClick = {
-                        val text = question.trim()
-                        if (text.isNotEmpty()) {
-                            onAsk(text)
-                            question = ""
-                        }
-                    },
-                    enabled = !isBusy && question.isNotBlank()
+                Surface(
+                    color = Color.Black.copy(alpha = 0.45f),
+                    shape = RoundedCornerShape(16.dp),
+                    modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Senden")
+                    Column(
+                        modifier = Modifier.padding(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = question,
+                            onValueChange = { question = it },
+                            label = { Text("Frage stellen") },
+                            modifier = Modifier.fillMaxWidth(),
+                            enabled = !isBusy
+                        )
+                        Button(
+                            onClick = {
+                                val text = question.trim()
+                                if (text.isNotEmpty()) {
+                                    onAsk(text)
+                                    question = ""
+                                }
+                            },
+                            enabled = !isBusy && question.isNotBlank()
+                        ) {
+                            Text("Senden")
+                        }
+                    }
                 }
             }
         }

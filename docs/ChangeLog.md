@@ -41,6 +41,8 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - Doku: VLM-Autoscan in `docs/VLM.md`, `docs/VLM-Mode.md` und `README.md` beschrieben.
 - UI: Einhandbedienung mit Start/Stop-Toggle unten rechts; VLM-Aktionen unten rechts (Neue Szene + Auto-Toggle).
 - VLM: Manueller "Neue Szene"-Trigger schaltet Auto aus.
+- VLM: Eingabebereich hat jetzt einen dunklen Hintergrund fuer bessere Lesbarkeit.
+- VLM: Hintergrundbild nur leicht gedimmt (0.85) fuer bessere Szenen-Visibilitaet.
 
 ### Fixed
 - GPT-5 Reasoning-only Antworten: automatische Retries mit hoeherem Token-Budget und Final-Only Hinweis.
