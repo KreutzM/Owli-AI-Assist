@@ -30,7 +30,7 @@ Der JSON-Modus ist aktuell deaktiviert. Das Schema bleibt fuer eine spaetere Rea
 - Profile und Prompts werden aus `app/src/main/assets/vlm-profiles.json` geladen.
 - Fehlerfaelle (Timeout, Parse-Fehler, kein Snapshot) muessen UI-seitig angezeigt werden.
 - Aktuell laeuft der VLM im Raw-Debug-Mode: Antwort wird als Freitext angezeigt, JSON-Parsing ist voruebergehend deaktiviert.
-- Diktat per Mikrofon fuegt Text ins Eingabefeld ein (kein Auto-Send).
+- Diktat per Mikrofon: Tippen fuegt Text ins Eingabefeld ein; lang druecken sendet sofort.
 
 ## VLM-Profile
 - Profile werden aus `app/src/main/assets/vlm-profiles.json` geladen.

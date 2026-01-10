@@ -47,6 +47,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - VLM: Composer am unteren Rand mit Send-Button und IME-Senden.
 - VLM: Mikrofon-Diktat fuegt Text ins Eingabefeld ein (kein Auto-Send).
 - VLM: Composer bleibt ueber der Tastatur am unteren Rand (Insets-Fix).
+- VLM: Mikrofon-Long-Press sendet Diktat sofort (Snackbar mit Rueckgaengig).
 
 ### Fixed
 - GPT-5 Reasoning-only Antworten: automatische Retries mit hoeherem Token-Budget und Final-Only Hinweis.

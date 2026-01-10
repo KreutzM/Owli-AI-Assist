@@ -15,13 +15,18 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
@@ -37,6 +42,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -69,6 +75,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun VlmScreen(
     state: VlmUiState,
@@ -87,6 +94,9 @@ fun VlmScreen(
     var isListening by remember { mutableStateOf(false) }
     var isProcessingSpeech by remember { mutableStateOf(false) }
     var speechError by remember { mutableStateOf<String?>(null) }
+    var autoSendOnVoiceResult by rememberSaveable { mutableStateOf(false) }
+    var pendingAutoSendText by remember { mutableStateOf<String?>(null) }
+    val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     var composerHeightPx by remember { mutableStateOf(0) }
     val density = LocalDensity.current
@@ -105,6 +115,13 @@ fun VlmScreen(
             backgroundBitmap = decoded?.asImageBitmap()
         }
     }
+    val sendQuestion = {
+        val text = question.trim()
+        if (text.isNotEmpty() && !isBusy) {
+            onAsk(text)
+            question = ""
+        }
+    }
     val speechLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -114,12 +131,43 @@ fun VlmScreen(
         val spoken = data?.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS)
             ?.firstOrNull()
             .orEmpty()
-        if (spoken.isNotBlank()) {
-            val current = question.trim()
-            question = if (current.isBlank()) spoken else "$current $spoken"
-            speechError = null
+        val trimmed = spoken.trim()
+        if (autoSendOnVoiceResult) {
+            autoSendOnVoiceResult = false
+            if (trimmed.length < 2) {
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(message = "Nichts erkannt")
+                }
+            } else if (isBusy) {
+                val current = question.trim()
+                question = if (current.isBlank()) trimmed else "$current $trimmed"
+                coroutineScope.launch {
+                    snackbarHostState.showSnackbar(message = "Bitte warten")
+                }
+            } else {
+                pendingAutoSendText = trimmed
+                question = trimmed
+                sendQuestion()
+                coroutineScope.launch {
+                    val resultAction = snackbarHostState.showSnackbar(
+                        message = "Gesendet",
+                        actionLabel = "Rueckgaengig"
+                    )
+                    if (resultAction == androidx.compose.material3.SnackbarResult.ActionPerformed) {
+                        question = pendingAutoSendText.orEmpty()
+                    }
+                    pendingAutoSendText = null
+                }
+                speechError = null
+            }
         } else {
-            speechError = "Keine Sprache erkannt"
+            if (trimmed.isNotBlank()) {
+                val current = question.trim()
+                question = if (current.isBlank()) trimmed else "$current $trimmed"
+                speechError = null
+            } else {
+                speechError = "Keine Sprache erkannt"
+            }
         }
         coroutineScope.launch {
             delay(1200)
@@ -127,11 +175,23 @@ fun VlmScreen(
             speechError = null
         }
     }
-    val sendQuestion = {
-        val text = question.trim()
-        if (text.isNotEmpty() && !isBusy) {
-            onAsk(text)
-            question = ""
+    val startVoiceIntent = { autoSend: Boolean ->
+        speechError = null
+        autoSendOnVoiceResult = autoSend
+        try {
+            val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                putExtra(
+                    RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                    RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                )
+                putExtra(RecognizerIntent.EXTRA_PROMPT, "Spracheingabe")
+            }
+            isListening = true
+            speechLauncher.launch(intent)
+        } catch (ex: ActivityNotFoundException) {
+            isListening = false
+            autoSendOnVoiceResult = false
+            speechError = "Spracherkennung nicht verfuegbar"
         }
     }
     Box(modifier = Modifier.fillMaxSize()) {
@@ -201,6 +261,10 @@ fun VlmScreen(
             }
 
         }
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier.align(Alignment.TopCenter)
+        )
         Column(
             modifier = Modifier
                 .align(Alignment.BottomCenter)
@@ -274,32 +338,24 @@ fun VlmScreen(
                         verticalAlignment = Alignment.Bottom,
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        IconButton(
-                            onClick = {
-                                speechError = null
-                                try {
-                                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                        putExtra(
-                                            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                                            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-                                        )
-                                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Spracheingabe")
+                        val micEnabled = !isBusy && !isListening
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .combinedClickable(
+                                    enabled = micEnabled,
+                                    onClick = { startVoiceIntent(false) },
+                                    onLongClick = { startVoiceIntent(true) },
+                                    onLongClickLabel = "Sofort senden"
+                                )
+                                .semantics {
+                                    contentDescription = when {
+                                        isListening -> "Spracheingabe laeuft"
+                                        autoSendOnVoiceResult -> "Spracheingabe & sofort senden"
+                                        else -> "Spracheingabe"
                                     }
-                                    isListening = true
-                                    speechLauncher.launch(intent)
-                                } catch (ex: ActivityNotFoundException) {
-                                    isListening = false
-                                    speechError = "Spracherkennung nicht verfuegbar"
-                                }
-                            },
-                            enabled = !isBusy && !isListening,
-                            modifier = Modifier.semantics {
-                                contentDescription = if (isListening) {
-                                    "Spracheingabe laeuft"
-                                } else {
-                                    "Spracheingabe starten"
-                                }
-                            }
+                                },
+                            contentAlignment = Alignment.Center
                         ) {
                             Icon(imageVector = Icons.Filled.Mic, contentDescription = null)
                         }
@@ -324,6 +380,13 @@ fun VlmScreen(
                         ) {
                             Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = null)
                         }
+                    }
+                    if (!isListening) {
+                        Text(
+                            text = "Tippen: diktieren  Gedrueckt halten: sofort senden",
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(start = 56.dp, bottom = 4.dp)
+                        )
                     }
                     val statusText = when {
                         isListening -> "Hoere zu..."
