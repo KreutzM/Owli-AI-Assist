@@ -58,6 +58,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - Build-Fixes fuer Navigation TopAppBar Opt-In und BackStack State-Delegate.
 - VLM-Snapshot funktioniert jetzt auch im eigenen Screen durch persistente Camera-Preview-Anbindung.
 - Camera-Overlay-Text nutzt theme-unabhaengige Farben mit dunklem Scrim fuer bessere Lesbarkeit.
+- VLM: IME-Insets werden nicht mehr doppelt angewendet; Composer bleibt sichtbar.
 
 ---
 

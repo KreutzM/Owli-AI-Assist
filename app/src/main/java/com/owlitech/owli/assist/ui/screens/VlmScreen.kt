@@ -21,7 +21,6 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.MaterialTheme
@@ -44,6 +43,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
@@ -53,7 +53,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
-import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.ui.platform.LocalDensity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.owlitech.owli.assist.camera.CameraFrameSource
@@ -87,6 +87,8 @@ fun VlmScreen(
     var isProcessingSpeech by remember { mutableStateOf(false) }
     var speechError by remember { mutableStateOf<String?>(null) }
     val coroutineScope = rememberCoroutineScope()
+    var composerHeightPx by remember { mutableStateOf(0) }
+    val density = LocalDensity.current
     val dimFilter = remember {
         ColorFilter.colorMatrix(
             ColorMatrix().apply { setToScale(0.85f, 0.85f, 0.85f, 1f) }
@@ -131,13 +133,83 @@ fun VlmScreen(
             question = ""
         }
     }
-    Scaffold(
-        modifier = Modifier.fillMaxSize(),
-        floatingActionButton = {
+    Box(modifier = Modifier.fillMaxSize()) {
+        CameraPreview(
+            cameraFrameSource = cameraFrameSource,
+            modifier = Modifier
+                .matchParentSize()
+                .alpha(0f)
+        )
+        backgroundBitmap?.let { image ->
+            Image(
+                bitmap = image,
+                contentDescription = null,
+                modifier = Modifier.matchParentSize(),
+                contentScale = ContentScale.Crop,
+                colorFilter = dimFilter
+            )
+        }
+        Column(
+            modifier = Modifier
+                .padding(12.dp)
+                .padding(bottom = with(density) { composerHeightPx.toDp() })
+                .fillMaxSize()
+                .verticalScroll(scrollState),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            CameraOverlayScope {
+                when (state) {
+                    is VlmUiState.Inactive -> {
+                        CameraOverlayLabel("Bereit. Tippe auf 'Neue Szene'.")
+                    }
+                    is VlmUiState.LoadingOverview -> {
+                        CameraOverlayRow {
+                            CircularProgressIndicator(color = CameraOverlayDefaults.textColor)
+                            Text(state.message ?: "Lade VLM...")
+                        }
+                    }
+                    is VlmUiState.Asking -> {
+                        CameraOverlayRow {
+                            CircularProgressIndicator(color = CameraOverlayDefaults.textColor)
+                            Text("Sende Frage...")
+                        }
+                    }
+                    is VlmUiState.Streaming -> {
+                        CameraOverlayLabel(text = "Streaming...")
+                        CameraOverlayLabel(text = state.partialText, maxLines = 6)
+                    }
+                    is VlmUiState.Error -> {
+                        CameraOverlayLabel(text = "Fehler: ${state.message}")
+                    }
+                    is VlmUiState.OverviewReadyRaw -> {
+                        CameraOverlayLabel(text = "Antwort:")
+                        CameraOverlayLabel(text = state.rawText, maxLines = 8)
+                    }
+                    is VlmUiState.OverviewReady -> {
+                        val desc = state.description
+                        val obstaclesText = if (desc.obstacles.isEmpty()) "keine" else desc.obstacles.joinToString()
+                        val landmarksText = if (desc.landmarks.isEmpty()) "keine" else desc.landmarks.joinToString()
+                        CameraOverlayLabel(text = "Kurz: ${desc.ttsOneLiner}", maxLines = 3)
+                        CameraOverlayLabel(text = "Empfehlung: ${desc.actionSuggestion}", maxLines = 3)
+                        CameraOverlayLabel(text = "Hindernisse: $obstaclesText", maxLines = 3)
+                        CameraOverlayLabel(text = "Landmarken: $landmarksText", maxLines = 3)
+                        CameraOverlayLabel(text = "Details: ${desc.readableText}", maxLines = 8)
+                        desc.overallConfidence?.let { CameraOverlayLabel(text = "Confidence: $it") }
+                    }
+                }
+            }
+
+        }
+        Column(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .imePadding()
+                .fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalAlignment = Alignment.End
+        ) {
             Row(
-                modifier = Modifier
-                    .navigationBarsPadding()
-                    .padding(16.dp),
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
@@ -182,165 +254,88 @@ fun VlmScreen(
                     }
                 )
             }
-        },
-        bottomBar = {
             Surface(
                 color = Color.Black.copy(alpha = 0.45f),
                 shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-                modifier = Modifier.fillMaxWidth()
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .onSizeChanged { composerHeightPx = it.height }
             ) {
-                Box(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .imePadding(),
-                    contentAlignment = Alignment.BottomStart
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.Bottom,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            verticalAlignment = Alignment.Bottom,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            IconButton(
-                                onClick = {
-                                    speechError = null
-                                    try {
-                                        val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
-                                            putExtra(
-                                                RecognizerIntent.EXTRA_LANGUAGE_MODEL,
-                                                RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
-                                            )
-                                            putExtra(RecognizerIntent.EXTRA_PROMPT, "Spracheingabe")
-                                        }
-                                        isListening = true
-                                        speechLauncher.launch(intent)
-                                    } catch (ex: ActivityNotFoundException) {
-                                        isListening = false
-                                        speechError = "Spracherkennung nicht verfuegbar"
+                        IconButton(
+                            onClick = {
+                                speechError = null
+                                try {
+                                    val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
+                                        putExtra(
+                                            RecognizerIntent.EXTRA_LANGUAGE_MODEL,
+                                            RecognizerIntent.LANGUAGE_MODEL_FREE_FORM
+                                        )
+                                        putExtra(RecognizerIntent.EXTRA_PROMPT, "Spracheingabe")
                                     }
-                                },
-                                enabled = !isBusy && !isListening,
-                                modifier = Modifier.semantics {
-                                    contentDescription = if (isListening) {
-                                        "Spracheingabe laeuft"
-                                    } else {
-                                        "Spracheingabe starten"
-                                    }
+                                    isListening = true
+                                    speechLauncher.launch(intent)
+                                } catch (ex: ActivityNotFoundException) {
+                                    isListening = false
+                                    speechError = "Spracherkennung nicht verfuegbar"
                                 }
-                            ) {
-                                Icon(imageVector = Icons.Filled.Mic, contentDescription = null)
+                            },
+                            enabled = !isBusy && !isListening,
+                            modifier = Modifier.semantics {
+                                contentDescription = if (isListening) {
+                                    "Spracheingabe laeuft"
+                                } else {
+                                    "Spracheingabe starten"
+                                }
                             }
-                            OutlinedTextField(
-                                value = question,
-                                onValueChange = { question = it },
-                                label = { Text("Frage stellen") },
-                                modifier = Modifier.weight(1f),
-                                enabled = !isBusy,
-                                maxLines = 34,
-                                minLines = 1,
-                                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                                keyboardActions = KeyboardActions(
-                                    onSend = { sendQuestion() },
-                                    onDone = { sendQuestion() }
-                                )
-                            )
-                            IconButton(
-                                onClick = { sendQuestion() },
-                                modifier = Modifier.semantics { contentDescription = "Nachricht senden" },
-                                enabled = !isBusy && question.isNotBlank()
-                            ) {
-                                Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = null)
-                            }
+                        ) {
+                            Icon(imageVector = Icons.Filled.Mic, contentDescription = null)
                         }
-                        val statusText = when {
-                            isListening -> "Hoere zu..."
-                            isProcessingSpeech -> "Verarbeite..."
-                            else -> speechError
-                        }
-                        if (statusText != null) {
-                            Text(
-                                text = statusText,
-                                style = MaterialTheme.typography.bodySmall,
-                                modifier = Modifier.padding(start = 56.dp, bottom = 8.dp)
+                        OutlinedTextField(
+                            value = question,
+                            onValueChange = { question = it },
+                            label = { Text("Frage stellen") },
+                            modifier = Modifier.weight(1f),
+                            enabled = !isBusy,
+                            maxLines = 34,
+                            minLines = 1,
+                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                            keyboardActions = KeyboardActions(
+                                onSend = { sendQuestion() },
+                                onDone = { sendQuestion() }
                             )
+                        )
+                        IconButton(
+                            onClick = { sendQuestion() },
+                            modifier = Modifier.semantics { contentDescription = "Nachricht senden" },
+                            enabled = !isBusy && question.isNotBlank()
+                        ) {
+                            Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = null)
                         }
                     }
-                }
-            }
-        }
-    ) { innerPadding ->
-        Box(modifier = Modifier.fillMaxSize()) {
-            CameraPreview(
-                cameraFrameSource = cameraFrameSource,
-                modifier = Modifier
-                    .matchParentSize()
-                    .alpha(0f)
-            )
-            backgroundBitmap?.let { image ->
-                Image(
-                    bitmap = image,
-                    contentDescription = null,
-                    modifier = Modifier.matchParentSize(),
-                    contentScale = ContentScale.Crop,
-                    colorFilter = dimFilter
-                )
-            }
-            Column(
-                modifier = Modifier
-                    .padding(innerPadding)
-                    .padding(12.dp)
-                    .fillMaxSize()
-                    .verticalScroll(scrollState),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                CameraOverlayScope {
-                    when (state) {
-                        is VlmUiState.Inactive -> {
-                            CameraOverlayLabel("Bereit. Tippe auf 'Neue Szene'.")
-                        }
-                        is VlmUiState.LoadingOverview -> {
-                            CameraOverlayRow {
-                                CircularProgressIndicator(color = CameraOverlayDefaults.textColor)
-                                Text(state.message ?: "Lade VLM...")
-                            }
-                        }
-                        is VlmUiState.Asking -> {
-                            CameraOverlayRow {
-                                CircularProgressIndicator(color = CameraOverlayDefaults.textColor)
-                                Text("Sende Frage...")
-                            }
-                        }
-                        is VlmUiState.Streaming -> {
-                            CameraOverlayLabel(text = "Streaming...")
-                            CameraOverlayLabel(text = state.partialText, maxLines = 6)
-                        }
-                        is VlmUiState.Error -> {
-                            CameraOverlayLabel(text = "Fehler: ${state.message}")
-                        }
-                        is VlmUiState.OverviewReadyRaw -> {
-                            CameraOverlayLabel(text = "Antwort:")
-                            CameraOverlayLabel(text = state.rawText, maxLines = 8)
-                        }
-                        is VlmUiState.OverviewReady -> {
-                            val desc = state.description
-                            val obstaclesText = if (desc.obstacles.isEmpty()) "keine" else desc.obstacles.joinToString()
-                            val landmarksText = if (desc.landmarks.isEmpty()) "keine" else desc.landmarks.joinToString()
-                            CameraOverlayLabel(text = "Kurz: ${desc.ttsOneLiner}", maxLines = 3)
-                            CameraOverlayLabel(text = "Empfehlung: ${desc.actionSuggestion}", maxLines = 3)
-                            CameraOverlayLabel(text = "Hindernisse: $obstaclesText", maxLines = 3)
-                            CameraOverlayLabel(text = "Landmarken: $landmarksText", maxLines = 3)
-                            CameraOverlayLabel(text = "Details: ${desc.readableText}", maxLines = 8)
-                            desc.overallConfidence?.let { CameraOverlayLabel(text = "Confidence: $it") }
-                        }
+                    val statusText = when {
+                        isListening -> "Hoere zu..."
+                        isProcessingSpeech -> "Verarbeite..."
+                        else -> speechError
+                    }
+                    if (statusText != null) {
+                        Text(
+                            text = statusText,
+                            style = MaterialTheme.typography.bodySmall,
+                            modifier = Modifier.padding(start = 56.dp, bottom = 8.dp)
+                        )
                     }
                 }
-
             }
         }
     }
