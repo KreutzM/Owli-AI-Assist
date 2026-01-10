@@ -76,6 +76,7 @@ class MainActivity : ComponentActivity() {
     private var streamingActive = false
     private var lastStreamingText = ""
     private var streamingTtsEnabled: Boolean = AppSettingsDefaults.streamingVlmTtsEnabled
+    private var voiceInputActive = false
     private lateinit var activeVlmProfile: VlmProfile
 
     private val requestPermissionLauncher =
@@ -142,7 +143,8 @@ class MainActivity : ComponentActivity() {
                         cameraFrameSource = cameraFrameSource,
                         vlmProfilesConfig = vlmProfilesConfig,
                         onStart = { onUserStart() },
-                        onStop = { onUserStop() }
+                        onStop = { onUserStop() },
+                        onVoiceInputActiveChanged = { active -> setVoiceInputActive(active) }
                     )
                 }
             }
@@ -287,7 +289,7 @@ class MainActivity : ComponentActivity() {
         }
         val delta = computeStreamingDelta(lastStreamingText, state.partialText)
         lastStreamingText = state.partialText
-        if (delta.isNotEmpty() && shouldUseStreamingTts()) {
+        if (!voiceInputActive && delta.isNotEmpty() && shouldUseStreamingTts()) {
             streamingTtsController.onDelta(delta)
             scheduleStreamingTimeout()
         }
@@ -299,17 +301,21 @@ class MainActivity : ComponentActivity() {
         if (streamingActive) {
             streamingActive = false
             streamingTimeoutJob?.cancel()
-            val shouldFlush = shouldUseStreamingTts() &&
-                (state is VlmUiState.OverviewReady || state is VlmUiState.OverviewReadyRaw)
-            if (shouldFlush) {
-                streamingTtsController.flushRemaining()
+            if (!voiceInputActive) {
+                val shouldFlush = shouldUseStreamingTts() &&
+                    (state is VlmUiState.OverviewReady || state is VlmUiState.OverviewReadyRaw)
+                if (shouldFlush) {
+                    streamingTtsController.flushRemaining()
+                } else {
+                    streamingTtsController.cancel()
+                }
             } else {
                 streamingTtsController.cancel()
             }
             lastStreamingText = ""
         }
         updateSceneSpeechSuppression()
-        if (!shouldUseStreamingTts() || !hadStreamingOutput) {
+        if (!voiceInputActive && (!shouldUseStreamingTts() || !hadStreamingOutput)) {
             when (state) {
                 is VlmUiState.OverviewReady -> {
                     audioFeedbackEngine.speakVlmResponse(
@@ -346,12 +352,25 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun updateSceneSpeechSuppression() {
-        val shouldSuppress = shouldUseStreamingTts() &&
+        val shouldSuppress = voiceInputActive || (shouldUseStreamingTts() &&
             (streamingActive || streamingTtsController.hasPending() || audioFeedbackEngine.isVlmStreamBusy())
+        )
         audioFeedbackEngine.setSceneSpeechSuppressed(shouldSuppress)
     }
 
     private fun shouldUseStreamingTts(): Boolean {
         return streamingTtsEnabled && activeVlmProfile.streamingEnabled
+    }
+
+    private fun setVoiceInputActive(active: Boolean) {
+        if (voiceInputActive == active) return
+        voiceInputActive = active
+        if (active) {
+            streamingTtsController.cancel()
+            audioFeedbackEngine.stopAllTts()
+            audioFeedbackEngine.setSceneSpeechSuppressed(true)
+        } else {
+            updateSceneSpeechSuppression()
+        }
     }
 }

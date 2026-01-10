@@ -81,6 +81,7 @@ fun VlmScreen(
     state: VlmUiState,
     onNewScene: () -> Unit,
     onAsk: (String) -> Unit,
+    onVoiceInputActiveChanged: (Boolean) -> Unit,
     cameraFrameSource: CameraFrameSource,
     autoScanAvailable: Boolean,
     isAutoScanRunning: Boolean,
@@ -173,12 +174,14 @@ fun VlmScreen(
             delay(1200)
             isProcessingSpeech = false
             speechError = null
+            onVoiceInputActiveChanged(false)
         }
     }
     val startVoiceIntent = { autoSend: Boolean ->
         speechError = null
         autoSendOnVoiceResult = autoSend
         try {
+            onVoiceInputActiveChanged(true)
             val intent = Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH).apply {
                 putExtra(
                     RecognizerIntent.EXTRA_LANGUAGE_MODEL,
@@ -191,6 +194,7 @@ fun VlmScreen(
         } catch (ex: ActivityNotFoundException) {
             isListening = false
             autoSendOnVoiceResult = false
+            onVoiceInputActiveChanged(false)
             speechError = "Spracherkennung nicht verfuegbar"
         }
     }

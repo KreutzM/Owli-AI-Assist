@@ -50,7 +50,7 @@ Owli-AI Assist ist eine Android-App fuer blinde Nutzer als AI Assistenz-App mit 
 6. Overflow-Menue (TopAppBar) -> Settings/VLM Settings/Diagnostics/About oeffnen.
 7. VLM ueber TopAppBar -> Szene beschreiben lassen, Follow-up fragen; Profil-Auswahl in VLM Settings.
    Auto-Toggle erscheint im VLM-Screen, wenn das Profil `auto_scan` definiert. Manuelle "Neue Szene" schaltet Auto aus.
-   Diktat per Mikrofon: Tippen fuegt Text ins Eingabefeld ein; lang druecken sendet sofort.
+   Diktat per Mikrofon: Tippen fuegt Text ins Eingabefeld ein; lang druecken sendet sofort. Sprachausgabe pausiert waehrend der Spracheingabe.
 8. Rueck-Button schliesst Unterfenster (Settings/Diag/VLM); App-Ende erst im Hauptfenster.
 9. Stop via Toggle -> Pipeline stoppt, Overlay/State wird zurueckgesetzt.
 
