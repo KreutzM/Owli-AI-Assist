@@ -13,7 +13,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +32,10 @@ import androidx.compose.ui.unit.dp
 import com.owlitech.owli.assist.camera.CameraFrameSource
 import com.owlitech.owli.assist.vlm.VlmUiState
 import com.owlitech.owli.assist.ui.components.CameraPreview
+import com.owlitech.owli.assist.ui.overlay.CameraOverlayDefaults
+import com.owlitech.owli.assist.ui.overlay.CameraOverlayLabel
+import com.owlitech.owli.assist.ui.overlay.CameraOverlayRow
+import com.owlitech.owli.assist.ui.overlay.CameraOverlayScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -110,43 +113,45 @@ fun VlmScreen(
                     }
                 }
             }
-            when (state) {
-                is VlmUiState.Inactive -> {
-                    Text("Bereit. Tippe auf 'Neue Szene'.")
-                }
-                is VlmUiState.LoadingOverview -> {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        CircularProgressIndicator()
-                        Text(state.message ?: "Lade VLM...")
+            CameraOverlayScope {
+                when (state) {
+                    is VlmUiState.Inactive -> {
+                        CameraOverlayLabel("Bereit. Tippe auf 'Neue Szene'.")
                     }
-                }
-                is VlmUiState.Asking -> {
-                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        CircularProgressIndicator()
-                        Text("Sende Frage...")
+                    is VlmUiState.LoadingOverview -> {
+                        CameraOverlayRow {
+                            CircularProgressIndicator(color = CameraOverlayDefaults.textColor)
+                            Text(state.message ?: "Lade VLM...")
+                        }
                     }
-                }
-                is VlmUiState.Streaming -> {
-                    Text(text = "Streaming...")
-                    Text(text = state.partialText)
-                }
-                is VlmUiState.Error -> {
-                    Text(text = "Fehler: ${state.message}", color = MaterialTheme.colorScheme.error)
-                }
-                is VlmUiState.OverviewReadyRaw -> {
-                    Text(text = "Antwort:")
-                    Text(text = state.rawText)
-                }
-                is VlmUiState.OverviewReady -> {
-                    val desc = state.description
-                    val obstaclesText = if (desc.obstacles.isEmpty()) "keine" else desc.obstacles.joinToString()
-                    val landmarksText = if (desc.landmarks.isEmpty()) "keine" else desc.landmarks.joinToString()
-                    Text(text = "Kurz: ${desc.ttsOneLiner}")
-                    Text(text = "Empfehlung: ${desc.actionSuggestion}")
-                    Text(text = "Hindernisse: $obstaclesText")
-                    Text(text = "Landmarken: $landmarksText")
-                    Text(text = "Details: ${desc.readableText}")
-                    desc.overallConfidence?.let { Text(text = "Confidence: $it") }
+                    is VlmUiState.Asking -> {
+                        CameraOverlayRow {
+                            CircularProgressIndicator(color = CameraOverlayDefaults.textColor)
+                            Text("Sende Frage...")
+                        }
+                    }
+                    is VlmUiState.Streaming -> {
+                        CameraOverlayLabel(text = "Streaming...")
+                        CameraOverlayLabel(text = state.partialText, maxLines = 6)
+                    }
+                    is VlmUiState.Error -> {
+                        CameraOverlayLabel(text = "Fehler: ${state.message}")
+                    }
+                    is VlmUiState.OverviewReadyRaw -> {
+                        CameraOverlayLabel(text = "Antwort:")
+                        CameraOverlayLabel(text = state.rawText, maxLines = 8)
+                    }
+                    is VlmUiState.OverviewReady -> {
+                        val desc = state.description
+                        val obstaclesText = if (desc.obstacles.isEmpty()) "keine" else desc.obstacles.joinToString()
+                        val landmarksText = if (desc.landmarks.isEmpty()) "keine" else desc.landmarks.joinToString()
+                        CameraOverlayLabel(text = "Kurz: ${desc.ttsOneLiner}", maxLines = 3)
+                        CameraOverlayLabel(text = "Empfehlung: ${desc.actionSuggestion}", maxLines = 3)
+                        CameraOverlayLabel(text = "Hindernisse: $obstaclesText", maxLines = 3)
+                        CameraOverlayLabel(text = "Landmarken: $landmarksText", maxLines = 3)
+                        CameraOverlayLabel(text = "Details: ${desc.readableText}", maxLines = 8)
+                        desc.overallConfidence?.let { CameraOverlayLabel(text = "Confidence: $it") }
+                    }
                 }
             }
 

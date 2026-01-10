@@ -1,6 +1,5 @@
 package com.owlitech.owli.assist.ui.screens
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -26,6 +25,8 @@ import com.owlitech.owli.assist.camera.CameraFrameSource
 import com.owlitech.owli.assist.domain.TrafficLightObservation
 import com.owlitech.owli.assist.ml.Detection
 import com.owlitech.owli.assist.ui.components.CameraPreview
+import com.owlitech.owli.assist.ui.overlay.CameraOverlayLabel
+import com.owlitech.owli.assist.ui.overlay.CameraOverlayScope
 import com.owlitech.owli.assist.ui.theme.OwliTheme
 
 @Composable
@@ -54,24 +55,24 @@ fun HomeScreen(
         Box(modifier = Modifier.weight(1f)) {
             CameraPreview(cameraFrameSource = cameraFrameSource, modifier = Modifier.fillMaxSize())
             if (showOverlay) {
-                DetectionOverlay(
-                    detections = detections,
-                    showLabels = showLabels,
-                    modifier = Modifier.fillMaxSize()
-                )
-                SceneOverlay(
-                    hazardLevel = hazardLevel,
-                    detectionsCount = detectionsCount,
-                    message = sceneMessage,
-                    rotationText = rotationDegrees?.let { "${it}deg" },
-                    trafficLights = trafficLights,
-                    blindViewPreview = blindViewPreview,
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(12.dp)
-                        .background(Color(0x66000000))
-                        .padding(8.dp)
-                )
+                CameraOverlayScope {
+                    DetectionOverlay(
+                        detections = detections,
+                        showLabels = showLabels,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                    SceneOverlay(
+                        hazardLevel = hazardLevel,
+                        detectionsCount = detectionsCount,
+                        message = sceneMessage,
+                        rotationText = rotationDegrees?.let { "${it}deg" },
+                        trafficLights = trafficLights,
+                        blindViewPreview = blindViewPreview,
+                        modifier = Modifier
+                            .align(Alignment.TopStart)
+                            .padding(12.dp)
+                    )
+                }
             }
         }
         ControlPanel(
@@ -99,19 +100,22 @@ fun SceneOverlay(
     blindViewPreview: String?,
     modifier: Modifier = Modifier
 ) {
-    Column(modifier = modifier) {
-        Text(text = "Hazard: $hazardLevel", color = Color.White)
-        Text(text = "Detections: $detectionsCount", color = Color.White)
-        rotationText?.let { Text(text = "Rot: $it", color = Color.White) }
+    Column(
+        modifier = modifier,
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        CameraOverlayLabel(text = "Hazard: $hazardLevel")
+        CameraOverlayLabel(text = "Detections: $detectionsCount")
+        rotationText?.let { CameraOverlayLabel(text = "Rot: $it") }
         val primaryTl = trafficLights.maxByOrNull { it.confidence }
         primaryTl?.let {
-            Text(text = "TL: ${it.phase} (conf=${"%.2f".format(it.confidence)})", color = Color.White)
+            CameraOverlayLabel(text = "TL: ${it.phase} (conf=${"%.2f".format(it.confidence)})")
         }
         message?.let {
-            Text(text = it, color = Color.White)
+            CameraOverlayLabel(text = it, maxLines = 3)
         }
         blindViewPreview?.let {
-            Text(text = "BV: $it", color = Color.White)
+            CameraOverlayLabel(text = "BV: $it", maxLines = 2)
         }
     }
 }
@@ -158,6 +162,8 @@ fun DetectionOverlay(
             )
             if (showLabels) {
                 val text = "${detection.label} ${"%.2f".format(detection.confidence)}"
+                bgPaint.color = android.graphics.Color.argb(160, 0, 0, 0)
+                labelPaint.color = android.graphics.Color.WHITE
                 val fm = labelPaint.fontMetrics
                 val textWidth = labelPaint.measureText(text)
                 val textHeight = fm.bottom - fm.top

@@ -49,6 +49,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - One-Shot Snapshot startet/stoppt CameraX auf dem Main-Thread (Fix fuer Crash in Background-Thread).
 - Build-Fixes fuer Navigation TopAppBar Opt-In und BackStack State-Delegate.
 - VLM-Snapshot funktioniert jetzt auch im eigenen Screen durch persistente Camera-Preview-Anbindung.
+- Camera-Overlay-Text nutzt theme-unabhaengige Farben mit dunklem Scrim fuer bessere Lesbarkeit.
 
 ---
 
