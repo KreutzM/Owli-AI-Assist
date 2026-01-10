@@ -44,6 +44,9 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - VLM: Eingabebereich hat jetzt einen dunklen Hintergrund fuer bessere Lesbarkeit.
 - VLM: Hintergrundbild nur leicht gedimmt (0.85) fuer bessere Szenen-Visibilitaet.
 - Menue: VLM Settings als eigener Eintrag, Profilwahl dort gebuendelt.
+- VLM: Composer am unteren Rand mit Send-Button und IME-Senden.
+- VLM: Mikrofon-Diktat fuegt Text ins Eingabefeld ein (kein Auto-Send).
+- VLM: Composer bleibt ueber der Tastatur am unteren Rand (Insets-Fix).
 
 ### Fixed
 - GPT-5 Reasoning-only Antworten: automatische Retries mit hoeherem Token-Budget und Final-Only Hinweis.
