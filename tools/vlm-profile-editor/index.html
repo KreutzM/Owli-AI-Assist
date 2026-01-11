@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>VLM Profile Editor</title>
+    <style>
+      :root {
+        color-scheme: light;
+      }
+      body {
+        margin: 0;
+        padding: 24px;
+        font-family: "Segoe UI", Tahoma, sans-serif;
+        background: #f6f7f9;
+        color: #1b1f24;
+      }
+      header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      h1 {
+        font-size: 22px;
+        margin: 0;
+      }
+      .toolbar {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        align-items: center;
+      }
+      button, select, input, textarea {
+        font: inherit;
+      }
+      button {
+        padding: 6px 12px;
+        border-radius: 6px;
+        border: 1px solid #c9ced6;
+        background: #ffffff;
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+      main {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+      }
+      .card {
+        background: #ffffff;
+        border-radius: 10px;
+        padding: 16px;
+        box-shadow: 0 1px 4px rgba(10, 10, 10, 0.08);
+      }
+      .row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      label {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        font-size: 13px;
+        color: #4b5563;
+      }
+      input[type="text"], input[type="number"], textarea, select {
+        padding: 8px;
+        border-radius: 6px;
+        border: 1px solid #c9ced6;
+        background: #ffffff;
+        color: #1b1f24;
+      }
+      textarea {
+        min-height: 100px;
+        resize: vertical;
+      }
+      .status {
+        font-size: 12px;
+        color: #5b6472;
+      }
+      .status.ok {
+        color: #15803d;
+      }
+      .status.error {
+        color: #b91c1c;
+      }
+      fieldset {
+        border: none;
+        padding: 0;
+        margin: 0;
+      }
+      .section-title {
+        font-size: 14px;
+        margin: 8px 0 12px;
+        color: #2f3640;
+      }
+      .toggle {
+        flex-direction: row;
+        align-items: center;
+        gap: 8px;
+      }
+      .error-list {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        color: #b91c1c;
+        font-size: 13px;
+      }
+      details {
+        border-top: 1px solid #e2e8f0;
+        padding-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>VLM Profile Editor</h1>
+      <div class="toolbar">
+        <button id="openButton" type="button">Open JSON</button>
+        <button id="saveButton" type="button" disabled>Save</button>
+        <button id="downloadButton" type="button" disabled>Download</button>
+        <span class="status" id="fileStatus">No file loaded</span>
+      </div>
+    </header>
+    <main>
+      <section class="card">
+        <div class="row">
+          <label>
+            Profile
+            <select id="profileSelect" disabled></select>
+          </label>
+          <div class="actions">
+            <button id="duplicateButton" type="button" disabled>Duplicate Profile</button>
+            <button id="deleteButton" type="button" disabled>Delete Profile</button>
+            <button id="setDefaultButton" type="button" disabled>Set as Default</button>
+            <button id="validateButton" type="button" disabled>Validate</button>
+          </div>
+          <label>
+            Default Profile ID
+            <input id="defaultProfileId" type="text" disabled>
+          </label>
+          <label>
+            Provider (defaults)
+            <input id="defaultProvider" type="text" disabled>
+          </label>
+        </div>
+        <div class="status" id="validationSummary"></div>
+        <ul class="error-list" id="validationErrors"></ul>
+      </section>
+      <section class="card">
+        <h2 class="section-title">Profile Details</h2>
+        <fieldset id="profileFields" disabled>
+          <div class="row">
+            <label>
+              id
+              <input id="fieldId" type="text">
+            </label>
+            <label>
+              label
+              <input id="fieldLabel" type="text">
+            </label>
+            <label>
+              description
+              <input id="fieldDescription" type="text">
+            </label>
+            <label>
+              provider
+              <input id="fieldProvider" type="text">
+            </label>
+            <label>
+              model_id
+              <input id="fieldModelId" type="text">
+            </label>
+          </div>
+          <div class="row" id="capabilityRow">
+            <div id="wrapStreaming">
+              <label class="toggle">
+                <input id="fieldStreaming" type="checkbox">
+                streaming_enabled
+              </label>
+            </div>
+            <div id="wrapSupportsReasoning">
+              <label class="toggle">
+                <input id="fieldSupportsReasoning" type="checkbox">
+                supports_reasoning
+              </label>
+            </div>
+            <div id="wrapSupportsVision">
+              <label class="toggle">
+                <input id="fieldSupportsVision" type="checkbox">
+                supports_vision
+              </label>
+            </div>
+            <div id="wrapSupportsJson">
+              <label class="toggle">
+                <input id="fieldSupportsJson" type="checkbox">
+                supports_json
+              </label>
+            </div>
+          </div>
+          <h3 class="section-title">Token Policy</h3>
+          <div class="row" id="tokenPolicyRow">
+            <div id="wrapMaxTokens">
+              <label>
+                max_tokens
+                <input id="fieldMaxTokens" type="number">
+              </label>
+            </div>
+            <div id="wrapTemperature">
+              <label>
+                temperature
+                <input id="fieldTemperature" type="number" step="0.01">
+              </label>
+            </div>
+            <div id="wrapReasoningEffort">
+              <label>
+                reasoning_effort
+                <input id="fieldReasoningEffort" type="text">
+              </label>
+            </div>
+            <div id="wrapTopP">
+              <label>
+                top_p
+                <input id="fieldTopP" type="number" step="0.01">
+              </label>
+            </div>
+          </div>
+          <h3 class="section-title">Auto Scan</h3>
+          <div class="row" id="autoScanRow">
+            <div id="wrapAutoScanEnabled">
+              <label class="toggle">
+                <input id="fieldAutoScanEnabled" type="checkbox">
+                enabled
+              </label>
+            </div>
+            <div id="wrapAutoScanInterval">
+              <label>
+                interval_ms
+                <input id="fieldAutoScanInterval" type="number">
+              </label>
+            </div>
+          </div>
+          <h3 class="section-title">Prompts</h3>
+          <div class="row">
+            <label>
+              system_prompt
+              <textarea id="fieldSystemPrompt"></textarea>
+            </label>
+            <label>
+              overview_prompt
+              <textarea id="fieldOverviewPrompt"></textarea>
+            </label>
+          </div>
+          <details id="advancedSection">
+            <summary>Advanced (optional fields)</summary>
+            <div class="row" id="advancedCapabilityRow"></div>
+            <h3 class="section-title">Token Policy (optional)</h3>
+            <div class="row" id="advancedTokenPolicyRow"></div>
+            <h3 class="section-title">Auto Scan (optional)</h3>
+            <div class="row" id="advancedAutoScanRow"></div>
+          </details>
+        </fieldset>
+      </section>
+    </main>
+    <input id="fileInput" type="file" accept="application/json,.json" hidden>
+    <script src="app.js"></script>
+  </body>
+</html>

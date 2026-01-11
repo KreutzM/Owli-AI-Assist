@@ -65,6 +65,10 @@ Owli-AI Assist ist eine Android-App fuer blinde Nutzer als AI Assistenz-App mit 
 - Ampel: TrafficLightPhaseClassifier (ROI-Inset, Zonenanalyse rot/oben, gruen/unten, Hysterese mit stabiler Phase).
 - VLM: Profile und Prompts in `app/src/main/assets/vlm-profiles.json` (On-Demand, Raw-Debug-Mode, optional `auto_scan`).
 
+## Developer Tools
+- Lokaler Editor fuer `vlm-profiles.json`: `tools/vlm-profile-editor/` (statische HTML-Seite).
+- CLI-Validator fuer VLM-Profile: `tools/validate_vlm_profiles.py`.
+
 ## Hinweise / Fehlerquellen
 - Fehlt das Modell-Asset, wird automatisch der FakeDetector verwendet (Status-Anzeige).
 - TTS braucht ggf. Sekunden bis READY; pendingMessage wird erst bei Ready gesprochen.

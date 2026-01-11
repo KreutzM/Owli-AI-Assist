@@ -10,6 +10,8 @@ Format (angelehnt an Keep a Changelog / SemVer):
 ## [Unreleased]
 
 ### Added
+- Lokaler Editor fuer VLM-Profile unter `tools/vlm-profile-editor/` (Repo-Tool).
+- CLI-Validator fuer VLM-Profile unter `tools/validate_vlm_profiles.py`.
 - Language-Setting (System/Deutsch/English) im Settings-Screen.
 - VLM policy layer mit Provider-Interface und GPT-5 Reasoning-Retries.
 - Dokumentation `docs/VLM.md` fuer Profile, Policies und Retry-Strategie.

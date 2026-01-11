@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "VLM Profiles",
+  "type": "object",
+  "required": ["default_profile_id", "profiles"],
+  "properties": {
+    "default_profile_id": { "type": "string" },
+    "defaults": { "type": "object" },
+    "profiles": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "description", "model_id"],
+        "properties": {
+          "id": { "type": "string" },
+          "label": { "type": "string" },
+          "description": { "type": "string" },
+          "model_id": { "type": "string" },
+          "provider": { "type": "string" },
+          "family": { "type": "string" },
+          "streaming_enabled": { "type": "boolean" },
+          "system_prompt": { "type": "string" },
+          "overview_prompt": { "type": "string" },
+          "auto_scan": {
+            "type": "object",
+            "properties": {
+              "enabled": { "type": "boolean" },
+              "interval_ms": { "type": "number" }
+            }
+          },
+          "parameter_overrides": {
+            "type": "object",
+            "properties": {
+              "temperature": { "type": "number" },
+              "top_p": { "type": "number" }
+            }
+          },
+          "token_policy": {
+            "type": "object",
+            "properties": {
+              "max_tokens": { "type": "number" },
+              "reasoning_effort": { "type": "string" }
+            }
+          },
+          "capabilities": {
+            "type": "object",
+            "properties": {
+              "supports_reasoning": { "type": "boolean" },
+              "supports_vision": { "type": "boolean" },
+              "supports_json": { "type": "boolean" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -79,6 +79,11 @@ Maximal 2 Retries, jeder Schritt wird im Log markiert.
 
 ## 5) Minimal-Latenz Profil (nano-fast)
 
+## 6) Developer Tools (Repo)
+
+- Editor: `tools/vlm-profile-editor/` (Open JSON, Validate, Save/Download).
+- CLI-Check: `python tools/validate_vlm_profiles.py` (optional: Pfad als Argument).
+
 Empfohlen fuer GPT-5-nano mit sehr kurzer Ausgabe:
 - `max_tokens`: 180-200
 - `reasoning_exclude`: true
