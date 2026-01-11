@@ -21,10 +21,19 @@ local.properties
 # TensorFlow Lite models
 *.tflite
 
+# Build outputs
+/build/
+/app/build/
+/app/release/
+
+# APKs / AABs (zusätzlich)
+*.apk
+*.aab
+
 # my
 /images
 /.gradle-user/
 /.kotlin
 /tmp
-*.apk
+
 
