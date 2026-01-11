@@ -121,6 +121,11 @@
         border-top: 1px solid #e2e8f0;
         padding-top: 8px;
       }
+    
+      .muted { opacity: 0.8; font-size: 0.9rem; margin-top: -6px; }
+      label.full { flex: 1 1 100%; }
+      textarea { width: 100%; }
+
     </style>
   </head>
   <body>
@@ -150,14 +155,61 @@
             Default Profile ID
             <input id="defaultProfileId" type="text" disabled>
           </label>
+</div>
+        <div class="status" id="validationSummary"></div>
+        <ul class="error-list" id="validationErrors">
+      </ul>
+      </section>
+
+      <section class="card">
+        <h2 class="section-title">Defaults</h2>
+        <p class="muted">These values apply unless overridden per profile.</p>
+        <div class="row">
           <label>
-            Provider (defaults)
-            <input id="defaultProvider" type="text" disabled>
+            provider
+            <input id="defaultProvider" type="text">
+          </label>
+          <label>
+            token_policy.max_tokens
+            <input id="defaultMaxTokens" type="number">
+          </label>
+          <label>
+            image.max_side_px
+            <input id="defaultImageMaxSidePx" type="number">
+          </label>
+          <label>
+            image.jpeg_quality
+            <input id="defaultImageJpegQuality" type="number" step="1">
           </label>
         </div>
-        <div class="status" id="validationSummary"></div>
-        <ul class="error-list" id="validationErrors"></ul>
+        <div class="row">
+          <label class="toggle">
+            <input id="defaultSupportsVision" type="checkbox">
+            capabilities.supports_vision
+          </label>
+          <label class="toggle">
+            <input id="defaultSupportsReasoning" type="checkbox">
+            capabilities.supports_reasoning
+          </label>
+          <label class="toggle">
+            <input id="defaultSupportsJson" type="checkbox">
+            capabilities.supports_json
+          </label>
+        </div>
+        <div class="row">
+          <label class="full">
+            system_prompt
+            <textarea id="defaultSystemPrompt" rows="6"></textarea>
+          </label>
+        </div>
+        <div class="row">
+          <label class="full">
+            overview_prompt
+            <textarea id="defaultOverviewPrompt" rows="4"></textarea>
+          </label>
+        </div>
       </section>
+
       <section class="card">
         <h2 class="section-title">Profile Details</h2>
         <fieldset id="profileFields" disabled>
@@ -175,12 +227,16 @@
               <input id="fieldDescription" type="text">
             </label>
             <label>
-              provider
+              provider (override)
               <input id="fieldProvider" type="text">
             </label>
             <label>
               model_id
               <input id="fieldModelId" type="text">
+            </label>
+            <label>
+              family
+              <input id="fieldFamily" type="text">
             </label>
           </div>
           <div class="row" id="capabilityRow">
@@ -229,6 +285,24 @@
                 <input id="fieldReasoningEffort" type="text">
               </label>
             </div>
+            <div id="wrapReasoningExclude">
+              <label class="toggle">
+                <input id="fieldReasoningExclude" type="checkbox">
+                reasoning_exclude
+              </label>
+            </div>
+            <div id="wrapRetry1MaxTokens">
+              <label>
+                retry1_max_tokens
+                <input id="fieldRetry1MaxTokens" type="number">
+              </label>
+            </div>
+            <div id="wrapRetry2MaxTokens">
+              <label>
+                retry2_max_tokens
+                <input id="fieldRetry2MaxTokens" type="number">
+              </label>
+            </div>
             <div id="wrapTopP">
               <label>
                 top_p
@@ -241,13 +315,19 @@
             <div id="wrapAutoScanEnabled">
               <label class="toggle">
                 <input id="fieldAutoScanEnabled" type="checkbox">
-                enabled
+                enabled_by_default
               </label>
             </div>
             <div id="wrapAutoScanInterval">
               <label>
                 interval_ms
                 <input id="fieldAutoScanInterval" type="number">
+              </label>
+            </div>
+            <div id="wrapAutoScanSpeakFree">
+              <label>
+                speak_free_every_ms
+                <input id="fieldAutoScanSpeakFree" type="number">
               </label>
             </div>
           </div>
