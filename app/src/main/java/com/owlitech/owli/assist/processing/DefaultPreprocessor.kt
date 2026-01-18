@@ -15,10 +15,12 @@ class DefaultPreprocessor(
     private val outputSize: Int = 448,
     private val enableImuDerotation: Boolean = false,
     private val stabilizationQualityMin: Float = 0.3f,
+    private val enableTranslationStabilization: Boolean = true,
     private val logInterval: Int = 30
 ) : Preprocessor {
 
     private val converter = YuvToRgbConverter()
+    private val translationEstimator = GlobalMotionEstimator()
     private var frameCount = 0
     private var stableCx = Float.NaN
     private var stableCy = Float.NaN
@@ -64,6 +66,21 @@ class DefaultPreprocessor(
             } else {
                 STABLE_CENTER_ALPHA
             }
+            if (enableTranslationStabilization) {
+                val translation = translationEstimator.estimate(bmp)
+                if (translation.quality >= TRANSLATION_QUALITY_MIN) {
+                    val scaleX = sourceWidth.toFloat() / translationEstimator.lowWidth
+                    val scaleY = sourceHeight.toFloat() / translationEstimator.lowHeight
+                    val translationScale =
+                        if (motion?.motionLevel == com.owlitech.owli.assist.motion.MotionLevel.HIGH) {
+                            TRANSLATION_SCALE_HIGH
+                        } else {
+                            TRANSLATION_SCALE
+                        }
+                    stableCx -= translation.dx * scaleX * translationScale
+                    stableCy -= translation.dy * scaleY * translationScale
+                }
+            }
             stableCx += (targetCx - stableCx) * alpha
             stableCy += (targetCy - stableCy) * alpha
         }
@@ -71,6 +88,12 @@ class DefaultPreprocessor(
             STABILIZED_CROP_SIZE,
             min(sourceWidth, sourceHeight)
         )
+        val minCx = cropSize / 2f
+        val maxCx = sourceWidth - cropSize / 2f
+        val minCy = cropSize / 2f
+        val maxCy = sourceHeight - cropSize / 2f
+        stableCx = stableCx.coerceIn(minCx, maxCx)
+        stableCy = stableCy.coerceIn(minCy, maxCy)
         val maxLeft = (sourceWidth - cropSize).coerceAtLeast(0)
         val maxTop = (sourceHeight - cropSize).coerceAtLeast(0)
         val cropLeft = (stableCx - cropSize / 2f)
@@ -167,5 +190,8 @@ class DefaultPreprocessor(
         private const val STABILIZED_CROP_SIZE = 560
         private const val STABLE_CENTER_ALPHA = 0.2f
         private const val STABLE_CENTER_ALPHA_HIGH = 0.06f
+        private const val TRANSLATION_QUALITY_MIN = 0.15f
+        private const val TRANSLATION_SCALE = 0.6f
+        private const val TRANSLATION_SCALE_HIGH = 0.35f
     }
 }

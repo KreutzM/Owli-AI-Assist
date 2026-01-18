@@ -20,6 +20,7 @@ object DiagnosticsReportBuilder {
         sb.appendLine("  running: ${state.isRunning} fps=${"%.2f".format(state.fps)} intervalMs=${"%.1f".format(state.frameIntervalMs)}")
         sb.appendLine("  detectorInfo: ${state.detectorInfo}")
         sb.appendLine("  analysisIntervalMs: ${state.analysisIntervalMs}")
+        sb.appendLine("  debugDetectorViewEnabled: ${state.debugDetectorViewEnabled}")
         sb.appendLine()
         sb.appendLine("Detector:")
         sb.appendLine("  threads=${state.detectorNumThreads} score>=${state.detectorScoreThreshold} maxResults=${state.detectorMaxResults}")

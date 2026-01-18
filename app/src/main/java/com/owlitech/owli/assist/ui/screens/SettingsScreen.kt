@@ -150,6 +150,18 @@ fun SettingsScreen(
             onValueChange = { v -> onUpdate { it.copy(stabilizationQualityMin = v) } },
             helper = stringResource(R.string.settings_stabilization_quality_min_helper)
         )
+        SettingSwitch(
+            label = stringResource(R.string.settings_translation_stabilization),
+            checked = settings.enableTranslationStabilization,
+            onCheckedChange = { v -> onUpdate { it.copy(enableTranslationStabilization = v) } },
+            helper = stringResource(R.string.settings_translation_stabilization_helper)
+        )
+        SettingSwitch(
+            label = stringResource(R.string.settings_detector_debug_view),
+            checked = settings.enableDetectorDebugView,
+            onCheckedChange = { v -> onUpdate { it.copy(enableDetectorDebugView = v) } },
+            helper = stringResource(R.string.settings_detector_debug_view_helper)
+        )
         SettingIntSlider(
             label = stringResource(R.string.settings_blindview_max_items),
             value = settings.maxItemsSpoken,

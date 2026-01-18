@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.Canvas
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
@@ -24,6 +25,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.graphics.nativeCanvas
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -37,6 +39,7 @@ import com.owlitech.owli.assist.ui.components.CameraPreview
 import com.owlitech.owli.assist.ui.overlay.CameraOverlayLabel
 import com.owlitech.owli.assist.ui.overlay.CameraOverlayScope
 import com.owlitech.owli.assist.ui.theme.OwliTheme
+import androidx.compose.foundation.Image
 
 @Composable
 fun HomeScreen(
@@ -52,6 +55,8 @@ fun HomeScreen(
     showOverlay: Boolean,
     showLabels: Boolean,
     frameMapping: FrameMapping?,
+    detectorDebugBitmap: android.graphics.Bitmap?,
+    showDetectorDebugView: Boolean,
     onStart: () -> Unit,
     onStop: () -> Unit,
     cameraFrameSource: CameraFrameSource,
@@ -85,6 +90,14 @@ fun HomeScreen(
                                 .padding(12.dp)
                         )
                     }
+                }
+                if (showDetectorDebugView && detectorDebugBitmap != null) {
+                    DetectorDebugView(
+                        bitmap = detectorDebugBitmap,
+                        modifier = Modifier
+                            .align(Alignment.TopEnd)
+                            .padding(12.dp)
+                    )
                 }
             }
             ControlPanel(
@@ -274,6 +287,31 @@ fun ControlPanel(
         }
         blindViewPreview?.let { Text(text = stringResource(R.string.home_blindview_preview_format, it)) }
         Spacer(modifier = Modifier.height(72.dp))
+    }
+}
+
+@Composable
+fun DetectorDebugView(
+    bitmap: android.graphics.Bitmap,
+    modifier: Modifier = Modifier
+) {
+    Box(
+        modifier = modifier
+            .padding(4.dp)
+    ) {
+        Image(
+            bitmap = bitmap.asImageBitmap(),
+            contentDescription = "Detector 448x448",
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .size(120.dp)
+        )
+        CameraOverlayLabel(
+            text = "Detector 448x448",
+            modifier = Modifier
+                .align(Alignment.TopStart)
+                .padding(4.dp)
+        )
     }
 }
 

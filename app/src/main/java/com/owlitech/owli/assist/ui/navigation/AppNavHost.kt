@@ -89,6 +89,8 @@ fun AppNavHost(
                     showOverlay = settings.showOverlay,
                     showLabels = settings.showOverlayLabels,
                     frameMapping = sceneState?.frameMapping,
+                    detectorDebugBitmap = sceneState?.detectorDebugBitmap,
+                    showDetectorDebugView = settings.enableDetectorDebugView,
                     onStart = onStart,
                     onStop = onStop,
                     cameraFrameSource = cameraFrameSource,

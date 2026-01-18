@@ -36,6 +36,7 @@ class DefaultVisionPipeline(
     private val sceneAnalyzer: SceneAnalyzer,
     private val trafficLightClassifier: TrafficLightPhaseClassifier,
     private val motionEstimator: MotionEstimator? = null,
+    private val debugDetectorViewEnabled: Boolean = false,
     @Suppress("unused")
     private val scope: CoroutineScope,
     private val minProcessIntervalMs: Long = 250L
@@ -52,6 +53,8 @@ class DefaultVisionPipeline(
     private val latestBitmap = AtomicReference<Bitmap?>(null)
     private val latestBitmapUpdatedAt = AtomicLong(0L)
     private val snapshotMutex = Mutex()
+    private var lastDebugDetectorAt: Long = 0L
+    private var lastDebugDetectorBitmap: Bitmap? = null
 
     private val frameListener = object : FrameListener {
         override fun onFrame(image: ImageProxy) {
@@ -76,8 +79,12 @@ class DefaultVisionPipeline(
                     appliedRollDeg = preprocessResult.appliedRollDeg,
                     mappingActive = preprocessResult.mapping != null
                 )
+                val debugBitmap = updateDebugDetectorBitmap(preprocessResult.bitmap448, now)
                 val sceneState = sceneAnalyzer.analyze(detections, trafficLights, motion)
-                    .copy(frameMapping = preprocessResult.mapping)
+                    .copy(
+                        frameMapping = preprocessResult.mapping,
+                        detectorDebugBitmap = debugBitmap
+                    )
                 com.owlitech.owli.assist.diagnostics.DiagnosticsCollector.updateFrameProcessed(now)
                 _sceneStates.tryEmit(sceneState)
                 lastProcessedAt = now
@@ -183,5 +190,31 @@ class DefaultVisionPipeline(
         val targetW = (width * scale).toInt().coerceAtLeast(1)
         val targetH = (height * scale).toInt().coerceAtLeast(1)
         return bitmap.scale(targetW, targetH, true)
+    }
+
+    private fun updateDebugDetectorBitmap(source: Bitmap, nowMs: Long): Bitmap? {
+        if (!debugDetectorViewEnabled) {
+            lastDebugDetectorBitmap = null
+            lastDebugDetectorAt = 0L
+            return null
+        }
+        if (nowMs - lastDebugDetectorAt >= DEBUG_DETECTOR_INTERVAL_MS || lastDebugDetectorBitmap == null) {
+            lastDebugDetectorAt = nowMs
+            lastDebugDetectorBitmap = createDetectorDebugBitmap(source)
+        }
+        return lastDebugDetectorBitmap
+    }
+
+    private fun createDetectorDebugBitmap(source: Bitmap): Bitmap {
+        return if (source.width == DEBUG_DETECTOR_SIZE && source.height == DEBUG_DETECTOR_SIZE) {
+            source.copy(source.config ?: Bitmap.Config.ARGB_8888, false)
+        } else {
+            Bitmap.createScaledBitmap(source, DEBUG_DETECTOR_SIZE, DEBUG_DETECTOR_SIZE, true)
+        }
+    }
+
+    companion object {
+        private const val DEBUG_DETECTOR_INTERVAL_MS = 300L
+        private const val DEBUG_DETECTOR_SIZE = 224
     }
 }

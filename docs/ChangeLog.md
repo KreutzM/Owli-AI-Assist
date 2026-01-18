@@ -12,6 +12,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 ### Added
 - Motion-Gating (IMU) mit MotionEstimator, neuen Settings und Diagnostics-Metriken.
 - IMU Roll-Lock (experimentell) und 448x448 Preprocessing mit FrameMapping fuer Overlay.
+- Debug-Detector-View (Picture-in-Picture) fuer 448x448 Input.
 - Lokaler Editor fuer VLM-Profile unter `tools/vlm-profile-editor/` (Repo-Tool).
 - CLI-Validator fuer VLM-Profile unter `tools/validate_vlm_profiles.py`.
 - Language-Setting (System/Deutsch/English) im Settings-Screen.

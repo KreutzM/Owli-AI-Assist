@@ -89,6 +89,12 @@ fun DiagnosticsScreen(
                     diagState.analysisIntervalMs
                 )
             )
+            Text(
+                stringResource(
+                    R.string.diagnostics_debug_detector_view_format,
+                    diagState.debugDetectorViewEnabled
+                )
+            )
         }
         SectionCard(title = stringResource(R.string.diagnostics_section_detector)) {
             Text(

@@ -235,5 +235,6 @@ Sie dient Codex als Grundlage für nachvollziehbare, konsistente Implementierung
 - Stabilisierung: Motion-Gating (IMU) fuer weniger Ansage-Spam und stabileres Tracking.
 - Stabilisierung: IMU Roll-Lock (experimentell) mit Quality-Min, 448x448 Preprocessing und Overlay-Mapping.
 - Stabilisierung: Glaettetes Crop-Window fuer stabilere 448x448 Ausrichtung bei Bewegung.
+- Stabilisierung: Translation-Schaetzung auf Low-Res Luma zur Crop-Kompensation.
 - Pipeline wird nach Rotation oder Settings-Änderungen automatisch neu aufgebaut, wenn zuvor aktiv (AutoStart-Flag).
 - Overlay/OwliAI-Preview per Setting ein-/ausblendbar.

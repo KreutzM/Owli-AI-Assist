@@ -12,6 +12,7 @@ Owli-AI Assist ist eine Android-App fuer blinde Nutzer als AI Assistenz-App mit 
 - TTS-Ausgabe mit Cooldown/Spam-Schutz, konfigurierbarer Sprechgeschwindigkeit; Status-Anzeige (RealDetector/Fallback)
 - IMU Motion-Gating (Gyro/Rotation Vector) fuer stabileres Tracking und Ansagen ohne Bild-Warp
 - IMU Roll-Lock (experimentell) + 448x448 Input mit Overlay-Mapping fuer stabilere Detektionen
+- Debug-Detector-View (Bild-in-Bild) fuer das 448x448 Input-Frame
 - DataStore-basiertes Settings-Menue (Detector/Tracking/OwliAI/TTS/Debug/Pipeline) inkl. Reset-to-Defaults
 - Diagnostics-Screen mit Live-Metriken und Copy-to-Clipboard Debug-Report
 - Start/Stop der Pipeline; Decay-Logik fuer Hazards; Auto-Restart nach Rotation/Settings-Aenderung

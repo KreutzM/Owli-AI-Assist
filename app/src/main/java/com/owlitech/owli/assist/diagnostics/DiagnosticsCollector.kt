@@ -49,7 +49,8 @@ object DiagnosticsCollector {
             showOverlayLabels = settings.showOverlayLabels,
             showBlindViewPreview = settings.showBlindViewPreview,
             analysisIntervalMs = settings.analysisIntervalMs,
-            stabilizationEnabled = settings.enableImuDerotation
+            stabilizationEnabled = settings.enableImuDerotation,
+            debugDetectorViewEnabled = settings.enableDetectorDebugView
         )
     }
 

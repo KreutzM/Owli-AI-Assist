@@ -166,7 +166,7 @@ Es soll mindestens eine Implementierung geben:
 
   * YUV-zu-RGB-Konvertierung
   * Roll-Lock per IMU (optional) nach Rotation
-  * Stabilisiertes Crop-Window (geglättetes Center), danach Center-Crop auf Square, Resize auf 448x448
+  * Stabilisiertes Crop-Window (geglättetes Center + Translation-Schaetzung), danach Center-Crop auf Square, Resize auf 448x448
   * FrameMapping fuer Overlay (448x448 -> Preview)
   * Normalisierung (z.B. Wertebereich [0,1] oder ImageNet-Mean/Std)
 

@@ -288,7 +288,9 @@ class MainActivity : AppCompatActivity() {
             motionGatingEnabled = settings.enableMotionGating,
             motionSpeakIntervalMultiplierHigh = settings.motionSpeakIntervalMultiplierHigh,
             enableImuDerotation = settings.enableImuDerotation,
-            stabilizationQualityMin = settings.stabilizationQualityMin
+            stabilizationQualityMin = settings.stabilizationQualityMin,
+            enableTranslationStabilization = settings.enableTranslationStabilization,
+            debugDetectorViewEnabled = settings.enableDetectorDebugView
         )
         mainViewModel.setPipeline(handle)
         activeVlmProfile = vlmProfilesConfig.resolve(settings.vlmProfileId)

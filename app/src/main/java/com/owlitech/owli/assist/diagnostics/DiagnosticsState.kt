@@ -40,7 +40,8 @@ data class DiagnosticsState(
     val motionQuality: Float = 0f,
     val stabilizationEnabled: Boolean = false,
     val appliedRollDeg: Float = 0f,
-    val mappingActive: Boolean = false
+    val mappingActive: Boolean = false,
+    val debugDetectorViewEnabled: Boolean = false
 )
 
 data class TtsDiagnostics(
