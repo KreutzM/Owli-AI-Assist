@@ -100,6 +100,10 @@
     <string name="settings_motion_high_threshold_helper">Gyro magnitude (rad/s)</string>
     <string name="settings_motion_speak_multiplier_high">Speak interval multiplier (high motion)</string>
     <string name="settings_motion_speak_multiplier_high_helper">Increase announce cooldown</string>
+    <string name="settings_imu_derotation">IMU roll-lock</string>
+    <string name="settings_imu_derotation_helper">Rotate input by roll for stability (experimental)</string>
+    <string name="settings_stabilization_quality_min">Stabilization quality min</string>
+    <string name="settings_stabilization_quality_min_helper">Minimum IMU quality to apply roll-lock</string>
     <string name="settings_blindview_max_items">BlindView max items</string>
     <string name="settings_blindview_max_items_helper">Objects per announcement</string>
     <string name="settings_tts_speech_rate">TTS speech rate</string>
@@ -148,6 +152,7 @@
     <string name="diagnostics_tracking_format">iou=%1$.2f trackMaxAgeMs=%2$d minHits=%3$d</string>
     <string name="diagnostics_overlay_format">overlay=%1$s labels=%2$s preview=%3$s</string>
     <string name="diagnostics_motion_format">motion=%1$s gyro=%2$.2f roll=%3$.1f pitch=%4$.1f q=%5$.2f</string>
+    <string name="diagnostics_stabilization_format">stabilization=%1$s appliedRoll=%2$.1f mapping=%3$s</string>
     <string name="diagnostics_detections_format">detectionsRaw=%1$d detectionsStable=%2$d</string>
     <string name="diagnostics_top_labels_format">topLabels=%1$s</string>
     <string name="diagnostics_last_preview_format">lastPreview=%1$s</string>

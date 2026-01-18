@@ -11,6 +11,7 @@ Owli-AI Assist ist eine Android-App fuer blinde Nutzer als AI Assistenz-App mit 
 - Ampelphasen-Erkennung (rot/gruen) per HSV-Heuristik (stabilisierte Phase im Overlay)
 - TTS-Ausgabe mit Cooldown/Spam-Schutz, konfigurierbarer Sprechgeschwindigkeit; Status-Anzeige (RealDetector/Fallback)
 - IMU Motion-Gating (Gyro/Rotation Vector) fuer stabileres Tracking und Ansagen ohne Bild-Warp
+- IMU Roll-Lock (experimentell) + 448x448 Input mit Overlay-Mapping fuer stabilere Detektionen
 - DataStore-basiertes Settings-Menue (Detector/Tracking/OwliAI/TTS/Debug/Pipeline) inkl. Reset-to-Defaults
 - Diagnostics-Screen mit Live-Metriken und Copy-to-Clipboard Debug-Report
 - Start/Stop der Pipeline; Decay-Logik fuer Hazards; Auto-Restart nach Rotation/Settings-Aenderung
@@ -62,9 +63,10 @@ Owli-AI Assist ist eine Android-App fuer blinde Nutzer als AI Assistenz-App mit 
 - Detector: `TfliteDetectorOptions` (Threads, NNAPI), Pfad: `models/efficientdet_lite2_int8.tflite` (aus Settings steuerbar)
 - OwliAI: Konfiguration (minConfidence, minConfidenceTrack, IoU-Threshold, bboxSmoothingAlpha, minConsecutiveHits, maxDetectionsPerFrame, maxTracks, Speak-Intervalle, TTS-Speech-Rate, Decay) via Settings anpassbar
 - Stabilisierung: Motion-Gating (Enable, Gyro-Schwellen, Speak-Interval-Multiplikator) via Settings anpassbar
+- Stabilisierung: IMU Roll-Lock (Enable, Quality-Min) via Settings anpassbar
 - Hazard (Basis): DefaultSceneAnalyzer `confidenceThreshold = 0.4`, Decay 800 ms. Mapping: Person -> Personenwarnung, Fahrzeugklassen -> Fahrzeugwarnung, Ampel -> Info.
 - TTS: Cooldown 2500 ms, Speech-Rate konfigurierbar (Default 2.0, via Settings); OwliAI nutzt Hash/Cooldown fuer Anti-Spam.
-- Preprocessing: YUV_420_888 -> ARGB_8888 (ohne JPEG-Roundtrip), Rotation wird angewendet, optional Downscale.
+- Preprocessing: YUV_420_888 -> ARGB_8888 (ohne JPEG-Roundtrip), Rotation wird angewendet, center-crop auf square, Resize auf 448x448; Overlay-Mapping via FrameMapping.
 - Ampel: TrafficLightPhaseClassifier (ROI-Inset, Zonenanalyse rot/oben, gruen/unten, Hysterese mit stabiler Phase).
 - VLM: Profile und Prompts in `app/src/main/assets/vlm-profiles.json` (On-Demand, Raw-Debug-Mode, optional `auto_scan`).
 

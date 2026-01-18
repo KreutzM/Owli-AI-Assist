@@ -37,11 +37,17 @@ object VisionPipelineModule {
         analysisIntervalMs: Long = 250L,
         motionEstimator: MotionEstimator? = null,
         motionGatingEnabled: Boolean = true,
-        motionSpeakIntervalMultiplierHigh: Float = 1.35f
+        motionSpeakIntervalMultiplierHigh: Float = 1.35f,
+        enableImuDerotation: Boolean = false,
+        stabilizationQualityMin: Float = 0.3f
     ): VisionPipelineHandle {
         val labels = LabelRepository().loadLabels(context)
         val translator = CocoLabelTranslator().also { it.validateAgainst(labels) }
-        val preprocessor = DefaultPreprocessor()
+        val preprocessor = DefaultPreprocessor(
+            outputSize = 448,
+            enableImuDerotation = enableImuDerotation,
+            stabilizationQualityMin = stabilizationQualityMin
+        )
         val trafficLightClassifier = HsvTrafficLightPhaseClassifier()
         val (detector, info) = if (!useFake && modelExists(context.assets, detectorOptions.modelPath)) {
             runCatching {

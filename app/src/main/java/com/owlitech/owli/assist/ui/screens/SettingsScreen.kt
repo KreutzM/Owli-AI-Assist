@@ -136,6 +136,20 @@ fun SettingsScreen(
             onValueChange = { v -> onUpdate { it.copy(motionSpeakIntervalMultiplierHigh = v) } },
             helper = stringResource(R.string.settings_motion_speak_multiplier_high_helper)
         )
+        SettingSwitch(
+            label = stringResource(R.string.settings_imu_derotation),
+            checked = settings.enableImuDerotation,
+            onCheckedChange = { v -> onUpdate { it.copy(enableImuDerotation = v) } },
+            helper = stringResource(R.string.settings_imu_derotation_helper)
+        )
+        SettingSlider(
+            label = stringResource(R.string.settings_stabilization_quality_min),
+            value = settings.stabilizationQualityMin,
+            valueRange = 0.0f..1.0f,
+            steps = 10,
+            onValueChange = { v -> onUpdate { it.copy(stabilizationQualityMin = v) } },
+            helper = stringResource(R.string.settings_stabilization_quality_min_helper)
+        )
         SettingIntSlider(
             label = stringResource(R.string.settings_blindview_max_items),
             value = settings.maxItemsSpoken,

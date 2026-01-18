@@ -55,6 +55,8 @@ class SettingsRepository(private val context: Context) {
             prefs[PrefKeys.motionMedThresholdRadS] = updated.motionMedThresholdRadS
             prefs[PrefKeys.motionHighThresholdRadS] = updated.motionHighThresholdRadS
             prefs[PrefKeys.motionSpeakIntervalMultiplierHigh] = updated.motionSpeakIntervalMultiplierHigh
+            prefs[PrefKeys.enableImuDerotation] = updated.enableImuDerotation
+            prefs[PrefKeys.stabilizationQualityMin] = updated.stabilizationQualityMin
         }
     }
 
@@ -99,6 +101,8 @@ private object PrefKeys {
     val motionMedThresholdRadS = floatPreferencesKey("motionMedThresholdRadS")
     val motionHighThresholdRadS = floatPreferencesKey("motionHighThresholdRadS")
     val motionSpeakIntervalMultiplierHigh = floatPreferencesKey("motionSpeakIntervalMultiplierHigh")
+    val enableImuDerotation = booleanPreferencesKey("enableImuDerotation")
+    val stabilizationQualityMin = floatPreferencesKey("stabilizationQualityMin")
 }
 
 private fun androidx.datastore.preferences.core.Preferences.toSettings(): AppSettings {
@@ -141,6 +145,8 @@ private fun androidx.datastore.preferences.core.Preferences.toSettings(): AppSet
         motionMedThresholdRadS = this[PrefKeys.motionMedThresholdRadS] ?: AppSettingsDefaults.motionMedThresholdRadS,
         motionHighThresholdRadS = this[PrefKeys.motionHighThresholdRadS] ?: AppSettingsDefaults.motionHighThresholdRadS,
         motionSpeakIntervalMultiplierHigh = this[PrefKeys.motionSpeakIntervalMultiplierHigh]
-            ?: AppSettingsDefaults.motionSpeakIntervalMultiplierHigh
+            ?: AppSettingsDefaults.motionSpeakIntervalMultiplierHigh,
+        enableImuDerotation = this[PrefKeys.enableImuDerotation] ?: AppSettingsDefaults.enableImuDerotation,
+        stabilizationQualityMin = this[PrefKeys.stabilizationQualityMin] ?: AppSettingsDefaults.stabilizationQualityMin
     )
 }

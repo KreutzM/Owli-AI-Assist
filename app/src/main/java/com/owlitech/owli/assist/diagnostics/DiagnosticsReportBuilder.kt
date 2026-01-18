@@ -37,6 +37,9 @@ object DiagnosticsReportBuilder {
         sb.appendLine(
             "  level=${state.motionLevel ?: "-"} gyro=${"%.2f".format(state.gyroMagRadS)} roll=${"%.1f".format(state.rollDeg)} pitch=${"%.1f".format(state.pitchDeg)} quality=${"%.2f".format(state.motionQuality)}"
         )
+        sb.appendLine(
+            "  stabilizationEnabled=${state.stabilizationEnabled} appliedRollDeg=${"%.1f".format(state.appliedRollDeg)} mappingActive=${state.mappingActive}"
+        )
         sb.appendLine()
         sb.appendLine("Scene Snapshot:")
         sb.appendLine("  detectionsRaw=${state.detectionsCountRaw} detectionsStable=${state.detectionsCountStable}")
@@ -52,6 +55,9 @@ object DiagnosticsReportBuilder {
         sb.appendLine("  streamingVlmTtsEnabled=${settings.streamingVlmTtsEnabled}")
         sb.appendLine(
             "  motionGating=${settings.enableMotionGating} motionMed=${settings.motionMedThresholdRadS} motionHigh=${settings.motionHighThresholdRadS} motionSpeakMultiplierHigh=${settings.motionSpeakIntervalMultiplierHigh}"
+        )
+        sb.appendLine(
+            "  imuDerotation=${settings.enableImuDerotation} stabilizationQualityMin=${settings.stabilizationQualityMin}"
         )
         return sb.toString()
     }

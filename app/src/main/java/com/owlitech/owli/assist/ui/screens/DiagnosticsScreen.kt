@@ -146,6 +146,14 @@ fun DiagnosticsScreen(
                     diagState.motionQuality
                 )
             )
+            Text(
+                stringResource(
+                    R.string.diagnostics_stabilization_format,
+                    diagState.stabilizationEnabled,
+                    diagState.appliedRollDeg,
+                    diagState.mappingActive
+                )
+            )
         }
         SectionCard(title = stringResource(R.string.diagnostics_section_scene_snapshot)) {
             Text(

@@ -43,7 +43,9 @@ data class AppSettings(
     val enableMotionGating: Boolean = AppSettingsDefaults.enableMotionGating,
     val motionMedThresholdRadS: Float = AppSettingsDefaults.motionMedThresholdRadS,
     val motionHighThresholdRadS: Float = AppSettingsDefaults.motionHighThresholdRadS,
-    val motionSpeakIntervalMultiplierHigh: Float = AppSettingsDefaults.motionSpeakIntervalMultiplierHigh
+    val motionSpeakIntervalMultiplierHigh: Float = AppSettingsDefaults.motionSpeakIntervalMultiplierHigh,
+    val enableImuDerotation: Boolean = AppSettingsDefaults.enableImuDerotation,
+    val stabilizationQualityMin: Float = AppSettingsDefaults.stabilizationQualityMin
 ) {
     fun toDetectorOptions(): TfliteDetectorOptions {
         return TfliteDetectorOptions(
@@ -114,4 +116,6 @@ object AppSettingsDefaults {
     const val motionMedThresholdRadS: Float = 0.9f
     const val motionHighThresholdRadS: Float = 1.6f
     const val motionSpeakIntervalMultiplierHigh: Float = 1.35f
+    const val enableImuDerotation: Boolean = false
+    const val stabilizationQualityMin: Float = 0.3f
 }

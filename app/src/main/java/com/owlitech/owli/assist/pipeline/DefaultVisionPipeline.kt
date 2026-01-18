@@ -63,15 +63,21 @@ class DefaultVisionPipeline(
             processing = true
             try {
                 val tsNs = image.imageInfo.timestamp
+                val motion = motionEstimator?.getSnapshot(tsNs)
+                com.owlitech.owli.assist.diagnostics.DiagnosticsCollector.updateMotion(motion)
                 cameraFrameSource.lastRotationDegrees = image.imageInfo.rotationDegrees
-                val bitmap = preprocessor.preprocess(image)
+                val preprocessResult = preprocessor.preprocess(image, motion)
+                val bitmap = preprocessResult.bitmap448
                 latestBitmap.set(bitmap)
                 latestBitmapUpdatedAt.set(now)
                 val detections = detector.detect(bitmap)
                 val trafficLights = trafficLightClassifier.classify(bitmap, detections)
-                val motion = motionEstimator?.getSnapshot(tsNs)
-                com.owlitech.owli.assist.diagnostics.DiagnosticsCollector.updateMotion(motion)
+                com.owlitech.owli.assist.diagnostics.DiagnosticsCollector.updateStabilization(
+                    appliedRollDeg = preprocessResult.appliedRollDeg,
+                    mappingActive = preprocessResult.mapping != null
+                )
                 val sceneState = sceneAnalyzer.analyze(detections, trafficLights, motion)
+                    .copy(frameMapping = preprocessResult.mapping)
                 com.owlitech.owli.assist.diagnostics.DiagnosticsCollector.updateFrameProcessed(now)
                 _sceneStates.tryEmit(sceneState)
                 lastProcessedAt = now
@@ -132,7 +138,8 @@ class DefaultVisionPipeline(
                 try {
                     val now = System.currentTimeMillis()
                     cameraFrameSource.lastRotationDegrees = image.imageInfo.rotationDegrees
-                    val bitmap = preprocessor.preprocess(image)
+                    val preprocessResult = preprocessor.preprocess(image, null)
+                    val bitmap = preprocessResult.bitmap448
                     latestBitmap.set(bitmap)
                     latestBitmapUpdatedAt.set(now)
                     deferred.complete(compressJpeg(bitmap, maxSidePx, quality))

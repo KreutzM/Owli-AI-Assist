@@ -88,6 +88,7 @@ fun AppNavHost(
                     blindViewPreview = if (settings.showBlindViewPreview) sceneState?.blindViewUtterancePreview else null,
                     showOverlay = settings.showOverlay,
                     showLabels = settings.showOverlayLabels,
+                    frameMapping = sceneState?.frameMapping,
                     onStart = onStart,
                     onStop = onStop,
                     cameraFrameSource = cameraFrameSource,

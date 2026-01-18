@@ -48,7 +48,8 @@ object DiagnosticsCollector {
             showOverlay = settings.showOverlay,
             showOverlayLabels = settings.showOverlayLabels,
             showBlindViewPreview = settings.showBlindViewPreview,
-            analysisIntervalMs = settings.analysisIntervalMs
+            analysisIntervalMs = settings.analysisIntervalMs,
+            stabilizationEnabled = settings.enableImuDerotation
         )
     }
 
@@ -102,6 +103,13 @@ object DiagnosticsCollector {
             rollDeg = radToDeg(snapshot.rollRad),
             pitchDeg = radToDeg(snapshot.pitchRad),
             motionQuality = snapshot.quality
+        )
+    }
+
+    fun updateStabilization(appliedRollDeg: Float, mappingActive: Boolean) {
+        _state.value = _state.value.copy(
+            appliedRollDeg = appliedRollDeg,
+            mappingActive = mappingActive
         )
     }
 

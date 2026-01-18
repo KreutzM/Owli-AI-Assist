@@ -37,7 +37,10 @@ data class DiagnosticsState(
     val gyroMagRadS: Float = 0f,
     val rollDeg: Float = 0f,
     val pitchDeg: Float = 0f,
-    val motionQuality: Float = 0f
+    val motionQuality: Float = 0f,
+    val stabilizationEnabled: Boolean = false,
+    val appliedRollDeg: Float = 0f,
+    val mappingActive: Boolean = false
 )
 
 data class TtsDiagnostics(

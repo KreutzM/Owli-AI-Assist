@@ -150,8 +150,13 @@ data class ModelInputSpec(
 ### 6.2 `Preprocessor`
 
 ```kotlin
+data class PreprocessResult(
+    val bitmap448: Bitmap,
+    val mapping: FrameMapping?
+)
+
 interface Preprocessor {
-    fun preprocess(image: ImageProxy): FloatArray // oder ByteBuffer, je nach Backend
+    fun preprocess(image: ImageProxy, motion: MotionSnapshot? = null): PreprocessResult
 }
 ```
 
@@ -160,7 +165,9 @@ Es soll mindestens eine Implementierung geben:
 * `DefaultPreprocessor`:
 
   * YUV-zu-RGB-Konvertierung
-  * Resize/Crop auf gewünschte Modellgröße (z.B. 640x640)
+  * Roll-Lock per IMU (optional) nach Rotation
+  * Center-Crop auf Square, Resize auf 448x448
+  * FrameMapping fuer Overlay (448x448 -> Preview)
   * Normalisierung (z.B. Wertebereich [0,1] oder ImageNet-Mean/Std)
 
 Ziel: Vorverarbeitung ist **modellkonfigurierbar** (auf Basis von `ModelInputSpec`).

@@ -286,7 +286,9 @@ class MainActivity : AppCompatActivity() {
             analysisIntervalMs = settings.analysisIntervalMs,
             motionEstimator = motionEstimator,
             motionGatingEnabled = settings.enableMotionGating,
-            motionSpeakIntervalMultiplierHigh = settings.motionSpeakIntervalMultiplierHigh
+            motionSpeakIntervalMultiplierHigh = settings.motionSpeakIntervalMultiplierHigh,
+            enableImuDerotation = settings.enableImuDerotation,
+            stabilizationQualityMin = settings.stabilizationQualityMin
         )
         mainViewModel.setPipeline(handle)
         activeVlmProfile = vlmProfilesConfig.resolve(settings.vlmProfileId)

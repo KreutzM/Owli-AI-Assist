@@ -32,6 +32,7 @@ import com.owlitech.owli.assist.R
 import com.owlitech.owli.assist.camera.CameraFrameSource
 import com.owlitech.owli.assist.domain.TrafficLightObservation
 import com.owlitech.owli.assist.ml.Detection
+import com.owlitech.owli.assist.processing.FrameMapping
 import com.owlitech.owli.assist.ui.components.CameraPreview
 import com.owlitech.owli.assist.ui.overlay.CameraOverlayLabel
 import com.owlitech.owli.assist.ui.overlay.CameraOverlayScope
@@ -50,6 +51,7 @@ fun HomeScreen(
     blindViewPreview: String?,
     showOverlay: Boolean,
     showLabels: Boolean,
+    frameMapping: FrameMapping?,
     onStart: () -> Unit,
     onStop: () -> Unit,
     cameraFrameSource: CameraFrameSource,
@@ -68,6 +70,7 @@ fun HomeScreen(
                         DetectionOverlay(
                             detections = detections,
                             showLabels = showLabels,
+                            frameMapping = frameMapping,
                             modifier = Modifier.fillMaxSize()
                         )
                         SceneOverlay(
@@ -157,6 +160,7 @@ fun SceneOverlay(
 fun DetectionOverlay(
     detections: List<Detection>,
     showLabels: Boolean,
+    frameMapping: FrameMapping?,
     modifier: Modifier = Modifier
 ) {
     val maxLabels = 10
@@ -183,10 +187,22 @@ fun DetectionOverlay(
     }
     Canvas(modifier = modifier) {
         sorted.forEach { detection ->
-            val left = detection.bbox.xMin * size.width
-            val top = detection.bbox.yMin * size.height
-            val right = detection.bbox.xMax * size.width
-            val bottom = detection.bbox.yMax * size.height
+            val left: Float
+            val top: Float
+            val right: Float
+            val bottom: Float
+            if (frameMapping != null) {
+                val mapped = frameMapping.mapToPreviewRect(detection.bbox, size.width, size.height)
+                left = mapped.left
+                top = mapped.top
+                right = mapped.right
+                bottom = mapped.bottom
+            } else {
+                left = detection.bbox.xMin * size.width
+                top = detection.bbox.yMin * size.height
+                right = detection.bbox.xMax * size.width
+                bottom = detection.bbox.yMax * size.height
+            }
             drawRect(
                 color = Color.Red,
                 topLeft = androidx.compose.ui.geometry.Offset(left, top),
