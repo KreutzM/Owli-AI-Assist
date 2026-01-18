@@ -12,7 +12,14 @@ data class FrameMapping(
     val modelSize: Int,
     val modelToSource: Matrix
 ) {
+    private val sourceToPreview = Matrix()
+    private var lastPreviewWidth = -1f
+    private var lastPreviewHeight = -1f
+
     fun mapToPreviewRect(bbox: BoundingBox, previewWidth: Float, previewHeight: Float): RectF {
+        if (previewWidth <= 0f || previewHeight <= 0f) {
+            return RectF()
+        }
         val left = bbox.xMin * modelSize
         val top = bbox.yMin * modelSize
         val right = bbox.xMax * modelSize
@@ -24,6 +31,8 @@ data class FrameMapping(
             left, bottom
         )
         modelToSource.mapPoints(points)
+        ensureSourceToPreview(previewWidth, previewHeight)
+        sourceToPreview.mapPoints(points)
         var minX = points[0]
         var minY = points[1]
         var maxX = points[0]
@@ -38,13 +47,20 @@ data class FrameMapping(
             maxY = max(maxY, y)
             i += 2
         }
-        val scaleX = previewWidth / sourceWidth.toFloat()
-        val scaleY = previewHeight / sourceHeight.toFloat()
-        return RectF(
-            minX * scaleX,
-            minY * scaleY,
-            maxX * scaleX,
-            maxY * scaleY
-        )
+        return RectF(minX, minY, maxX, maxY)
+    }
+
+    private fun ensureSourceToPreview(previewWidth: Float, previewHeight: Float) {
+        if (previewWidth == lastPreviewWidth && previewHeight == lastPreviewHeight) return
+        lastPreviewWidth = previewWidth
+        lastPreviewHeight = previewHeight
+        val scale = max(previewWidth / sourceWidth.toFloat(), previewHeight / sourceHeight.toFloat())
+        val scaledW = sourceWidth * scale
+        val scaledH = sourceHeight * scale
+        val offsetX = (previewWidth - scaledW) * 0.5f
+        val offsetY = (previewHeight - scaledH) * 0.5f
+        sourceToPreview.reset()
+        sourceToPreview.postScale(scale, scale)
+        sourceToPreview.postTranslate(offsetX, offsetY)
     }
 }

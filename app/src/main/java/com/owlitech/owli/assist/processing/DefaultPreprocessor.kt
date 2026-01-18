@@ -9,6 +9,7 @@ import androidx.camera.core.ImageProxy
 import androidx.core.graphics.scale
 import com.owlitech.owli.assist.motion.MotionSnapshot
 import kotlin.math.min
+import kotlin.math.roundToInt
 
 class DefaultPreprocessor(
     private val outputSize: Int = 448,
@@ -19,6 +20,8 @@ class DefaultPreprocessor(
 
     private val converter = YuvToRgbConverter()
     private var frameCount = 0
+    private var stableCx = Float.NaN
+    private var stableCy = Float.NaN
 
     override fun preprocess(image: ImageProxy, motion: MotionSnapshot?): PreprocessResult {
         val start = System.nanoTime()
@@ -50,16 +53,39 @@ class DefaultPreprocessor(
 
         val sourceWidth = bmp.width
         val sourceHeight = bmp.height
-        val squareSize = min(sourceWidth, sourceHeight)
-        val cropLeft = ((sourceWidth - squareSize) / 2f).toInt()
-        val cropTop = ((sourceHeight - squareSize) / 2f).toInt()
-        val cropped = Bitmap.createBitmap(bmp, cropLeft, cropTop, squareSize, squareSize)
+        val targetCx = sourceWidth / 2f
+        val targetCy = sourceHeight / 2f
+        if (stableCx.isNaN() || stableCy.isNaN()) {
+            stableCx = targetCx
+            stableCy = targetCy
+        } else {
+            val alpha = if (motion?.motionLevel == com.owlitech.owli.assist.motion.MotionLevel.HIGH) {
+                STABLE_CENTER_ALPHA_HIGH
+            } else {
+                STABLE_CENTER_ALPHA
+            }
+            stableCx += (targetCx - stableCx) * alpha
+            stableCy += (targetCy - stableCy) * alpha
+        }
+        val cropSize = min(
+            STABILIZED_CROP_SIZE,
+            min(sourceWidth, sourceHeight)
+        )
+        val maxLeft = (sourceWidth - cropSize).coerceAtLeast(0)
+        val maxTop = (sourceHeight - cropSize).coerceAtLeast(0)
+        val cropLeft = (stableCx - cropSize / 2f)
+            .coerceIn(0f, maxLeft.toFloat())
+            .roundToInt()
+        val cropTop = (stableCy - cropSize / 2f)
+            .coerceIn(0f, maxTop.toFloat())
+            .roundToInt()
+        val cropped = Bitmap.createBitmap(bmp, cropLeft, cropTop, cropSize, cropSize)
         if (ownsBitmap && cropped !== bmp) {
             bmp.recycle()
         }
         ownsBitmap = true
 
-        val output = if (squareSize != outputSize) {
+        val output = if (cropSize != outputSize) {
             val resized = cropped.scale(outputSize, outputSize, true)
             if (resized !== cropped) {
                 cropped.recycle()
@@ -72,7 +98,7 @@ class DefaultPreprocessor(
         val mapping = buildMapping(
             sourceWidth = sourceWidth,
             sourceHeight = sourceHeight,
-            squareSize = squareSize,
+            cropSize = cropSize,
             cropLeft = cropLeft,
             cropTop = cropTop,
             appliedRollDeg = appliedRollDeg
@@ -113,12 +139,12 @@ class DefaultPreprocessor(
     private fun buildMapping(
         sourceWidth: Int,
         sourceHeight: Int,
-        squareSize: Int,
+        cropSize: Int,
         cropLeft: Int,
         cropTop: Int,
         appliedRollDeg: Float
     ): FrameMapping {
-        val scale = squareSize.toFloat() / outputSize.toFloat()
+        val scale = cropSize.toFloat() / outputSize.toFloat()
         val matrix = Matrix().apply {
             setScale(scale, scale)
             postTranslate(cropLeft.toFloat(), cropTop.toFloat())
@@ -138,5 +164,8 @@ class DefaultPreprocessor(
         private const val TAG = "DefaultPreprocessor"
         private const val RAD_TO_DEG = 180f / kotlin.math.PI.toFloat()
         private val bitmapPaint = Paint(Paint.FILTER_BITMAP_FLAG)
+        private const val STABILIZED_CROP_SIZE = 560
+        private const val STABLE_CENTER_ALPHA = 0.2f
+        private const val STABLE_CENTER_ALPHA_HIGH = 0.06f
     }
 }

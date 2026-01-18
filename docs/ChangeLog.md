@@ -28,6 +28,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - Beispielprofil `nano-traffic-scan` mit `auto_scan` in `vlm-profiles.json`.
 
 ### Changed
+- Overlay-Mapping folgt jetzt dem Preview-Fill (Center-Crop) inkl. stabilisiertem Crop-Window.
 - UI-Strings in Ressourcen (EN/DE) fuer i18n vorbereitet.
 - Spracheinstellung wird per AppCompat Locale beim Start/Wechsel angewendet.
 - Namespace/applicationId auf `com.owlitech.owli.assist` umgestellt; App-Theme/Compose-Theme auf Owli benannt.
