@@ -7,7 +7,7 @@ import android.graphics.Bitmap
  */
 class FakeDetector : Detector {
     override fun warmup() {
-        // Kein Warmup nÃ¶tig.
+        // Kein Warmup nötig.
     }
 
     override fun detect(input: Bitmap): List<Detection> {
@@ -27,6 +27,6 @@ class FakeDetector : Detector {
     }
 
     override fun close() {
-        // Keine Ressourcen zu schlieÃŸen.
+        // Keine Ressourcen zu schließen.
     }
 }

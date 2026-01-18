@@ -6,7 +6,7 @@ import kotlin.math.max
 import kotlin.math.min
 
 /**
- * Einfacher IoU-basierter Tracker pro Label mit geglÃ¤tteten Bounding Boxes.
+ * Einfacher IoU-basierter Tracker pro Label mit geglätteten Bounding Boxes.
  */
 class IouObjectTracker(
     private val config: BlindViewConfig

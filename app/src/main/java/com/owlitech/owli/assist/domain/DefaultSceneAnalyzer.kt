@@ -94,7 +94,7 @@ class DefaultSceneAnalyzer(
         }
 
         if (combinedHazards.isEmpty()) {
-            // Decay nach Timeout: zurÃ¼ck auf NONE
+            // Decay nach Timeout: zurück auf NONE
             if (lastRelevantDetectionAt != 0L && now - lastRelevantDetectionAt > decayMillis) {
                 lastRelevantDetectionAt = 0L
                 return SceneState(
@@ -134,7 +134,7 @@ class DefaultSceneAnalyzer(
                 }
                 TrafficLightPhase.GREEN -> {
                     if (lastStableTrafficLight == TrafficLightPhase.RED) {
-                        append("Ampel grÃ¼n")
+                        append("Ampel grün")
                     }
                     lastStableTrafficLight = TrafficLightPhase.GREEN
                 }

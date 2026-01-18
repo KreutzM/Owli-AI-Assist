@@ -4,7 +4,7 @@ import android.graphics.Bitmap
 import java.io.Closeable
 
 /**
- * FÃ¼hrt ML-Inferenz aus.
+ * Führt ML-Inferenz aus.
  */
 interface Detector : Closeable {
     fun warmup()

@@ -77,7 +77,7 @@ class HsvTrafficLightPhaseClassifier(
     private fun selectPrimary(detections: List<Detection>): Detection? {
         return detections.maxByOrNull { det ->
             val area = (det.bbox.xMax - det.bbox.xMin) * (det.bbox.yMax - det.bbox.yMin)
-            val heightBias = 1f - det.bbox.yMin * 0.1f // leicht bevorzugt oben hÃ¤ngende Ampeln
+            val heightBias = 1f - det.bbox.yMin * 0.1f // leicht bevorzugt oben hängende Ampeln
             area * heightBias + det.confidence * 0.01f
         }
     }

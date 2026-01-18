@@ -12,7 +12,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 /**
- * Verantwortlich fÃ¼r CameraX-Setup und liefert Frames an einen FrameListener.
+ * Verantwortlich für CameraX-Setup und liefert Frames an einen FrameListener.
  */
 class CameraFrameSource(
     private val context: Context,

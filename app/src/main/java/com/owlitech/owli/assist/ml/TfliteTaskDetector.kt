@@ -29,7 +29,7 @@ class TfliteTaskDetector(
     }
 
     override fun warmup() {
-        // Optional: kleiner Dummy-Run mit 1x1 Bitmap, falls nÃ¶tig
+        // Optional: kleiner Dummy-Run mit 1x1 Bitmap, falls nötig
         val dummy = createBitmap(1, 1, Bitmap.Config.ARGB_8888)
         detect(dummy)
     }
