@@ -51,6 +51,10 @@ class SettingsRepository(private val context: Context) {
             prefs[PrefKeys.showOverlayLabels] = updated.showOverlayLabels
             prefs[PrefKeys.analysisIntervalMs] = updated.analysisIntervalMs
             prefs[PrefKeys.languagePreference] = updated.languagePreference.name
+            prefs[PrefKeys.enableMotionGating] = updated.enableMotionGating
+            prefs[PrefKeys.motionMedThresholdRadS] = updated.motionMedThresholdRadS
+            prefs[PrefKeys.motionHighThresholdRadS] = updated.motionHighThresholdRadS
+            prefs[PrefKeys.motionSpeakIntervalMultiplierHigh] = updated.motionSpeakIntervalMultiplierHigh
         }
     }
 
@@ -91,6 +95,10 @@ private object PrefKeys {
     val showOverlayLabels = booleanPreferencesKey("showOverlayLabels")
     val analysisIntervalMs = longPreferencesKey("analysisIntervalMs")
     val languagePreference = stringPreferencesKey("languagePreference")
+    val enableMotionGating = booleanPreferencesKey("enableMotionGating")
+    val motionMedThresholdRadS = floatPreferencesKey("motionMedThresholdRadS")
+    val motionHighThresholdRadS = floatPreferencesKey("motionHighThresholdRadS")
+    val motionSpeakIntervalMultiplierHigh = floatPreferencesKey("motionSpeakIntervalMultiplierHigh")
 }
 
 private fun androidx.datastore.preferences.core.Preferences.toSettings(): AppSettings {
@@ -128,6 +136,11 @@ private fun androidx.datastore.preferences.core.Preferences.toSettings(): AppSet
         analysisIntervalMs = this[PrefKeys.analysisIntervalMs] ?: AppSettingsDefaults.analysisIntervalMs,
         languagePreference = LanguagePreference.valueOf(
             this[PrefKeys.languagePreference] ?: AppSettingsDefaults.languagePreference.name
-        )
+        ),
+        enableMotionGating = this[PrefKeys.enableMotionGating] ?: AppSettingsDefaults.enableMotionGating,
+        motionMedThresholdRadS = this[PrefKeys.motionMedThresholdRadS] ?: AppSettingsDefaults.motionMedThresholdRadS,
+        motionHighThresholdRadS = this[PrefKeys.motionHighThresholdRadS] ?: AppSettingsDefaults.motionHighThresholdRadS,
+        motionSpeakIntervalMultiplierHigh = this[PrefKeys.motionSpeakIntervalMultiplierHigh]
+            ?: AppSettingsDefaults.motionSpeakIntervalMultiplierHigh
     )
 }

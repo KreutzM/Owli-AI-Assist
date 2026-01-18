@@ -10,6 +10,7 @@ Owli-AI Assist ist eine Android-App fuer blinde Nutzer als AI Assistenz-App mit 
 - Hazard-Auswertung (Basis): Personen/Fahrzeuge -> Warnung; Ampeln -> Info/Phase
 - Ampelphasen-Erkennung (rot/gruen) per HSV-Heuristik (stabilisierte Phase im Overlay)
 - TTS-Ausgabe mit Cooldown/Spam-Schutz, konfigurierbarer Sprechgeschwindigkeit; Status-Anzeige (RealDetector/Fallback)
+- IMU Motion-Gating (Gyro/Rotation Vector) fuer stabileres Tracking und Ansagen ohne Bild-Warp
 - DataStore-basiertes Settings-Menue (Detector/Tracking/OwliAI/TTS/Debug/Pipeline) inkl. Reset-to-Defaults
 - Diagnostics-Screen mit Live-Metriken und Copy-to-Clipboard Debug-Report
 - Start/Stop der Pipeline; Decay-Logik fuer Hazards; Auto-Restart nach Rotation/Settings-Aenderung
@@ -22,6 +23,7 @@ Owli-AI Assist ist eine Android-App fuer blinde Nutzer als AI Assistenz-App mit 
 - `ml`: Detector-Interface; TfliteTaskDetector (EfficientDet-Lite2) + FakeDetector
 - Ansage: Label/Clock/Distanz-Mapper, Announce-/Speech-Planner, IoU-Tracker (EMA, Confidence-Filter)
 - `domain`: DefaultSceneAnalyzer (OwliAI-Planung, Hazard-Mapping, Decay)
+- `motion`: MotionEstimator (IMU Samples, MotionSnapshot)
 - `pipeline`: DefaultVisionPipeline (Frame->Bitmap->Detect->Analyze), VisionPipelineModule (DI + Real/Fake Auswahl, AppMode)
 - `audio`: AudioFeedbackEngine (TTS, Cooldown, SpeechRate, pendingMessage)
 - `ui`: MainActivity (Compose: PreviewView + Overlay + ControlPanel + OwliAI-Preview + Settings), MainViewModel (Flows, Start/Stop/Status)
@@ -59,6 +61,7 @@ Owli-AI Assist ist eine Android-App fuer blinde Nutzer als AI Assistenz-App mit 
 - Sprache: System/Deutsch/English im Settings-Screen (Default: Systemsprache)
 - Detector: `TfliteDetectorOptions` (Threads, NNAPI), Pfad: `models/efficientdet_lite2_int8.tflite` (aus Settings steuerbar)
 - OwliAI: Konfiguration (minConfidence, minConfidenceTrack, IoU-Threshold, bboxSmoothingAlpha, minConsecutiveHits, maxDetectionsPerFrame, maxTracks, Speak-Intervalle, TTS-Speech-Rate, Decay) via Settings anpassbar
+- Stabilisierung: Motion-Gating (Enable, Gyro-Schwellen, Speak-Interval-Multiplikator) via Settings anpassbar
 - Hazard (Basis): DefaultSceneAnalyzer `confidenceThreshold = 0.4`, Decay 800 ms. Mapping: Person -> Personenwarnung, Fahrzeugklassen -> Fahrzeugwarnung, Ampel -> Info.
 - TTS: Cooldown 2500 ms, Speech-Rate konfigurierbar (Default 2.0, via Settings); OwliAI nutzt Hash/Cooldown fuer Anti-Spam.
 - Preprocessing: YUV_420_888 -> ARGB_8888 (ohne JPEG-Roundtrip), Rotation wird angewendet, optional Downscale.

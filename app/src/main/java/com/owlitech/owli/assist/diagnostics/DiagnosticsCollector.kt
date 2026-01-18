@@ -1,9 +1,11 @@
 package com.owlitech.owli.assist.diagnostics
 
 import com.owlitech.owli.assist.settings.AppSettings
+import com.owlitech.owli.assist.motion.MotionSnapshot
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import java.util.concurrent.atomic.AtomicLong
+import kotlin.math.PI
 
 object DiagnosticsCollector {
     private val _state = MutableStateFlow(DiagnosticsState())
@@ -81,5 +83,29 @@ object DiagnosticsCollector {
             topLabels = topLabels.take(5),
             lastUtterancePreview = preview
         )
+    }
+
+    fun updateMotion(snapshot: MotionSnapshot?) {
+        if (snapshot == null) {
+            _state.value = _state.value.copy(
+                motionLevel = null,
+                gyroMagRadS = 0f,
+                rollDeg = 0f,
+                pitchDeg = 0f,
+                motionQuality = 0f
+            )
+            return
+        }
+        _state.value = _state.value.copy(
+            motionLevel = snapshot.motionLevel,
+            gyroMagRadS = snapshot.gyroMagRadS,
+            rollDeg = radToDeg(snapshot.rollRad),
+            pitchDeg = radToDeg(snapshot.pitchRad),
+            motionQuality = snapshot.quality
+        )
+    }
+
+    private fun radToDeg(rad: Float): Float {
+        return (rad * 180f / PI.toFloat())
     }
 }

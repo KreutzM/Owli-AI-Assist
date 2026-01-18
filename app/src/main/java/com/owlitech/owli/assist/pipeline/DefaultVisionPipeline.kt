@@ -8,6 +8,7 @@ import com.owlitech.owli.assist.camera.FrameListener
 import com.owlitech.owli.assist.domain.SceneAnalyzer
 import com.owlitech.owli.assist.domain.SceneState
 import com.owlitech.owli.assist.ml.Detector
+import com.owlitech.owli.assist.motion.MotionEstimator
 import com.owlitech.owli.assist.processing.Preprocessor
 import com.owlitech.owli.assist.processing.TrafficLightPhaseClassifier
 import com.owlitech.owli.assist.util.AppLogger
@@ -34,6 +35,7 @@ class DefaultVisionPipeline(
     private val detector: Detector,
     private val sceneAnalyzer: SceneAnalyzer,
     private val trafficLightClassifier: TrafficLightPhaseClassifier,
+    private val motionEstimator: MotionEstimator? = null,
     @Suppress("unused")
     private val scope: CoroutineScope,
     private val minProcessIntervalMs: Long = 250L
@@ -60,13 +62,16 @@ class DefaultVisionPipeline(
             }
             processing = true
             try {
+                val tsNs = image.imageInfo.timestamp
                 cameraFrameSource.lastRotationDegrees = image.imageInfo.rotationDegrees
                 val bitmap = preprocessor.preprocess(image)
                 latestBitmap.set(bitmap)
                 latestBitmapUpdatedAt.set(now)
                 val detections = detector.detect(bitmap)
                 val trafficLights = trafficLightClassifier.classify(bitmap, detections)
-                val sceneState = sceneAnalyzer.analyze(detections, trafficLights)
+                val motion = motionEstimator?.getSnapshot(tsNs)
+                com.owlitech.owli.assist.diagnostics.DiagnosticsCollector.updateMotion(motion)
+                val sceneState = sceneAnalyzer.analyze(detections, trafficLights, motion)
                 com.owlitech.owli.assist.diagnostics.DiagnosticsCollector.updateFrameProcessed(now)
                 _sceneStates.tryEmit(sceneState)
                 lastProcessedAt = now

@@ -22,6 +22,7 @@ import androidx.navigation.compose.rememberNavController
 import com.owlitech.owli.assist.audio.AudioFeedbackEngine
 import com.owlitech.owli.assist.audio.StreamingTtsController
 import com.owlitech.owli.assist.camera.CameraFrameSource
+import com.owlitech.owli.assist.motion.MotionEstimator
 import com.owlitech.owli.assist.pipeline.VisionPipelineModule
 import com.owlitech.owli.assist.settings.AppSettings
 import com.owlitech.owli.assist.settings.AppSettingsDefaults
@@ -50,6 +51,7 @@ class MainActivity : AppCompatActivity() {
 
     private val cameraFrameSource by lazy { CameraFrameSource(this, this) }
     private val audioFeedbackEngine by lazy { AudioFeedbackEngine(this) }
+    private val motionEstimator by lazy { MotionEstimator(this) }
     private val streamingTtsController by lazy {
         StreamingTtsController(
             speaker = object : StreamingTtsController.Speaker {
@@ -157,6 +159,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         AppLogger.d("Activity onStart, shouldAutoStart=${mainViewModel.shouldAutoStart.value}")
+        motionEstimator.start()
         ensurePermissionAndAutoStart()
     }
 
@@ -164,6 +167,7 @@ class MainActivity : AppCompatActivity() {
         super.onStop()
         AppLogger.d("Activity onStop -> stop pipeline (lifecycle)")
         mainViewModel.stopForLifecycle()
+        motionEstimator.stop()
         streamingTimeoutJob?.cancel()
         streamingActive = false
         lastStreamingText = ""
@@ -260,6 +264,10 @@ class MainActivity : AppCompatActivity() {
         audioFeedbackEngine.updatePitch(settings.ttsPitch)
         streamingTtsEnabled = settings.streamingVlmTtsEnabled
         updateSceneSpeechSuppression()
+        motionEstimator.updateThresholds(
+            medThresholdRadS = settings.motionMedThresholdRadS,
+            highThresholdRadS = settings.motionHighThresholdRadS
+        )
         com.owlitech.owli.assist.diagnostics.DiagnosticsCollector.updateSettings(settings)
         com.owlitech.owli.assist.diagnostics.DiagnosticsCollector.updatePipelineStatus(
             isRunning = mainViewModel.isRunning.value,
@@ -275,7 +283,10 @@ class MainActivity : AppCompatActivity() {
             detectorOptions = settings.toDetectorOptions(),
             mode = settings.appMode,
             blindViewConfig = settings.toBlindViewConfig(),
-            analysisIntervalMs = settings.analysisIntervalMs
+            analysisIntervalMs = settings.analysisIntervalMs,
+            motionEstimator = motionEstimator,
+            motionGatingEnabled = settings.enableMotionGating,
+            motionSpeakIntervalMultiplierHigh = settings.motionSpeakIntervalMultiplierHigh
         )
         mainViewModel.setPipeline(handle)
         activeVlmProfile = vlmProfilesConfig.resolve(settings.vlmProfileId)

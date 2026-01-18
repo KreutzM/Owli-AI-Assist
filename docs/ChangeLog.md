@@ -10,6 +10,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 ## [Unreleased]
 
 ### Added
+- Motion-Gating (IMU) mit MotionEstimator, neuen Settings und Diagnostics-Metriken.
 - Lokaler Editor fuer VLM-Profile unter `tools/vlm-profile-editor/` (Repo-Tool).
 - CLI-Validator fuer VLM-Profile unter `tools/validate_vlm_profiles.py`.
 - Language-Setting (System/Deutsch/English) im Settings-Screen.

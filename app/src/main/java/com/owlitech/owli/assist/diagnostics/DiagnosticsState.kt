@@ -1,5 +1,7 @@
 package com.owlitech.owli.assist.diagnostics
 
+import com.owlitech.owli.assist.motion.MotionLevel
+
 data class DiagnosticsState(
     val versionName: String = "unknown",
     val versionCode: Int = 0,
@@ -30,7 +32,12 @@ data class DiagnosticsState(
     val lastUtterancePreview: String? = null,
     val showOverlay: Boolean = true,
     val showOverlayLabels: Boolean = true,
-    val showBlindViewPreview: Boolean = true
+    val showBlindViewPreview: Boolean = true,
+    val motionLevel: MotionLevel? = null,
+    val gyroMagRadS: Float = 0f,
+    val rollDeg: Float = 0f,
+    val pitchDeg: Float = 0f,
+    val motionQuality: Float = 0f
 )
 
 data class TtsDiagnostics(

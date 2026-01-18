@@ -33,6 +33,11 @@ object DiagnosticsReportBuilder {
         sb.appendLine("  iouThreshold=${state.iouThreshold} trackMaxAgeMs=${state.trackMaxAgeMs} minConsecutiveHits=${state.minConsecutiveHits}")
         sb.appendLine("  showOverlay=${state.showOverlay} showLabels=${state.showOverlayLabels} showPreview=${state.showBlindViewPreview}")
         sb.appendLine()
+        sb.appendLine("Motion:")
+        sb.appendLine(
+            "  level=${state.motionLevel ?: "-"} gyro=${"%.2f".format(state.gyroMagRadS)} roll=${"%.1f".format(state.rollDeg)} pitch=${"%.1f".format(state.pitchDeg)} quality=${"%.2f".format(state.motionQuality)}"
+        )
+        sb.appendLine()
         sb.appendLine("Scene Snapshot:")
         sb.appendLine("  detectionsRaw=${state.detectionsCountRaw} detectionsStable=${state.detectionsCountStable}")
         sb.appendLine("  topLabels=${state.topLabels.joinToString()}")
@@ -45,6 +50,9 @@ object DiagnosticsReportBuilder {
         sb.appendLine("             bboxAlpha=${settings.bboxSmoothingAlpha} minHits=${settings.minConsecutiveHits} maxDetections=${settings.maxDetectionsPerFrameForTracking} maxTracks=${settings.maxTracks}")
         sb.appendLine("  ttsSpeechRate=${settings.ttsSpeechRate} ttsPitch=${settings.ttsPitch}")
         sb.appendLine("  streamingVlmTtsEnabled=${settings.streamingVlmTtsEnabled}")
+        sb.appendLine(
+            "  motionGating=${settings.enableMotionGating} motionMed=${settings.motionMedThresholdRadS} motionHigh=${settings.motionHighThresholdRadS} motionSpeakMultiplierHigh=${settings.motionSpeakIntervalMultiplierHigh}"
+        )
         return sb.toString()
     }
 }

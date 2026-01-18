@@ -105,6 +105,37 @@ fun SettingsScreen(
             onValueChange = { v -> onUpdate { it.copy(bboxSmoothingAlpha = v) } },
             helper = stringResource(R.string.settings_bbox_smoothing_helper)
         )
+        Text(stringResource(R.string.settings_section_stabilization), style = MaterialTheme.typography.titleSmall)
+        SettingSwitch(
+            label = stringResource(R.string.settings_motion_gating),
+            checked = settings.enableMotionGating,
+            onCheckedChange = { v -> onUpdate { it.copy(enableMotionGating = v) } },
+            helper = stringResource(R.string.settings_motion_gating_helper)
+        )
+        SettingSlider(
+            label = stringResource(R.string.settings_motion_med_threshold),
+            value = settings.motionMedThresholdRadS,
+            valueRange = 0.4f..2.5f,
+            steps = 10,
+            onValueChange = { v -> onUpdate { it.copy(motionMedThresholdRadS = v) } },
+            helper = stringResource(R.string.settings_motion_med_threshold_helper)
+        )
+        SettingSlider(
+            label = stringResource(R.string.settings_motion_high_threshold),
+            value = settings.motionHighThresholdRadS,
+            valueRange = 0.8f..3.5f,
+            steps = 13,
+            onValueChange = { v -> onUpdate { it.copy(motionHighThresholdRadS = v) } },
+            helper = stringResource(R.string.settings_motion_high_threshold_helper)
+        )
+        SettingSlider(
+            label = stringResource(R.string.settings_motion_speak_multiplier_high),
+            value = settings.motionSpeakIntervalMultiplierHigh,
+            valueRange = 1.0f..2.0f,
+            steps = 10,
+            onValueChange = { v -> onUpdate { it.copy(motionSpeakIntervalMultiplierHigh = v) } },
+            helper = stringResource(R.string.settings_motion_speak_multiplier_high_helper)
+        )
         SettingIntSlider(
             label = stringResource(R.string.settings_blindview_max_items),
             value = settings.maxItemsSpoken,

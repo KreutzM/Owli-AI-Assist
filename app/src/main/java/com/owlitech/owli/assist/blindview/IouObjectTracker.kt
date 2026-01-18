@@ -15,7 +15,14 @@ class IouObjectTracker(
     private var nextId: Long = 1
     private var lastUpdateAt: Long = 0L
 
-    fun update(detections: List<Detection>, nowMs: Long): List<Detection> {
+    fun update(
+        detections: List<Detection>,
+        nowMs: Long,
+        maxAgeOverrideMs: Long? = null,
+        smoothingAlphaOverride: Float? = null
+    ): List<Detection> {
+        val effectiveMaxAge = maxAgeOverrideMs ?: config.trackMaxAgeMs
+        val effectiveSmoothingAlpha = smoothingAlphaOverride ?: config.bboxSmoothingAlpha
         val prevUpdateAt = lastUpdateAt
         if (config.resetAfterGapMs > 0 && lastUpdateAt != 0L && nowMs - lastUpdateAt > config.resetAfterGapMs) {
             tracks.clear()
@@ -24,10 +31,10 @@ class IouObjectTracker(
         val dtSeconds = if (prevUpdateAt == 0L) 0f else ((nowMs - prevUpdateAt).toFloat() / 1000f).coerceAtLeast(0f)
 
         if (detections.isEmpty()) {
-            pruneOld(nowMs)
+            pruneOld(nowMs, effectiveMaxAge)
             val allIds = tracks.map { it.id }.toSet()
             decayUnmatched(dtSeconds, allIds)
-            return stableTracks(nowMs)
+            return stableTracks(nowMs, effectiveMaxAge)
         }
 
         val filtered = detections
@@ -46,16 +53,16 @@ class IouObjectTracker(
             val match = findBestMatch(detection, unmatchedTracks)
             if (match != null) {
                 unmatchedTracks.remove(match.id)
-                smoothTrack(match, detection, nowMs)
+                smoothTrack(match, detection, nowMs, effectiveSmoothingAlpha)
             } else {
                 createTrack(detection, nowMs)
             }
         }
 
         decayUnmatched(dtSeconds, unmatchedTracks)
-        pruneOld(nowMs)
+        pruneOld(nowMs, effectiveMaxAge)
         pruneTrackLimit()
-        return stableTracks(nowMs)
+        return stableTracks(nowMs, effectiveMaxAge)
     }
 
     private fun findBestMatch(detection: Detection, unmatched: Set<Long>): Track? {
@@ -73,8 +80,8 @@ class IouObjectTracker(
         return best
     }
 
-    private fun smoothTrack(track: Track, detection: Detection, nowMs: Long) {
-        val a = config.bboxSmoothingAlpha.coerceIn(0f, 1f)
+    private fun smoothTrack(track: Track, detection: Detection, nowMs: Long, smoothingAlpha: Float) {
+        val a = smoothingAlpha.coerceIn(0f, 1f)
         val confAlpha = config.confidenceEmaAlpha.coerceIn(0f, 1f)
         track.bbox = lerp(track.bbox, detection.bbox, a)
         track.confidenceEma = ema(track.confidenceEma, detection.confidence, confAlpha)
@@ -100,8 +107,7 @@ class IouObjectTracker(
         )
     }
 
-    private fun pruneOld(nowMs: Long) {
-        val maxAge = config.trackMaxAgeMs
+    private fun pruneOld(nowMs: Long, maxAge: Long) {
         tracks.removeAll { nowMs - it.lastSeenAt > maxAge }
     }
 
@@ -116,8 +122,7 @@ class IouObjectTracker(
         }
     }
 
-    private fun stableTracks(nowMs: Long): List<Detection> {
-        val maxAge = config.trackMaxAgeMs
+    private fun stableTracks(nowMs: Long, maxAge: Long): List<Detection> {
         return tracks.filter { track ->
             track.consecutiveHits >= config.minConsecutiveHitsToAnnounce &&
                 track.confidenceEma >= config.minConfidenceTrack &&

@@ -232,5 +232,6 @@ Sie dient Codex als Grundlage für nachvollziehbare, konsistente Implementierung
 ## Settings & Robustheit (aktuell)
 
 - Settings-Screen (DataStore) für Detector/Tracking/OwliAI/TTS/Debug/Pipeline-Intervall, inkl. Reset auf Defaults.
+- Stabilisierung: Motion-Gating (IMU) fuer weniger Ansage-Spam und stabileres Tracking.
 - Pipeline wird nach Rotation oder Settings-Änderungen automatisch neu aufgebaut, wenn zuvor aktiv (AutoStart-Flag).
 - Overlay/OwliAI-Preview per Setting ein-/ausblendbar.

@@ -1,6 +1,6 @@
-# Prompts-Codex-CLI â€“ Vorlagen fÃ¼r ChatGPT5.1-Codex-max
+# Prompts-Codex-CLI – Vorlagen für ChatGPT5.1-Codex-max
 
-Diese Datei sammelt **Prompt-Bausteine und Muster**, mit denen Codex-CLI (ChatGPT5.1-Codex-max) mÃ¶glichst effizient fÃ¼r dieses Projekt genutzt werden kann.
+Diese Datei sammelt **Prompt-Bausteine und Muster**, mit denen Codex-CLI (ChatGPT5.1-Codex-max) möglichst effizient für dieses Projekt genutzt werden kann.
 
 Alle Prompts beziehen sich auf:
 
@@ -8,22 +8,22 @@ Alle Prompts beziehen sich auf:
 * `System-Spezifikation.md`
 * `Coding-Guidelines.md`
 
-Bitte diese Dateien bei komplexeren Aufgaben erwÃ¤hnen oder als Kontext mitsenden.
+Bitte diese Dateien bei komplexeren Aufgaben erwähnen oder als Kontext mitsenden.
 
 ---
 
-## 1. Allgemeine Empfehlungen fÃ¼r Prompts
+## 1. Allgemeine Empfehlungen für Prompts
 
-* **Konkret sein**: Immer genau angeben, welche Datei, Klasse oder Funktion geÃ¤ndert werden soll.
-* **Kontext geben**: Kurz angeben, welchen Teil der Architektur / Spezifikation die Ã„nderung betrifft.
-* **Ausgabeformat festlegen**: Z. B. â€žGib nur den kompletten Kotlin-Code der Datei zurÃ¼ck, ohne ErklÃ¤rungen.â€œ
+* **Konkret sein**: Immer genau angeben, welche Datei, Klasse oder Funktion geändert werden soll.
+* **Kontext geben**: Kurz angeben, welchen Teil der Architektur / Spezifikation die Änderung betrifft.
+* **Ausgabeformat festlegen**: Z. B. „Gib nur den kompletten Kotlin-Code der Datei zurück, ohne Erklärungen.“
 * **Schrittweise arbeiten**: Lieber mehrere kleine, fokussierte Prompts als einen riesigen.
 
 ---
 
 ## 2. Prompt-Vorlage: Neue Klasse implementieren
 
-**Zweck:** Implementierung einer neuen Klasse gemÃ¤ÃŸ Architektur und Spezifikation.
+**Zweck:** Implementierung einer neuen Klasse gemäß Architektur und Spezifikation.
 
 **Muster:**
 
@@ -38,7 +38,7 @@ Bitte diese Dateien bei komplexeren Aufgaben erwÃ¤hnen oder als Kontext mitsen
 > * [Stichpunkt 2]
 > * [Stichpunkt 3]
 >
-> Gib nur den vollstÃ¤ndigen Kotlin-Code fÃ¼r diese Datei aus, ohne zusÃ¤tzliche ErklÃ¤rungen.
+> Gib nur den vollständigen Kotlin-Code für diese Datei aus, ohne zusätzliche Erklärungen.
 
 **Beispiel:**
 
@@ -48,11 +48,11 @@ Bitte diese Dateien bei komplexeren Aufgaben erwÃ¤hnen oder als Kontext mitsen
 > * Implementiert das Interface `VisionPipeline`.
 > * Nutzt `CameraFrameSource`, `Preprocessor`, `Detector` und `SceneAnalyzer`.
 > * Verarbeitet Frames sequentiell auf einem Hintergrund-Dispatcher.
-> * Emittiert `SceneState`-Objekte Ã¼ber einen `StateFlow` oder `SharedFlow`.
+> * Emittiert `SceneState`-Objekte über einen `StateFlow` oder `SharedFlow`.
 
 ---
 
-## 3. Prompt-Vorlage: Bestehende Datei verfeinern / vervollstÃ¤ndigen
+## 3. Prompt-Vorlage: Bestehende Datei verfeinern / vervollständigen
 
 **Zweck:** Teilskelett oder alte Version verbessern.
 
@@ -64,27 +64,27 @@ Bitte diese Dateien bei komplexeren Aufgaben erwÃ¤hnen oder als Kontext mitsen
 > // aktueller Inhalt
 > ```
 >
-> Bitte vervollstÃ¤ndige oder verbessere diese Datei gemÃ¤ÃŸ `System-Architektur.md`, `System-Spezifikation.md` und `Coding-Guidelines.md`.
+> Bitte vervollständige oder verbessere diese Datei gemäß `System-Architektur.md`, `System-Spezifikation.md` und `Coding-Guidelines.md`.
 >
 > Spezifische Anforderungen:
 >
 > * [Anforderung 1]
 > * [Anforderung 2]
 >
-> Ã„ndere keine Paketdeklaration. Gib nur den vollstÃ¤ndigen, aktualisierten Kotlin-Code dieser Datei zurÃ¼ck.
+> Ändere keine Paketdeklaration. Gib nur den vollständigen, aktualisierten Kotlin-Code dieser Datei zurück.
 
 ---
 
 ## 4. Prompt-Vorlage: Unit-Tests erzeugen
 
-**Zweck:** Tests fÃ¼r eine bestimmte Klasse oder Funktion generieren.
+**Zweck:** Tests für eine bestimmte Klasse oder Funktion generieren.
 
 **Muster:**
 
-> Du bist Test-Autor fÃ¼r diese App.
+> Du bist Test-Autor für diese App.
 > Halte dich an `System-Architektur.md`, `System-Spezifikation.md` und `Coding-Guidelines.md`.
 >
-> Erzeuge Unit-Tests fÃ¼r die Klasse `<Klassenname>` in `<Pfad/Dateiname.kt>`.
+> Erzeuge Unit-Tests für die Klasse `<Klassenname>` in `<Pfad/Dateiname.kt>`.
 >
 > Hier ist der Code der Klasse:
 >
@@ -95,25 +95,25 @@ Bitte diese Dateien bei komplexeren Aufgaben erwÃ¤hnen oder als Kontext mitsen
 > Anforderungen an die Tests:
 >
 > * Nutze JUnit4/JUnit5 (je nach Projektsetup) und Kotlin.
-> * Teste insbesondere folgende FÃ¤lle:
+> * Teste insbesondere folgende Fälle:
 >
 >   * [Testfall 1]
 >   * [Testfall 2]
 >   * [Testfall 3]
-> * Tests sollen deterministisch und unabhÃ¤ngig voneinander sein.
+> * Tests sollen deterministisch und unabhängig voneinander sein.
 >
-> Gib nur den vollstÃ¤ndigen Code der Testdatei zurÃ¼ck (inklusive Paket und Importen).
+> Gib nur den vollständigen Code der Testdatei zurück (inklusive Paket und Importen).
 
-**Beispiel-TestfÃ¤lle fÃ¼r `SceneAnalyzer`:**
+**Beispiel-Testfälle für `SceneAnalyzer`:**
 
-* Wenn eine Person mit hoher Konfidenz zentral unten im Bild erkannt wird â†’ `HazardLevel.DANGER`, `primaryMessage` nicht null.
-* Wenn nur Objekte oben im Bild sind â†’ `HazardLevel.WARNING` oder `NONE`, je nach Logik.
+* Wenn eine Person mit hoher Konfidenz zentral unten im Bild erkannt wird → `HazardLevel.DANGER`, `primaryMessage` nicht null.
+* Wenn nur Objekte oben im Bild sind → `HazardLevel.WARNING` oder `NONE`, je nach Logik.
 
 ---
 
 ## 5. Prompt-Vorlage: Refactoring nach Architekturregeln
 
-**Zweck:** Code, der gewachsen ist, nachtrÃ¤glich anpassen.
+**Zweck:** Code, der gewachsen ist, nachträglich anpassen.
 
 **Muster:**
 
@@ -125,11 +125,11 @@ Bitte diese Dateien bei komplexeren Aufgaben erwÃ¤hnen oder als Kontext mitsen
 >
 > Bitte refaktoriere diesen Code im Sinne von `System-Architektur.md` und `Coding-Guidelines.md`:
 >
-> * Trenne UI-Logik von GeschÃ¤ftslogik.
+> * Trenne UI-Logik von Geschäftslogik.
 > * Entferne ML-spezifische Details aus der UI-Schicht.
-> * Stelle sicher, dass keine Inferenz auf dem Main-Thread lÃ¤uft.
+> * Stelle sicher, dass keine Inferenz auf dem Main-Thread läuft.
 >
-> Gib nur den vollstÃ¤ndigen, refaktorierten Kotlin-Code der Datei zurÃ¼ck.
+> Gib nur den vollständigen, refaktorierten Kotlin-Code der Datei zurück.
 
 ---
 
@@ -141,37 +141,37 @@ Bitte diese Dateien bei komplexeren Aufgaben erwÃ¤hnen oder als Kontext mitsen
 
 > Du kennst die Inhalte aus `System-Architektur.md`, `System-Spezifikation.md` und `Coding-Guidelines.md`.
 >
-> Diskutiere verschiedene AnsÃ¤tze fÃ¼r:
+> Diskutiere verschiedene Ansätze für:
 >
-> * [Thema, z. B. â€žAmpelerkennungâ€œ oder â€žDepth-Integrationâ€œ]
+> * [Thema, z. B. „Ampelerkennung“ oder „Depth-Integration“]
 >
-> Vergleiche Vor- und Nachteile und schlage einen konkreten Ansatz fÃ¼r dieses Projekt vor.
-> Antworte strukturiert mit kurzen, prÃ¤gnanten Bullet-Points.
+> Vergleiche Vor- und Nachteile und schlage einen konkreten Ansatz für dieses Projekt vor.
+> Antworte strukturiert mit kurzen, prägnanten Bullet-Points.
 
 ---
 
 ## 7. Prompt-Vorlage: Konfiguration und Build-Skripte
 
-**Zweck:** Gradle-Dateien oder Manifest-EintrÃ¤ge generieren.
+**Zweck:** Gradle-Dateien oder Manifest-Einträge generieren.
 
 **Muster:**
 
-> Erzeuge eine vollstÃ¤ndige `app/build.gradle.kts` fÃ¼r dieses Projekt.
+> Erzeuge eine vollständige `app/build.gradle.kts` für dieses Projekt.
 >
 > Rahmenbedingungen:
 >
 > * Kotlin, Jetpack Compose, CameraX.
-> * AbhÃ¤ngigkeiten fÃ¼r TFLite/LiteRT (oder ONNX, falls angegeben).
-> * MinSdk und TargetSdk gemÃ¤ÃŸ Ã¼blichen aktuellen Werten.
+> * Abhängigkeiten für TFLite/LiteRT (oder ONNX, falls angegeben).
+> * MinSdk und TargetSdk gemäß üblichen aktuellen Werten.
 > * Halte dich an die Struktur aus `System-Architektur.md`.
 >
-> Gib nur die vollstÃ¤ndige Datei `app/build.gradle.kts` zurÃ¼ck.
+> Gib nur die vollständige Datei `app/build.gradle.kts` zurück.
 
 ---
 
 ## 8. Prompt-Vorlage: Debug-/Diagnose-Funktionen
 
-**Zweck:** Hilfsklassen fÃ¼r Logging, FPS-Messung etc.
+**Zweck:** Hilfsklassen für Logging, FPS-Messung etc.
 
 **Muster:**
 
@@ -180,20 +180,20 @@ Bitte diese Dateien bei komplexeren Aufgaben erwÃ¤hnen oder als Kontext mitsen
 > Anforderungen:
 >
 > * Wrapper um `Log.d/e`.
-> * Statische Methoden fÃ¼r Debug/Info/Error.
-> * SpÃ¤ter austauschbar gegen eine andere Logging-Library.
+> * Statische Methoden für Debug/Info/Error.
+> * Später austauschbar gegen eine andere Logging-Library.
 >
 > Halte dich an `Coding-Guidelines.md`. Gib nur den Kotlin-Code der Datei aus.
 
 ---
 
-## 9. Prompt-Vorlage: Code-ErklÃ¤rung / Review
+## 9. Prompt-Vorlage: Code-Erklärung / Review
 
 **Zweck:** Generierten oder bestehenden Code besser verstehen.
 
 **Muster:**
 
-> ErklÃ¤re mir den folgenden Kotlin-Code im Kontext der Architektur in `System-Architektur.md`:
+> Erkläre mir den folgenden Kotlin-Code im Kontext der Architektur in `System-Architektur.md`:
 >
 > ```kotlin
 > // Code
@@ -201,17 +201,17 @@ Bitte diese Dateien bei komplexeren Aufgaben erwÃ¤hnen oder als Kontext mitsen
 >
 > Gehe insbesondere ein auf:
 >
-> * Wie fÃ¼gt sich dieser Code in die VisionPipeline ein?
+> * Wie fügt sich dieser Code in die VisionPipeline ein?
 > * Welche Threads/Dispatcher werden genutzt?
-> * Gibt es erkennbare Probleme oder VerbesserungsmÃ¶glichkeiten?
+> * Gibt es erkennbare Probleme oder Verbesserungsmöglichkeiten?
 
 ---
 
-## 10. Empfehlung: Eigene Snippets ergÃ¤nzen
+## 10. Empfehlung: Eigene Snippets ergänzen
 
 Diese Datei soll im Projektverlauf erweitert werden:
 
-* FÃ¼ge konkrete, bewÃ¤hrte Prompts hinzu, die gut funktioniert haben.
-* Markiere, welche Prompts eher fÃ¼r **Implementierung**, welche fÃ¼r **Refactoring** und welche fÃ¼r **Testgenerierung** gedacht sind.
+* Füge konkrete, bewährte Prompts hinzu, die gut funktioniert haben.
+* Markiere, welche Prompts eher für **Implementierung**, welche für **Refactoring** und welche für **Testgenerierung** gedacht sind.
 
-So entsteht ein wachsender â€žPrompt-Werkzeugkastenâ€œ, mit dem Codex-CLI effizient auf das Projekt ausgerichtet werden kann.
+So entsteht ein wachsender „Prompt-Werkzeugkasten“, mit dem Codex-CLI effizient auf das Projekt ausgerichtet werden kann.

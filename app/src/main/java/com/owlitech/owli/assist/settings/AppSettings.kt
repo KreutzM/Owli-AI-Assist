@@ -39,7 +39,11 @@ data class AppSettings(
     val showBlindViewPreview: Boolean = AppSettingsDefaults.showBlindViewPreview,
     val showOverlayLabels: Boolean = AppSettingsDefaults.showOverlayLabels,
     val analysisIntervalMs: Long = AppSettingsDefaults.analysisIntervalMs,
-    val languagePreference: LanguagePreference = AppSettingsDefaults.languagePreference
+    val languagePreference: LanguagePreference = AppSettingsDefaults.languagePreference,
+    val enableMotionGating: Boolean = AppSettingsDefaults.enableMotionGating,
+    val motionMedThresholdRadS: Float = AppSettingsDefaults.motionMedThresholdRadS,
+    val motionHighThresholdRadS: Float = AppSettingsDefaults.motionHighThresholdRadS,
+    val motionSpeakIntervalMultiplierHigh: Float = AppSettingsDefaults.motionSpeakIntervalMultiplierHigh
 ) {
     fun toDetectorOptions(): TfliteDetectorOptions {
         return TfliteDetectorOptions(
@@ -106,4 +110,8 @@ object AppSettingsDefaults {
     const val analysisIntervalMs: Long = 250L
     const val confidenceDecayPerSecond: Float = 0.15f
     val languagePreference: LanguagePreference = LanguagePreference.SYSTEM
+    const val enableMotionGating: Boolean = true
+    const val motionMedThresholdRadS: Float = 0.9f
+    const val motionHighThresholdRadS: Float = 1.6f
+    const val motionSpeakIntervalMultiplierHigh: Float = 1.35f
 }

@@ -11,6 +11,7 @@ import com.owlitech.owli.assist.domain.DefaultSceneAnalyzer
 import com.owlitech.owli.assist.ml.FakeDetector
 import com.owlitech.owli.assist.ml.TfliteDetectorOptions
 import com.owlitech.owli.assist.ml.TfliteTaskDetector
+import com.owlitech.owli.assist.motion.MotionEstimator
 import com.owlitech.owli.assist.processing.DefaultPreprocessor
 import com.owlitech.owli.assist.processing.HsvTrafficLightPhaseClassifier
 import com.owlitech.owli.assist.util.AppLogger
@@ -33,7 +34,10 @@ object VisionPipelineModule {
         detectorOptions: TfliteDetectorOptions = TfliteDetectorOptions(),
         mode: AppMode = AppMode.BLINDVIEW,
         blindViewConfig: BlindViewConfig = BlindViewConfig(),
-        analysisIntervalMs: Long = 250L
+        analysisIntervalMs: Long = 250L,
+        motionEstimator: MotionEstimator? = null,
+        motionGatingEnabled: Boolean = true,
+        motionSpeakIntervalMultiplierHigh: Float = 1.35f
     ): VisionPipelineHandle {
         val labels = LabelRepository().loadLabels(context)
         val translator = CocoLabelTranslator().also { it.validateAgainst(labels) }
@@ -52,7 +56,9 @@ object VisionPipelineModule {
         }
         val analyzer = DefaultSceneAnalyzer(
             blindViewConfig = blindViewConfig,
-            translator = translator
+            translator = translator,
+            motionGatingEnabled = motionGatingEnabled,
+            motionSpeakIntervalMultiplierHigh = motionSpeakIntervalMultiplierHigh
         )
         val pipeline = DefaultVisionPipeline(
             cameraFrameSource = cameraFrameSource,
@@ -60,6 +66,7 @@ object VisionPipelineModule {
             detector = detector,
             sceneAnalyzer = analyzer,
             trafficLightClassifier = trafficLightClassifier,
+            motionEstimator = motionEstimator,
             scope = scope,
             minProcessIntervalMs = analysisIntervalMs
         )

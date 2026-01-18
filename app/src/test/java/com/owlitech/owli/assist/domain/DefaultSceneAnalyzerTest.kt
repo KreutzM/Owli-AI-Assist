@@ -12,7 +12,7 @@ class DefaultSceneAnalyzerTest {
 
     @Test
     fun `returns NONE when no detections`() {
-        val state = analyzer.analyze(emptyList())
+        val state = analyzer.analyze(emptyList(), emptyList(), null)
 
         assertEquals(HazardLevel.NONE, state.overallHazardLevel)
         assertEquals(0, state.hazards.size)
@@ -29,7 +29,7 @@ class DefaultSceneAnalyzerTest {
             )
         )
 
-        val state = analyzer.analyze(detections)
+        val state = analyzer.analyze(detections, emptyList(), null)
 
         assertEquals(HazardLevel.WARNING, state.overallHazardLevel)
         assertEquals(1, state.hazards.size)

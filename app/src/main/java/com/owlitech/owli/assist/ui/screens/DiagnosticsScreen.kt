@@ -38,6 +38,7 @@ fun DiagnosticsScreen(
     val reportLabel = stringResource(R.string.diagnostics_report_label)
     val reportCopiedText = stringResource(R.string.diagnostics_report_copied)
     val missingPreview = stringResource(R.string.diagnostics_last_preview_missing)
+    val motionLevelText = diagState.motionLevel?.name ?: missingPreview
     Column(
         modifier = Modifier
             .padding(12.dp)
@@ -131,6 +132,18 @@ fun DiagnosticsScreen(
                     diagState.showOverlay,
                     diagState.showOverlayLabels,
                     diagState.showBlindViewPreview
+                )
+            )
+        }
+        SectionCard(title = stringResource(R.string.diagnostics_section_motion)) {
+            Text(
+                stringResource(
+                    R.string.diagnostics_motion_format,
+                    motionLevelText,
+                    diagState.gyroMagRadS,
+                    diagState.rollDeg,
+                    diagState.pitchDeg,
+                    diagState.motionQuality
                 )
             )
         }
