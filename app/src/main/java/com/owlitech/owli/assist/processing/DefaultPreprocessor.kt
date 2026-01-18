@@ -24,14 +24,16 @@ class DefaultPreprocessor(
         val start = System.nanoTime()
         val rotation = image.imageInfo.rotationDegrees
         var bmp = converter.yuvToRgb(image)
+        var ownsBitmap = false
 
         if (rotation != 0) {
             val matrix = Matrix().apply { postRotate(rotation.toFloat()) }
             val rotated = Bitmap.createBitmap(bmp, 0, 0, bmp.width, bmp.height, matrix, true)
-            if (rotated !== bmp) {
+            if (ownsBitmap && rotated !== bmp) {
                 bmp.recycle()
             }
             bmp = rotated
+            ownsBitmap = true
         }
 
         val qualityMin = stabilizationQualityMin.coerceIn(0f, 1f)
@@ -39,10 +41,11 @@ class DefaultPreprocessor(
         if (enableImuDerotation && motion != null && motion.quality >= qualityMin) {
             appliedRollDeg = -motion.rollRad * RAD_TO_DEG
             val stabilized = rotateKeepingSize(bmp, appliedRollDeg)
-            if (stabilized !== bmp) {
+            if (ownsBitmap && stabilized !== bmp) {
                 bmp.recycle()
             }
             bmp = stabilized
+            ownsBitmap = true
         }
 
         val sourceWidth = bmp.width
@@ -51,9 +54,10 @@ class DefaultPreprocessor(
         val cropLeft = ((sourceWidth - squareSize) / 2f).toInt()
         val cropTop = ((sourceHeight - squareSize) / 2f).toInt()
         val cropped = Bitmap.createBitmap(bmp, cropLeft, cropTop, squareSize, squareSize)
-        if (cropped !== bmp) {
+        if (ownsBitmap && cropped !== bmp) {
             bmp.recycle()
         }
+        ownsBitmap = true
 
         val output = if (squareSize != outputSize) {
             val resized = cropped.scale(outputSize, outputSize, true)

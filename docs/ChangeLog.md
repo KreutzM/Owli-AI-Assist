@@ -59,6 +59,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - VLM: Sprachausgabe bleibt waehrend aktiver Spracheingabe pausiert.
 
 ### Fixed
+- Crash im Preprocessing durch recycle()'d Bitmap aus dem YUV-Converter.
 - Sprache kann jetzt per Settings sofort umgeschaltet werden (Locale-Recreate).
 - Crash beim App-Start nach Umstellung auf AppCompatActivity (Theme-Anpassung).
 - GPT-5 Reasoning-only Antworten: automatische Retries mit hoeherem Token-Budget und Final-Only Hinweis.
