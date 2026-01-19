@@ -41,7 +41,12 @@ data class DiagnosticsState(
     val stabilizationEnabled: Boolean = false,
     val appliedRollDeg: Float = 0f,
     val mappingActive: Boolean = false,
-    val debugDetectorViewEnabled: Boolean = false
+    val debugDetectorViewEnabled: Boolean = false,
+    val translationDxLowRes: Int = 0,
+    val translationDyLowRes: Int = 0,
+    val translationQuality: Float = 0f,
+    val cropLeftPx: Int = 0,
+    val cropTopPx: Int = 0
 )
 
 data class TtsDiagnostics(

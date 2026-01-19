@@ -290,6 +290,9 @@ class MainActivity : AppCompatActivity() {
             enableImuDerotation = settings.enableImuDerotation,
             stabilizationQualityMin = settings.stabilizationQualityMin,
             enableTranslationStabilization = settings.enableTranslationStabilization,
+            translationQualityMin = settings.translationQualityMin,
+            translationSearchRadiusLowRes = settings.translationSearchRadiusLowRes,
+            translationPatchOffsetLowRes = settings.translationPatchOffsetLowRes,
             debugDetectorViewEnabled = settings.enableDetectorDebugView
         )
         mainViewModel.setPipeline(handle)

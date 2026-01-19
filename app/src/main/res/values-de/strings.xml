@@ -106,6 +106,12 @@
     <string name="settings_stabilization_quality_min_helper">IMU-Qualitaetsschwelle fuer Roll-Lock</string>
     <string name="settings_translation_stabilization">Translations-Stabilisierung</string>
     <string name="settings_translation_stabilization_helper">Crop-Fenster gegen Bewegung stabilisieren (experimentell)</string>
+    <string name="settings_translation_quality_min">Translation: Quality min</string>
+    <string name="settings_translation_quality_min_helper">Minimale Match-Qualitaet fuer Translation</string>
+    <string name="settings_translation_search_radius">Translation Suchradius (low-res)</string>
+    <string name="settings_translation_search_radius_helper">Suchradius in Low-Res Pixeln</string>
+    <string name="settings_translation_patch_offset">Translation Patch-Offset (low-res)</string>
+    <string name="settings_translation_patch_offset_helper">Kandidat-Offset um die Mitte (low-res px)</string>
     <string name="settings_detector_debug_view">Detektor-Ansicht anzeigen</string>
     <string name="settings_detector_debug_view_helper">Bild-in-Bild Vorschau des 448x448 Inputs</string>
     <string name="settings_blindview_max_items">BlindView max Items</string>
@@ -158,6 +164,8 @@
     <string name="diagnostics_overlay_format">overlay=%1$s labels=%2$s preview=%3$s</string>
     <string name="diagnostics_motion_format">motion=%1$s gyro=%2$.2f roll=%3$.1f pitch=%4$.1f q=%5$.2f</string>
     <string name="diagnostics_stabilization_format">stabilization=%1$s appliedRoll=%2$.1f mapping=%3$s</string>
+    <string name="diagnostics_translation_format">translation dx=%1$d dy=%2$d q=%3$.2f</string>
+    <string name="diagnostics_crop_format">crop left=%1$d top=%2$d</string>
     <string name="diagnostics_detections_format">detectionsRaw=%1$d detectionsStable=%2$d</string>
     <string name="diagnostics_top_labels_format">topLabels=%1$s</string>
     <string name="diagnostics_last_preview_format">lastPreview=%1$s</string>

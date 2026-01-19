@@ -47,6 +47,9 @@ data class AppSettings(
     val enableImuDerotation: Boolean = AppSettingsDefaults.enableImuDerotation,
     val stabilizationQualityMin: Float = AppSettingsDefaults.stabilizationQualityMin,
     val enableTranslationStabilization: Boolean = AppSettingsDefaults.enableTranslationStabilization,
+    val translationQualityMin: Float = AppSettingsDefaults.translationQualityMin,
+    val translationSearchRadiusLowRes: Int = AppSettingsDefaults.translationSearchRadiusLowRes,
+    val translationPatchOffsetLowRes: Int = AppSettingsDefaults.translationPatchOffsetLowRes,
     val enableDetectorDebugView: Boolean = AppSettingsDefaults.enableDetectorDebugView
 ) {
     fun toDetectorOptions(): TfliteDetectorOptions {
@@ -121,5 +124,8 @@ object AppSettingsDefaults {
     const val enableImuDerotation: Boolean = false
     const val stabilizationQualityMin: Float = 0.3f
     const val enableTranslationStabilization: Boolean = true
+    const val translationQualityMin: Float = 0.15f
+    const val translationSearchRadiusLowRes: Int = 12
+    const val translationPatchOffsetLowRes: Int = 16
     const val enableDetectorDebugView: Boolean = false
 }

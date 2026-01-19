@@ -41,6 +41,10 @@ object DiagnosticsReportBuilder {
         sb.appendLine(
             "  stabilizationEnabled=${state.stabilizationEnabled} appliedRollDeg=${"%.1f".format(state.appliedRollDeg)} mappingActive=${state.mappingActive}"
         )
+        sb.appendLine(
+            "  translationDxLowRes=${state.translationDxLowRes} translationDyLowRes=${state.translationDyLowRes} quality=${"%.2f".format(state.translationQuality)}"
+        )
+        sb.appendLine("  cropLeftPx=${state.cropLeftPx} cropTopPx=${state.cropTopPx}")
         sb.appendLine()
         sb.appendLine("Scene Snapshot:")
         sb.appendLine("  detectionsRaw=${state.detectionsCountRaw} detectionsStable=${state.detectionsCountStable}")
@@ -59,6 +63,9 @@ object DiagnosticsReportBuilder {
         )
         sb.appendLine(
             "  imuDerotation=${settings.enableImuDerotation} stabilizationQualityMin=${settings.stabilizationQualityMin}"
+        )
+        sb.appendLine(
+            "  translationStabilization=${settings.enableTranslationStabilization} translationQualityMin=${settings.translationQualityMin} translationSearchRadiusLowRes=${settings.translationSearchRadiusLowRes} translationPatchOffsetLowRes=${settings.translationPatchOffsetLowRes}"
         )
         return sb.toString()
     }

@@ -41,6 +41,9 @@ object VisionPipelineModule {
         enableImuDerotation: Boolean = false,
         stabilizationQualityMin: Float = 0.3f,
         enableTranslationStabilization: Boolean = true,
+        translationQualityMin: Float = 0.15f,
+        translationSearchRadiusLowRes: Int = 12,
+        translationPatchOffsetLowRes: Int = 16,
         debugDetectorViewEnabled: Boolean = false
     ): VisionPipelineHandle {
         val labels = LabelRepository().loadLabels(context)
@@ -49,7 +52,10 @@ object VisionPipelineModule {
             outputSize = 448,
             enableImuDerotation = enableImuDerotation,
             stabilizationQualityMin = stabilizationQualityMin,
-            enableTranslationStabilization = enableTranslationStabilization
+            enableTranslationStabilization = enableTranslationStabilization,
+            translationQualityMin = translationQualityMin,
+            translationSearchRadiusLowRes = translationSearchRadiusLowRes,
+            translationPatchOffsetLowRes = translationPatchOffsetLowRes
         )
         val trafficLightClassifier = HsvTrafficLightPhaseClassifier()
         val (detector, info) = if (!useFake && modelExists(context.assets, detectorOptions.modelPath)) {

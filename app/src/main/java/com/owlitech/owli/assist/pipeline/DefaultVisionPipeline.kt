@@ -79,6 +79,13 @@ class DefaultVisionPipeline(
                     appliedRollDeg = preprocessResult.appliedRollDeg,
                     mappingActive = preprocessResult.mapping != null
                 )
+                com.owlitech.owli.assist.diagnostics.DiagnosticsCollector.updateTranslation(
+                    dxLowRes = preprocessResult.translationDxLowRes,
+                    dyLowRes = preprocessResult.translationDyLowRes,
+                    quality = preprocessResult.translationQuality,
+                    cropLeftPx = preprocessResult.cropLeftPx,
+                    cropTopPx = preprocessResult.cropTopPx
+                )
                 val debugBitmap = updateDebugDetectorBitmap(preprocessResult.bitmap448, now)
                 val sceneState = sceneAnalyzer.analyze(detections, trafficLights, motion)
                     .copy(

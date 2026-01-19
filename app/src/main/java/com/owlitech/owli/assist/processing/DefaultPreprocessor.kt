@@ -16,11 +16,18 @@ class DefaultPreprocessor(
     private val enableImuDerotation: Boolean = false,
     private val stabilizationQualityMin: Float = 0.3f,
     private val enableTranslationStabilization: Boolean = true,
+    private val translationQualityMin: Float = 0.15f,
+    private val translationSearchRadiusLowRes: Int = 12,
+    private val translationPatchOffsetLowRes: Int = 16,
     private val logInterval: Int = 30
 ) : Preprocessor {
 
     private val converter = YuvToRgbConverter()
-    private val translationEstimator = GlobalMotionEstimator()
+    private val translationEstimator = GlobalMotionEstimator(
+        searchRadius = translationSearchRadiusLowRes,
+        patchOffset = translationPatchOffsetLowRes,
+        qualityMin = translationQualityMin
+    )
     private var frameCount = 0
     private var stableCx = Float.NaN
     private var stableCy = Float.NaN
@@ -57,6 +64,11 @@ class DefaultPreprocessor(
         val sourceHeight = bmp.height
         val targetCx = sourceWidth / 2f
         val targetCy = sourceHeight / 2f
+        var translationDx = 0
+        var translationDy = 0
+        var translationQuality = 0f
+        var patchCenterX: Int? = null
+        var patchCenterY: Int? = null
         if (stableCx.isNaN() || stableCy.isNaN()) {
             stableCx = targetCx
             stableCy = targetCy
@@ -68,7 +80,12 @@ class DefaultPreprocessor(
             }
             if (enableTranslationStabilization) {
                 val translation = translationEstimator.estimate(bmp)
-                if (translation.quality >= TRANSLATION_QUALITY_MIN) {
+                translationDx = translation.dx
+                translationDy = translation.dy
+                translationQuality = translation.quality
+                patchCenterX = translation.patchCenterX
+                patchCenterY = translation.patchCenterY
+                if (translation.quality > 0f) {
                     val scaleX = sourceWidth.toFloat() / translationEstimator.lowWidth
                     val scaleY = sourceHeight.toFloat() / translationEstimator.lowHeight
                     val translationScale =
@@ -140,7 +157,14 @@ class DefaultPreprocessor(
         return PreprocessResult(
             bitmap448 = output,
             mapping = mapping,
-            appliedRollDeg = appliedRollDeg
+            appliedRollDeg = appliedRollDeg,
+            translationDxLowRes = translationDx,
+            translationDyLowRes = translationDy,
+            translationQuality = translationQuality,
+            cropLeftPx = cropLeft,
+            cropTopPx = cropTop,
+            patchCenterXLowRes = patchCenterX,
+            patchCenterYLowRes = patchCenterY
         )
     }
 
@@ -190,7 +214,6 @@ class DefaultPreprocessor(
         private const val STABILIZED_CROP_SIZE = 560
         private const val STABLE_CENTER_ALPHA = 0.2f
         private const val STABLE_CENTER_ALPHA_HIGH = 0.06f
-        private const val TRANSLATION_QUALITY_MIN = 0.15f
         private const val TRANSLATION_SCALE = 0.6f
         private const val TRANSLATION_SCALE_HIGH = 0.35f
     }

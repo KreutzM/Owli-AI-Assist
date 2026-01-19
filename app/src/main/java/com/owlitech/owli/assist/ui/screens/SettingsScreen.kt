@@ -156,6 +156,28 @@ fun SettingsScreen(
             onCheckedChange = { v -> onUpdate { it.copy(enableTranslationStabilization = v) } },
             helper = stringResource(R.string.settings_translation_stabilization_helper)
         )
+        SettingSlider(
+            label = stringResource(R.string.settings_translation_quality_min),
+            value = settings.translationQualityMin,
+            valueRange = 0.0f..1.0f,
+            steps = 10,
+            onValueChange = { v -> onUpdate { it.copy(translationQualityMin = v) } },
+            helper = stringResource(R.string.settings_translation_quality_min_helper)
+        )
+        SettingIntSlider(
+            label = stringResource(R.string.settings_translation_search_radius),
+            value = settings.translationSearchRadiusLowRes,
+            valueRange = 4..24,
+            onValueChange = { v -> onUpdate { it.copy(translationSearchRadiusLowRes = v) } },
+            helper = stringResource(R.string.settings_translation_search_radius_helper)
+        )
+        SettingIntSlider(
+            label = stringResource(R.string.settings_translation_patch_offset),
+            value = settings.translationPatchOffsetLowRes,
+            valueRange = 4..32,
+            onValueChange = { v -> onUpdate { it.copy(translationPatchOffsetLowRes = v) } },
+            helper = stringResource(R.string.settings_translation_patch_offset_helper)
+        )
         SettingSwitch(
             label = stringResource(R.string.settings_detector_debug_view),
             checked = settings.enableDetectorDebugView,

@@ -160,6 +160,21 @@ fun DiagnosticsScreen(
                     diagState.mappingActive
                 )
             )
+            Text(
+                stringResource(
+                    R.string.diagnostics_translation_format,
+                    diagState.translationDxLowRes,
+                    diagState.translationDyLowRes,
+                    diagState.translationQuality
+                )
+            )
+            Text(
+                stringResource(
+                    R.string.diagnostics_crop_format,
+                    diagState.cropLeftPx,
+                    diagState.cropTopPx
+                )
+            )
         }
         SectionCard(title = stringResource(R.string.diagnostics_section_scene_snapshot)) {
             Text(

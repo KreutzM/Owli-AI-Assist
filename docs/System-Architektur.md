@@ -152,7 +152,13 @@ data class ModelInputSpec(
 ```kotlin
 data class PreprocessResult(
     val bitmap448: Bitmap,
-    val mapping: FrameMapping?
+    val mapping: FrameMapping?,
+    val appliedRollDeg: Float,
+    val translationDxLowRes: Int,
+    val translationDyLowRes: Int,
+    val translationQuality: Float,
+    val cropLeftPx: Int,
+    val cropTopPx: Int
 )
 
 interface Preprocessor {
@@ -166,7 +172,7 @@ Es soll mindestens eine Implementierung geben:
 
   * YUV-zu-RGB-Konvertierung
   * Roll-Lock per IMU (optional) nach Rotation
-  * Stabilisiertes Crop-Window (geglättetes Center + Translation-Schaetzung), danach Center-Crop auf Square, Resize auf 448x448
+  * Stabilisiertes Crop-Window (geglättetes Center + Translation-Schaetzung via Low-Res Patch-Selection, Quality-Gate), danach Center-Crop auf Square, Resize auf 448x448
   * FrameMapping fuer Overlay (448x448 -> Preview)
   * Normalisierung (z.B. Wertebereich [0,1] oder ImageNet-Mean/Std)
 
@@ -448,3 +454,4 @@ Diese Architektur dient als Zielbild. Codex soll alle Implementierungen möglich
 * Persistente Settings per DataStore (Detector/Tracking/OwliAI/TTS/Debug/Pipeline-Intervall) mit Reset-to-Defaults.
 * UI-Toggles: Overlay, Overlay-Labels (BBox + Confidence), OwliAI-Preview.
 * Diagnostics-Screen zeigt Pipeline/Detector/Tracking/TTS-Status (FPS, Intervall, Thresholds, AutoStart) und kann einen Debug-Report ins Clipboard kopieren.
+* Diagnostics zeigt Stabilisierung (Roll-Lock) sowie Translation-Daten (dx/dy/quality) und Crop-Offsets.

@@ -58,6 +58,9 @@ class SettingsRepository(private val context: Context) {
             prefs[PrefKeys.enableImuDerotation] = updated.enableImuDerotation
             prefs[PrefKeys.stabilizationQualityMin] = updated.stabilizationQualityMin
             prefs[PrefKeys.enableTranslationStabilization] = updated.enableTranslationStabilization
+            prefs[PrefKeys.translationQualityMin] = updated.translationQualityMin
+            prefs[PrefKeys.translationSearchRadiusLowRes] = updated.translationSearchRadiusLowRes
+            prefs[PrefKeys.translationPatchOffsetLowRes] = updated.translationPatchOffsetLowRes
             prefs[PrefKeys.enableDetectorDebugView] = updated.enableDetectorDebugView
         }
     }
@@ -106,6 +109,9 @@ private object PrefKeys {
     val enableImuDerotation = booleanPreferencesKey("enableImuDerotation")
     val stabilizationQualityMin = floatPreferencesKey("stabilizationQualityMin")
     val enableTranslationStabilization = booleanPreferencesKey("enableTranslationStabilization")
+    val translationQualityMin = floatPreferencesKey("translationQualityMin")
+    val translationSearchRadiusLowRes = intPreferencesKey("translationSearchRadiusLowRes")
+    val translationPatchOffsetLowRes = intPreferencesKey("translationPatchOffsetLowRes")
     val enableDetectorDebugView = booleanPreferencesKey("enableDetectorDebugView")
 }
 
@@ -154,6 +160,11 @@ private fun androidx.datastore.preferences.core.Preferences.toSettings(): AppSet
         stabilizationQualityMin = this[PrefKeys.stabilizationQualityMin] ?: AppSettingsDefaults.stabilizationQualityMin,
         enableTranslationStabilization = this[PrefKeys.enableTranslationStabilization]
             ?: AppSettingsDefaults.enableTranslationStabilization,
+        translationQualityMin = this[PrefKeys.translationQualityMin] ?: AppSettingsDefaults.translationQualityMin,
+        translationSearchRadiusLowRes = this[PrefKeys.translationSearchRadiusLowRes]
+            ?: AppSettingsDefaults.translationSearchRadiusLowRes,
+        translationPatchOffsetLowRes = this[PrefKeys.translationPatchOffsetLowRes]
+            ?: AppSettingsDefaults.translationPatchOffsetLowRes,
         enableDetectorDebugView = this[PrefKeys.enableDetectorDebugView] ?: AppSettingsDefaults.enableDetectorDebugView
     )
 }

@@ -114,6 +114,22 @@ object DiagnosticsCollector {
         )
     }
 
+    fun updateTranslation(
+        dxLowRes: Int,
+        dyLowRes: Int,
+        quality: Float,
+        cropLeftPx: Int,
+        cropTopPx: Int
+    ) {
+        _state.value = _state.value.copy(
+            translationDxLowRes = dxLowRes,
+            translationDyLowRes = dyLowRes,
+            translationQuality = quality,
+            cropLeftPx = cropLeftPx,
+            cropTopPx = cropTopPx
+        )
+    }
+
     private fun radToDeg(rad: Float): Float {
         return (rad * 180f / PI.toFloat())
     }
