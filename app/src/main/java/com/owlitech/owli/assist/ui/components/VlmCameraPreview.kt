@@ -15,6 +15,7 @@ import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import android.view.Surface
 
 @Composable
 fun VlmCameraPreview(
@@ -36,6 +37,9 @@ fun VlmCameraPreview(
             if (isBound) return
             val cameraProvider = provider ?: return
             val preview = Preview.Builder().build()
+            val rotation = previewView.display?.rotation ?: Surface.ROTATION_0
+            preview.targetRotation = rotation
+            imageCapture?.targetRotation = rotation
             preview.setSurfaceProvider(previewView.surfaceProvider)
             runCatching { cameraProvider.unbindAll() }
             val useCases = listOfNotNull(preview, imageCapture)

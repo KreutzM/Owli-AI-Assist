@@ -2,7 +2,9 @@ package com.owlitech.owli.assist.ui.screens
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.speech.RecognizerIntent
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
@@ -79,6 +81,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import android.media.ExifInterface
 import com.owlitech.owli.assist.R
 import com.owlitech.owli.assist.vlm.VlmAttachment
 import com.owlitech.owli.assist.vlm.VlmUiState
@@ -93,6 +96,7 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import java.io.File
+import java.io.ByteArrayInputStream
 
 private enum class CaptureUiMode { Preview, Frozen }
 
@@ -145,9 +149,9 @@ fun VlmScreen(
         val bytes = previewBytes
         if (bytes != null) {
             val decoded = withContext(Dispatchers.Default) {
-                BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
+                decodeJpegWithExif(bytes)
             }
-            backgroundBitmap = decoded?.asImageBitmap()
+            backgroundBitmap = decoded
         }
     }
     LaunchedEffect(state) {
@@ -759,5 +763,42 @@ fun VlmScreen(
                 }
             )
         }
+    }
+}
+
+private fun decodeJpegWithExif(bytes: ByteArray): androidx.compose.ui.graphics.ImageBitmap? {
+    val decoded = BitmapFactory.decodeByteArray(bytes, 0, bytes.size) ?: return null
+    val rotation = readExifRotation(bytes)
+    if (rotation == 0) {
+        return decoded.asImageBitmap()
+    }
+    val matrix = Matrix().apply { postRotate(rotation.toFloat()) }
+    val rotated = runCatching {
+        Bitmap.createBitmap(decoded, 0, 0, decoded.width, decoded.height, matrix, true)
+    }.getOrNull()
+    return if (rotated != null && rotated != decoded) {
+        decoded.recycle()
+        rotated.asImageBitmap()
+    } else {
+        decoded.asImageBitmap()
+    }
+}
+
+private fun readExifRotation(bytes: ByteArray): Int {
+    val orientation = runCatching {
+        ByteArrayInputStream(bytes).use { stream ->
+            ExifInterface(stream).getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_UNDEFINED
+            )
+        }
+    }.getOrDefault(ExifInterface.ORIENTATION_UNDEFINED)
+    return when (orientation) {
+        ExifInterface.ORIENTATION_ROTATE_90,
+        ExifInterface.ORIENTATION_TRANSPOSE -> 90
+        ExifInterface.ORIENTATION_ROTATE_180 -> 180
+        ExifInterface.ORIENTATION_ROTATE_270,
+        ExifInterface.ORIENTATION_TRANSVERSE -> 270
+        else -> 0
     }
 }
