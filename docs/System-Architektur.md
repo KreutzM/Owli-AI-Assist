@@ -1,457 +1,157 @@
-# System-Architektur - AI Assistenz-App (CV fuer blinde Nutzer)
+# System-Architektur – Owli-AI Assist (Ist-Zustand)
 
-Diese Datei beschreibt die Ziel-Architektur der Android-App, damit ChatGPT5.1-Codex-max (über Codex-CLI) konsistenten, erweiterbaren Code erzeugen kann.
+Dieses Dokument beschreibt den **aktuellen Ist-Zustand** der Architektur im Repo (Branch/Stand: `ref/Test-Optimization`).
+Ziel: Für ein Team aus **2 Menschen + 1 Codex-Agent** eine gemeinsame, präzise Referenz zu haben, die **mit dem Code übereinstimmt**.
 
-Bitte bei allen Code-Generierungen diese Architektur, Paketstruktur und Begriffe berücksichtigen.
-
----
-
-## 1. Ziel und Rahmen
-
-Die App ist eine **AI Assistenz-App** für blinde Nutzer:
-
-* Das Smartphone ist am Koerper oder in der Hand, die Kamera zeigt nach vorn.
-* Pro Zeiteinheit (z.B. 1–5 FPS) werden Kamerabilder analysiert.
-* Die App erkennt:
-
-  * Fußgänger und andere Fahrzeuge (Motorraeder, Autos, Busse …) im Sichtfeld
-  * Hindernisse im Sichtfeld (z.B. Äste, Steine, Objekte)
-  * Ampeln und ggf. deren Status (rot/grün)
-* Der Nutzer erhält **akustische** (und optional haptische) Warnungen.
-
-Wichtige Ziele:
-
-* **Modularität / Testbarkeit**: CV-Pipeline klar getrennt von UI und Audio.
-* **Austauschbare Modelle**: Verschiedene YOLO-/CV-Modelle müssen einfach austauschbar sein.
-* **On-Device-Inferenz**: Kein Cloud-Zwang, TFLite/LiteRT/ONNX/MediaPipe sind mögliche Backends.
-* **Prototyp-freundlich**: Einfach neue Heuristiken und Modelle testen.
+> Hinweis: Falls du eine Ziel-/Soll-Architektur dokumentieren willst, lege dafür eine separate Datei an (z. B. `docs/System-Architektur-Soll.md`).
+> Dieses Dokument bleibt bewusst **Ist-orientiert**.
 
 ---
 
-## 2. Paketstruktur
+## Überblick
 
-Basis-Paket (anpassbar, hier als Beispiel):
+Owli-AI Assist ist eine Android-App für blinde Nutzer:innen mit:
 
-```text
-com.owlitech.owli.assist
- ├─ camera       // Kamera-Integration und Frame-Lieferung
- ├─ pipeline     // VisionPipeline: Orchestrierung von Kamera, ML, Analyzer
- ├─ processing   // Vorverarbeitung von Frames für Modelle
- ├─ ml           // ML-Modelle, Detector-Schnittstellen, Backends
- ├─ domain       // Domänenlogik, Szeneninterpretation, Hazard-Modelle
- ├─ motion       // IMU/Motion-Estimator (Gyro/Rotation Vector)
- ├─ audio        // Audio- und TTS-Feedback
- ├─ ui           // Activities, Compose UI, ViewModels
- └─ util         // Gemeinsame Hilfsklassen (Logger, Dispatchers etc.)
-```
+- **Live-Kamera (CameraX)** + optionalem Overlay
+- **On-Device Objekterkennung** (TFLite Task Vision; vorgesehen: EfficientDet-Lite2)
+- **Szenen-/Gefahrenheuristik** (Domain-Logik)
+- **Audio-Feedback (TTS)** inkl. Cooldowns/Spam-Schutz
+- **Motion-Gating** (IMU) zur Stabilisierung von Tracking/Ansagen
+- **VLM On-Demand** via OpenRouter (profilbasiert, optional Autoscan)
+- **Diagnostics** (Live-Metriken + Copy-to-Clipboard Report)
+- **DataStore Settings** (Feature-Toggles + Parameter)
 
-Bitte bei Code-Generierung diese Struktur verwenden (oder konsistent erweitern).
+Wichtig: Die sichtbare CameraX-Preview ist **das Originalbild**. Stabilisierung passiert primär im **Model-Input (448×448)**, der optional als Debug-Preview angezeigt wird.
 
 ---
 
-## 3. Datenfluss (High-Level)
+## Paketstruktur (tatsächliche Namespaces)
 
-1. **Kamera** (CameraX) liefert kontinuierlich Frames (`ImageProxy`).
-2. **IMU** liefert Motion-Snapshots (Gyro/Rotation Vector) zur Stabilisierung.
-3. **VisionPipeline** nimmt Frames entgegen, begrenzt die Framerate (z.B. 1-5 FPS) und verarbeitet Frames sequentiell.
-4. **Preprocessor** konvertiert `ImageProxy` in Modell-Input (`FloatArray` oder `ByteBuffer`).
-5. **Detector** fuehrt das ML-Modell aus und gibt eine Liste von `Detection`-Objekten zurueck.
-6. **SceneAnalyzer** interpretiert `Detection`-Listen und erzeugt eine domaenenspezifische `SceneState`-Repraesentation (z.B. Hazard-Level, Warntext, OwliAI-Items) unter Einbezug von Motion-Snapshots.
-7. **UI** beobachtet `SceneState` und zeigt Debug-Infos (Overlays) an.
-8. **AudioFeedbackEngine** beobachtet `SceneState` und erzeugt gesprochene Warnungen/Toene.
+Basis-Paket: `com.owlitech.owli.assist`
 
-Alle ML- und Bildverarbeitungsaufgaben laufen **nicht** im UI-Thread, sondern auf Worker-Threads (Coroutines/Dispatchers).
+- `camera/`
+  - CameraX Integration: Preview + ImageAnalysis
+  - liefert Frames an die Pipeline
 
----
+- `processing/`
+  - Preprocessing (ImageProxy → Bitmap)
+  - 448×448 Model-Input, FrameMapping (Model↔Source) für Overlay
+  - optionale Stabilisierung:
+    - IMU Roll-Derotation (quality-gated)
+    - Translation-Stabilisierung des Crop-Windows (Low-Res Patch-Matching)
 
-## 4. Kamera-Schicht (`camera`)
+- `ml/`
+  - Detector-Abstraktion
+  - TFLite Task Vision Detector (EfficientDet-Lite2 vorgesehen)
+  - Fallback: FakeDetector, wenn Modell fehlt oder Init scheitert
 
-### 4.1 `FrameListener`
+- `domain/`
+  - SceneAnalyzer: Tracking-/Hazard-Logik, Ampel-Status-Ableitung
+  - SceneState/Models (HazardLevel, Messages, Ampelphase etc.)
 
-```kotlin
-interface FrameListener {
-    fun onFrame(image: ImageProxy)
-}
-```
+- `blindview/`
+  - IoU-Tracker, Smoothing/EMA, Consecutive Hits
+  - Objekt-Label-Übersetzung, Clock-Position-Mapping („auf 2 Uhr“)
+  - Speech-/Announce-Planung und Formatierung
 
-### 4.2 `CameraFrameSource`
+- `motion/`
+  - MotionEstimator: Sensorfusion (Gyro + Rotation Vector)
+  - liefert MotionSnapshot (Level/Quality, Roll etc.) für Gating
 
-* Verantwortlich für Einrichtung von CameraX (Preview + ImageAnalysis).
-* Besitzt Methoden:
+- `audio/`
+  - AudioFeedbackEngine: Android TTS, Cooldown/Rate/Pitch
+  - StreamingTtsController: chunked/streaming Ausgabe (u. a. VLM)
 
-```kotlin
-class CameraFrameSource(
-    private val context: Context,
-    private val lifecycleOwner: LifecycleOwner
-) {
-    var frameListener: FrameListener? = null
+- `settings/`
+  - DataStore Preferences + Defaults
+  - Settings Repository + ViewModels
 
-    fun start(cameraSelector: CameraSelector)
-    fun stop()
-}
-```
+- `diagnostics/`
+  - Sammeln von Live-Metriken (Pipeline, Motion, Stabilisierung, Detections)
+  - ReportBuilder für Copy-to-Clipboard
 
-* `start()` bindet CameraX an den Lifecycle und liefert Frames an `frameListener` (ImageAnalysis).
-* *Wichtig*: Kein direktes ML im `onFrame` der CameraX-Callback-Funktion.
+- `vlm/`
+  - OpenRouter Client, Profile Loader (JSON), Session, SSE/Streaming Parser
+  - On-Demand Queries: Bild + Prompt; Raw-Debug Ausgabe
 
----
+- `pipeline/`
+  - DefaultVisionPipeline orchestriert: Frame → Preprocess → Detect → Analyze
+  - SnapshotProvider: Debug-/Diagnostics-Snapshots
 
-## 5. Vision-Pipeline-Schicht (`pipeline`)
-
-Die Pipeline kapselt den kompletten Weg von Kamera-Frame bis `SceneState`.
-
-### 5.1 API
-
-```kotlin
-interface VisionPipeline {
-    val sceneStates: Flow<SceneState>
-    fun start()
-    fun stop()
-}
-```
-
-### 5.2 Beispiel-Implementierung: `DefaultVisionPipeline`
-
-* Konstruktor-Parameter:
-
-  * `cameraSource: CameraFrameSource`
-  * `preprocessor: Preprocessor`
-  * `detector: Detector`
-  * `analyzer: SceneAnalyzer`
-  * `scope: CoroutineScope` (z.B. ViewModelScope oder AppScope)
-
-* Aufgaben:
-
-  * `CameraFrameSource` als `FrameListener` registrieren.
-  * Frames in einen `SharedFlow<ImageProxy>` pushen.
-  * Framerate drosseln (z.B. `sample` / eigene Logik, ca. 1–5 FPS).
-  * Frames sequentiell auf einem geeigneten Dispatcher verarbeiten.
-  * `SceneState` in `sceneStates`-Flow emittieren.
-  * Backpressure-Strategie: Bei Überlast **ältere Frames verwerfen**, neueste priorisieren.
-
-Kein direkter Bezug auf UI-Elemente oder Android-spezifische Views in der Pipeline.
+- `ui/`
+  - Jetpack Compose Screens, Navigation, Overlay, Settings UI, Diagnostics UI
+  - MainActivity + ViewModels (Start/Stop, Flows, Status)
 
 ---
 
-## 6. Vorverarbeitung (`processing`)
+## Datenfluss zur Laufzeit
 
-### 6.1 `ModelInputSpec`
+### 1) Kamera → Pipeline
+1. `camera/CameraFrameSource` startet CameraX Preview + ImageAnalysis.
+2. ImageAnalysis liefert `ImageProxy` Frames (typ. KEEP_ONLY_LATEST) an die Pipeline.
 
-```kotlin
-data class ModelInputSpec(
-    val width: Int,
-    val height: Int,
-    val channels: Int = 3,
-    val normalizeMean: FloatArray,
-    val normalizeStd: FloatArray
-)
-```
+### 2) Preprocessing (processing/)
+1. YUV → RGB Bitmap
+2. Rotation gemäß `ImageInfo.rotationDegrees`
+3. optional: IMU Roll-Derotation (nur wenn MotionSnapshot quality ausreichend)
+4. optional: Translation-Stabilisierung (Patch-Matching) → aktualisiert Crop-Fenster
+5. erzeugt **Model-Input Bitmap (448×448)** + `FrameMapping` (für Overlay)
 
-### 6.2 `Preprocessor`
+### 3) Detection (ml/)
+- `Detector.detect(input: Bitmap)` liefert Detections (BoundingBoxes, score, labelIndex/label)
+- Wenn TFLite-Modell nicht vorhanden/initialisierbar: FakeDetector liefert stabile Dummy-Ergebnisse (für UI/Integration)
 
-```kotlin
-data class PreprocessResult(
-    val bitmap448: Bitmap,
-    val mapping: FrameMapping?,
-    val appliedRollDeg: Float,
-    val translationDxLowRes: Int,
-    val translationDyLowRes: Int,
-    val translationQuality: Float,
-    val cropLeftPx: Int,
-    val cropTopPx: Int
-)
+### 4) Scene Analysis (domain/ + blindview/)
+- `DefaultSceneAnalyzer` verarbeitet Detections:
+  - Tracking über `blindview/IouObjectTracker`
+  - Label/Clock/Distance Mapping
+  - Hazard-Entscheidungen (Warnlevel + Message)
+  - Ampelphase per `processing/TrafficLightPhaseClassifier` (HSV-Heuristik) + Stabilisierung/Decay
+- Ergebnis: `SceneState` (für UI + Audio)
 
-interface Preprocessor {
-    fun preprocess(image: ImageProxy, motion: MotionSnapshot? = null): PreprocessResult
-}
-```
+### 5) Ausgabe: UI + Audio
+- UI zeigt:
+  - Preview (Original CameraX)
+  - Overlay (BoundingBoxes) via `FrameMapping`
+  - optional Labels/Confidence
+  - optional Debug-Preview des 448×448 Input
+  - Status (RealDetector/Fallback)
+- Audio:
+  - `AudioFeedbackEngine` spricht ausgewählte Messages/Announce-Pläne per TTS
+  - Cooldowns verhindern Spam; Parameter sind über Settings konfigurierbar
 
-Es soll mindestens eine Implementierung geben:
-
-* `DefaultPreprocessor`:
-
-  * YUV-zu-RGB-Konvertierung
-  * Roll-Lock per IMU (optional) nach Rotation
-  * Stabilisiertes Crop-Window (geglättetes Center + Translation-Schaetzung via Low-Res Patch-Selection, Quality-Gate), danach Center-Crop auf Square, Resize auf 448x448
-  * FrameMapping fuer Overlay (448x448 -> Preview)
-  * Normalisierung (z.B. Wertebereich [0,1] oder ImageNet-Mean/Std)
-
-Ziel: Vorverarbeitung ist **modellkonfigurierbar** (auf Basis von `ModelInputSpec`).
+### 6) Diagnostics
+- `diagnostics/` sammelt Snapshots:
+  - Stabilisierung: dx/dy/quality/crop
+  - Motion: level/quality/roll
+  - Pipeline timing / last frame / detection counts
+- Diagnostics-Screen zeigt Live-Metriken + Debug-Report.
 
 ---
 
-## 7. ML-Schicht (`ml`)
+## Konfiguration & Assets
 
-### 7.1 Datenklassen
-
-```kotlin
-data class Detection(
-    val label: String,
-    val confidence: Float,
-    val bbox: BoundingBox
-)
-
-data class BoundingBox(
-    val xMin: Float,
-    val yMin: Float,
-    val xMax: Float,
-    val yMax: Float
-    // Normalisierte Koordinaten 0..1 im Bildkoordinatensystem
-)
-```
-
-### 7.2 Modellbeschreibung
-
-```kotlin
-data class ModelSpec(
-    val modelPath: String,             // z.B. "models/yolo_v8n.tflite"
-    val inputSpec: ModelInputSpec,
-    val labels: List<String>,
-    val outputShape: IntArray,
-    val scoreThreshold: Float = 0.3f,
-    val nmsThreshold: Float = 0.5f
-)
-```
-
-### 7.3 Backend-Typen
-
-```kotlin
-enum class Backend {
-    TFLITE,
-    ONNX,
-    MEDIAPIPE
-}
-
-
-data class DetectorConfig(
-    val modelSpec: ModelSpec,
-    val backend: Backend
-)
-```
-
-### 7.4 `Detector`-Interface
-
-```kotlin
-interface Detector : Closeable {
-    fun warmup()
-    fun detect(input: FloatArray): List<Detection>
-}
-```
-
-* `warmup()` optional, um das Modell einmalig zu laden/initialisieren.
-* `detect()` wird von der `VisionPipeline` auf Worker-Threads aufgerufen.
-
-### 7.5 `DetectorFactory`
-
-```kotlin
-interface DetectorFactory {
-    fun create(config: DetectorConfig): Detector
-}
-```
-
-### 7.6 Beispiel-Implementierung: `YoloTfliteDetector`
-
-* Lädt ein YOLO-kompatibles TFLite-Modell aus Assets/Dateisystem anhand von `ModelSpec`.
-* Erhält `FloatArray` oder `ByteBuffer` als Input.
-* Führt TFLite-Inferenz durch.
-* Dekodiert Output in `Detection`-Liste.
-* Wendet NMS mit `modelSpec.nmsThreshold` an.
-
-Weitere konkrete Implementierungen (später):
-
-* `YoloOnnxDetector`
-* `MediaPipeObjectDetector`
+- TFLite Modell (wenn genutzt): `app/src/main/assets/models/efficientdet_lite2_int8.tflite`
+- Labels: `app/src/main/assets/models/labels.txt`
+- VLM Profile: `app/src/main/assets/vlm-profiles.json`
+- OpenRouter API Key: `OPENROUTER_API_KEY` in `local.properties` (nicht committen)
 
 ---
 
-## 8. Domänen-Schicht (`domain`)
+## Tests & Quality Gates (Ist-Zustand)
 
-Diese Schicht kennt keine Android-spezifischen Klassen und keine ML-Backends.
-
-### 8.1 Hazard-Level und Szenenstatus
-
-```kotlin
-enum class HazardLevel { NONE, WARNING, DANGER }
-
-
-data class HazardEvent(
-    val type: HazardType,
-    val direction: Direction?,
-    val urgency: HazardLevel
-)
-
-enum class HazardType {
-    PERSON_AHEAD,
-    VEHICLE_AHEAD,
-    OBSTACLE_AHEAD,
-    TRAFFIC_LIGHT_RED,
-    TRAFFIC_LIGHT_GREEN,
-    UNKNOWN
-}
-
-enum class Direction { LEFT, RIGHT, CENTER }
-
-
-
-data class SceneState(
-    val timestamp: Long,
-    val detections: List<Detection>,   // optional für Debug/Overlay
-    val hazards: List<HazardEvent>,
-    val primaryMessage: String?,       // z.B. "Achtung, Person voraus!"
-    val overallHazardLevel: HazardLevel
-)
-```
-
-### 8.2 `SceneAnalyzer`
-
-```kotlin
-interface SceneAnalyzer {
-    fun analyze(
-        detections: List<Detection>,
-        trafficLights: List<TrafficLightObservation> = emptyList(),
-        motion: MotionSnapshot? = null
-    ): SceneState
-}
-```
-
-* Implementierung enthält Heuristiken:
-
-  * Auswahl relevanter Objekte im Sichtfeld (z.B. mittleres Drittel, unteres Drittel des Bildes)
-  * Schätzung Richtung (links/rechts/zentral) anhand BBox
-  * Zusammenfassung zu `HazardEvent`-Liste und `primaryMessage`.
-
-Diese Schicht ist gut unit-testbar (Pure Kotlin, keine Android-Klassen).
+- JVM Unit-Tests: `app/src/test/...`
+  - u. a. BlindView-Tracker/Planner/Formatter, SceneAnalyzer, StreamingTTS
+- Instrumented Tests: aktuell nur Minimal-Beispiele (keine Device-Tests als Standard-Workflow)
+- Empfohlene Checks (siehe `AGENTS.md`):
+  - `:app:testDebugUnitTest`
+  - `:app:lintDebug` (wenn relevant)
+  - `:app:assembleDebug` (wenn UI/Resources/Manifest/Gradle betroffen)
 
 ---
 
-## 9. Audio-Schicht (`audio`)
+## Grenzen des aktuellen Stands
 
-### 9.1 `AudioFeedbackEngine`
-
-```kotlin
-class AudioFeedbackEngine(
-    private val context: Context
-) : Closeable {
-    fun onSceneUpdated(state: SceneState)
-    override fun close()
-}
-```
-
-* Intern: `TextToSpeech`-Instanz oder ähnliche TTS-Engine.
-* Implementiert eine Cooldown-/Debounce-Logik, damit nicht ständig gesprochen wird.
-* Spricht nur relevante Änderungen, z.B. Wechsel in `HazardLevel` oder neue, kritische `HazardEvent`s.
-
-Audio-Schicht sollte **nicht** direkt von ML oder Kamera abhängen, sondern nur von `SceneState`.
-
----
-
-## 10. UI-Schicht (`ui` + Settings)
-
-Die UI-Schicht ist **Konsument** von `SceneState` und orchestriert Start/Stop der Pipeline.
-
-### 10.1 `MainViewModel`
-
-```kotlin
-class MainViewModel(
-    private val visionPipeline: VisionPipeline
-) : ViewModel() {
-
-    val sceneState: StateFlow<SceneState?>
-
-    fun start()
-    fun stop()
-}
-```
-
-* `start()` & `stop()` delegieren an `visionPipeline.start/stop`.
-* Der ViewModel beobachtet `visionPipeline.sceneStates` und mapped sie auf `sceneState`.
-
-### 10.2 `MainActivity`
-
-* Verantwortlich für:
-
-  * Setup von CameraX (via `CameraFrameSource`).
-  * Erzeugen der `VisionPipeline`-Instanz (oder via Dependency Injection erhalten), basierend auf aktuellen Settings.
-  * Instanziieren von `AudioFeedbackEngine` und Registrierung als Beobachter von `sceneState`.
-  * Compose-UI:
-
-    * Kamerapreview (z.B. `AndroidView` mit `PreviewView`).
-    * Overlay-Layer für Bounding Boxes (Debug).
-    * Textanzeige für `primaryMessage` / Status.
-    * Settings-Screen für Detector/OwliAI/TTS/Debug/Pipeline-Parameter (DataStore-basiert, Reset möglich).
-
-Lifecycle-Regeln:
-
-* `onResume()` → Pipeline & Kamera starten.
-* `onPause()` → Pipeline & Kamera stoppen (oder Auto-Restart-Flag merken).
-* `onDestroy()` → TTS/Audio und ggf. Detector/Pipeline sauber schließen.
-
----
-
-## 11. Concurrency & Performance
-
-Wichtige Regeln für Implementierungen:
-
-1. **Kein ML im UI-Thread**:
-
-   * Alle Inferenz- und Vorverarbeitungsschritte laufen auf `Dispatchers.Default` oder dedizierten `ExecutorService`.
-
-2. **Frame-Drosselung & Backpressure**:
-
-   * Kamera liefert ggf. 30 FPS, Pipeline verarbeitet nur 1–5 FPS.
-   * Bei Überlast alte Frames verwerfen ("latest wins").
-
-3. **Ressourcen-Lifecycle**:
-
-   * `Detector`-Instanzen werden einmalig initialisiert und wiederverwendet.
-   * `Detector.close()` im richtigen Lifecycle-Hook aufrufen.
-   * `AudioFeedbackEngine.close()` beim Zerstören der UI.
-
----
-
-## 12. Extensibilität
-
-Die Architektur soll es Codex ermöglichen, neue Features relativ einfach einzufügen:
-
-* **Weitere Modelle**:
-
-  * Neue `Detector`-Implementierungen (z.B. für Depth/Segmentation) können parallel existieren.
-  * Kombination mehrerer Detektoren durch z.B. `CompositeDetector` oder durch Parallel-Pipelines.
-
-* **Weitere Frontends**:
-
-  * Domänenschicht (`SceneState`, `SceneAnalyzer`) bleibt unverändert, neue UIs (Wear OS, Head-Up-Display) konsumieren dieselben Daten.
-
-* **Experimentelle Features (z.B. CLIP/OpenCLIP)**:
-
-  * Eigene `Detector`-Varianten oder zusätzliche Analyzerschichten können hinzugefügt werden, ohne UI/Audio zu brechen.
-
----
-
-## 13. Coding-Guidelines (für Codex)
-
-* Sprache: **Kotlin** für alle Android-Komponenten.
-* UI: bevorzugt **Jetpack Compose**, aber klassische Views sind für Kamera-Preview erlaubt.
-* Folgende Prinzipien beachten:
-
-  * Single Responsibility für Klassen.
-  * Klare Trennung von Android-spezifischem Code (UI, CameraX, TTS) und core logic (SceneAnalyzer, Detector-Interfaces).
-  * Keine harten Abhängigkeiten von UI auf ML-Details: UI konsumiert nur `SceneState`.
-  * Bei Generierung von Beispielcode bitte sinnvolle Default-Werte, Kommentare in Deutsch und Threading-Hinweise ergänzen.
-
-Diese Architektur dient als Zielbild. Codex soll alle Implementierungen möglichst eng an dieses Design anlehnen.
-
----
-
-## 14. OwliAI-Hinweise
-
-* OwliAI nutzt einen IoU-basierten Lightweight-Tracker pro Label (EMA-BBox/Confidence, Max-Age, minConsecutiveHits), um Position/Uhrzeit pro Objekt zu stabilisieren.
-* Announce-Planer aggregiert Objekte nach Label/Uhrzeit/Distanz, sortiert NEAR->MID->FAR und links->rechts; Speech-Planer/Cooldown verhindert Spam.
-* TTS-Sprechrate ist konfigurierbar (z.B. 2.0) und unabhaengig von den Speak-Intervallen/Cooldowns.
-
-## 15. Settings, Debug & Diagnostics (aktuell)
-
-* Persistente Settings per DataStore (Detector/Tracking/OwliAI/TTS/Debug/Pipeline-Intervall) mit Reset-to-Defaults.
-* UI-Toggles: Overlay, Overlay-Labels (BBox + Confidence), OwliAI-Preview.
-* Diagnostics-Screen zeigt Pipeline/Detector/Tracking/TTS-Status (FPS, Intervall, Thresholds, AutoStart) und kann einen Debug-Report ins Clipboard kopieren.
-* Diagnostics zeigt Stabilisierung (Roll-Lock) sowie Translation-Daten (dx/dy/quality) und Crop-Offsets.
+- Stabilisierung wird nicht in der CameraX-Preview „gerendert“, sondern im Model-Input. (Debug-Preview existiert.)
+- Hazard-Logik ist heuristisch und nicht als Sicherheitsprodukt zu verstehen.
+- Haptik ist (Stand jetzt) nicht Kernbestandteil.

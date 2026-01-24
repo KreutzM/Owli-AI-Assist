@@ -1,217 +1,111 @@
-# Prompts-Codex-CLI – Vorlagen für ChatGPT5.1-Codex-max
+# Prompts – Codex CLI (gpt-5.2-codex)
 
-Diese Datei sammelt **Prompt-Bausteine und Muster**, mit denen Codex-CLI (ChatGPT5.1-Codex-max) möglichst effizient für dieses Projekt genutzt werden kann.
+Diese Datei liefert **Prompt-Vorlagen** für Codex-CLI, die zu `AGENTS.md` passen.
 
-Alle Prompts beziehen sich auf:
-
-* `System-Architektur.md`
-* `System-Spezifikation.md`
-* `Coding-Guidelines.md`
-
-Bitte diese Dateien bei komplexeren Aufgaben erwähnen oder als Kontext mitsenden.
+Ziel: Arbeiten in **kleinen, sinnvollen Inkrementen** (2 Menschen + 1 Codex-Agent) mit **schnellen Checks** und ohne unnötige Device-Läufe.
 
 ---
 
-## 1. Allgemeine Empfehlungen für Prompts
+## 0) Standard-Setup (Windows / PowerShell)
 
-* **Konkret sein**: Immer genau angeben, welche Datei, Klasse oder Funktion geändert werden soll.
-* **Kontext geben**: Kurz angeben, welchen Teil der Architektur / Spezifikation die Änderung betrifft.
-* **Ausgabeformat festlegen**: Z. B. „Gib nur den kompletten Kotlin-Code der Datei zurück, ohne Erklärungen.“
-* **Schrittweise arbeiten**: Lieber mehrere kleine, fokussierte Prompts als einen riesigen.
+- Wrapper: `gradlew.bat`
+- Keine Bash-only Syntax, keine langen `&&`-Ketten, keine Pipes.
+- Keine Device-/Emulator-Tasks automatisch (`connectedAndroidTest`, `connectedCheck`, `installDebug` etc.).
 
----
-
-## 2. Prompt-Vorlage: Neue Klasse implementieren
-
-**Zweck:** Implementierung einer neuen Klasse gemäß Architektur und Spezifikation.
-
-**Muster:**
-
-> Du bist ChatGPT5.1-Codex-max und arbeitest an einer Android-App.
-> Bitte halte dich an die Architektur in `System-Architektur.md`, die Anforderungen in `System-Spezifikation.md` und die Regeln in `Coding-Guidelines.md`.
->
-> Implementiere die Klasse `<Klassenname>` in der Datei `<Pfad/Dateiname.kt>` im Paket `<Paketname>`.
->
-> Anforderungen:
->
-> * [Stichpunkt 1]
-> * [Stichpunkt 2]
-> * [Stichpunkt 3]
->
-> Gib nur den vollständigen Kotlin-Code für diese Datei aus, ohne zusätzliche Erklärungen.
-
-**Beispiel:**
-
-> Implementiere `DefaultVisionPipeline` in `pipeline/DefaultVisionPipeline.kt` im Paket `com.owlitech.owli.assist.pipeline`.
-> Anforderungen:
->
-> * Implementiert das Interface `VisionPipeline`.
-> * Nutzt `CameraFrameSource`, `Preprocessor`, `Detector` und `SceneAnalyzer`.
-> * Verarbeitet Frames sequentiell auf einem Hintergrund-Dispatcher.
-> * Emittiert `SceneState`-Objekte über einen `StateFlow` oder `SharedFlow`.
+**Fast checks (Default):**
+- `./gradlew.bat :app:testDebugUnitTest`
+- (wenn relevant) `./gradlew.bat :app:lintDebug`
+- (wenn UI/Resources/Manifest/Gradle betroffen) `./gradlew.bat :app:assembleDebug`
 
 ---
 
-## 3. Prompt-Vorlage: Bestehende Datei verfeinern / vervollständigen
+## 1) Template: Small Change (1–2 Commits)
 
-**Zweck:** Teilskelett oder alte Version verbessern.
+```text
+You are in an Android/Kotlin repo on Windows (PowerShell).
+Follow AGENTS.md strictly.
 
-**Muster:**
+Task:
+<describe the change briefly>
 
-> Hier ist der aktuelle Inhalt der Datei `<Pfad/Dateiname.kt>`:
->
-> ```kotlin
-> // aktueller Inhalt
-> ```
->
-> Bitte vervollständige oder verbessere diese Datei gemäß `System-Architektur.md`, `System-Spezifikation.md` und `Coding-Guidelines.md`.
->
-> Spezifische Anforderungen:
->
-> * [Anforderung 1]
-> * [Anforderung 2]
->
-> Ändere keine Paketdeklaration. Gib nur den vollständigen, aktualisierten Kotlin-Code dieser Datei zurück.
+Rules:
+- Work in small, meaningful increments; commit frequently.
+- Each commit must pass: ./gradlew.bat :app:testDebugUnitTest
+- Run ./gradlew.bat :app:lintDebug when Android components or public APIs are touched.
+- Do NOT run any device/emulator tasks.
 
----
-
-## 4. Prompt-Vorlage: Unit-Tests erzeugen
-
-**Zweck:** Tests für eine bestimmte Klasse oder Funktion generieren.
-
-**Muster:**
-
-> Du bist Test-Autor für diese App.
-> Halte dich an `System-Architektur.md`, `System-Spezifikation.md` und `Coding-Guidelines.md`.
->
-> Erzeuge Unit-Tests für die Klasse `<Klassenname>` in `<Pfad/Dateiname.kt>`.
->
-> Hier ist der Code der Klasse:
->
-> ```kotlin
-> // Code der zu testenden Klasse
-> ```
->
-> Anforderungen an die Tests:
->
-> * Nutze JUnit4/JUnit5 (je nach Projektsetup) und Kotlin.
-> * Teste insbesondere folgende Fälle:
->
->   * [Testfall 1]
->   * [Testfall 2]
->   * [Testfall 3]
-> * Tests sollen deterministisch und unabhängig voneinander sein.
->
-> Gib nur den vollständigen Code der Testdatei zurück (inklusive Paket und Importen).
-
-**Beispiel-Testfälle für `SceneAnalyzer`:**
-
-* Wenn eine Person mit hoher Konfidenz zentral unten im Bild erkannt wird → `HazardLevel.DANGER`, `primaryMessage` nicht null.
-* Wenn nur Objekte oben im Bild sind → `HazardLevel.WARNING` oder `NONE`, je nach Logik.
+Start:
+1) Summarize where in the code you will change things (files/packages).
+2) Propose the first 1–2 small commits (titles + short content).
+3) Implement commit #1, run checks, then commit.
+```
 
 ---
 
-## 5. Prompt-Vorlage: Refactoring nach Architekturregeln
+## 2) Template: Bugfix with Regression Test
 
-**Zweck:** Code, der gewachsen ist, nachträglich anpassen.
+```text
+You are in an Android/Kotlin repo on Windows (PowerShell).
+Follow AGENTS.md strictly.
 
-**Muster:**
+Bug report:
+<describe bug + expected behavior>
 
-> Hier ist der aktuelle Code von `<Pfad/Dateiname.kt>`:
->
-> ```kotlin
-> // aktueller Code
-> ```
->
-> Bitte refaktoriere diesen Code im Sinne von `System-Architektur.md` und `Coding-Guidelines.md`:
->
-> * Trenne UI-Logik von Geschäftslogik.
-> * Entferne ML-spezifische Details aus der UI-Schicht.
-> * Stelle sicher, dass keine Inferenz auf dem Main-Thread läuft.
->
-> Gib nur den vollständigen, refaktorierten Kotlin-Code der Datei zurück.
+Requirements:
+- Add a regression test in app/src/test that fails before the fix and passes after.
+- Keep the fix minimal and focused.
+- Run: ./gradlew.bat :app:testDebugUnitTest (and lintDebug if relevant).
+- No device/emulator tasks.
 
----
-
-## 6. Prompt-Vorlage: Diskussion / Designentscheidung
-
-**Zweck:** Nicht direkt Code, sondern Architekturfragen / Design.
-
-**Muster:**
-
-> Du kennst die Inhalte aus `System-Architektur.md`, `System-Spezifikation.md` und `Coding-Guidelines.md`.
->
-> Diskutiere verschiedene Ansätze für:
->
-> * [Thema, z. B. „Ampelerkennung“ oder „Depth-Integration“]
->
-> Vergleiche Vor- und Nachteile und schlage einen konkreten Ansatz für dieses Projekt vor.
-> Antworte strukturiert mit kurzen, prägnanten Bullet-Points.
+Process:
+1) Create failing test (commit).
+2) Apply minimal fix (commit).
+3) Re-run checks; ensure green.
+```
 
 ---
 
-## 7. Prompt-Vorlage: Konfiguration und Build-Skripte
+## 3) Template: Add Tests for Untested Logic
 
-**Zweck:** Gradle-Dateien oder Manifest-Einträge generieren.
+```text
+Goal: Increase unit test coverage for pure logic (JVM tests only).
 
-**Muster:**
+Scope:
+- Prefer domain/processing/blindview/motion logic.
+- No new dependencies unless explicitly required.
 
-> Erzeuge eine vollständige `app/build.gradle.kts` für dieses Projekt.
->
-> Rahmenbedingungen:
->
-> * Kotlin, Jetpack Compose, CameraX.
-> * Abhängigkeiten für TFLite/LiteRT (oder ONNX, falls angegeben).
-> * MinSdk und TargetSdk gemäß üblichen aktuellen Werten.
-> * Halte dich an die Struktur aus `System-Architektur.md`.
->
-> Gib nur die vollständige Datei `app/build.gradle.kts` zurück.
-
----
-
-## 8. Prompt-Vorlage: Debug-/Diagnose-Funktionen
-
-**Zweck:** Hilfsklassen für Logging, FPS-Messung etc.
-
-**Muster:**
-
-> Implementiere eine Utility-Klasse `AppLogger` im Paket `com.owlitech.owli.assist.util`.
->
-> Anforderungen:
->
-> * Wrapper um `Log.d/e`.
-> * Statische Methoden für Debug/Info/Error.
-> * Später austauschbar gegen eine andere Logging-Library.
->
-> Halte dich an `Coding-Guidelines.md`. Gib nur den Kotlin-Code der Datei aus.
+Work:
+1) Identify 3–5 high-value functions/classes to test.
+2) Add deterministic tests (no network, no sleeps).
+3) Keep each test addition as a small commit with a clear message.
+4) Run: ./gradlew.bat :app:testDebugUnitTest after each commit.
+```
 
 ---
 
-## 9. Prompt-Vorlage: Code-Erklärung / Review
+## 4) Template: Lint Baseline / Cleanup
 
-**Zweck:** Generierten oder bestehenden Code besser verstehen.
+```text
+Goal: Establish/clean Android Lint baseline without large refactors.
 
-**Muster:**
-
-> Erkläre mir den folgenden Kotlin-Code im Kontext der Architektur in `System-Architektur.md`:
->
-> ```kotlin
-> // Code
-> ```
->
-> Gehe insbesondere ein auf:
->
-> * Wie fügt sich dieser Code in die VisionPipeline ein?
-> * Welche Threads/Dispatcher werden genutzt?
-> * Gibt es erkennbare Probleme oder Verbesserungsmöglichkeiten?
+Rules:
+- Fix issues where reasonable.
+- If suppressing, add a short justification comment.
+- Keep diffs small; avoid formatting-only churn.
+- Run: ./gradlew.bat :app:lintDebug and ./gradlew.bat :app:testDebugUnitTest
+- No device tasks.
+```
 
 ---
 
-## 10. Empfehlung: Eigene Snippets ergänzen
+## 5) Template: Documentation Update (Ist-Zustand)
 
-Diese Datei soll im Projektverlauf erweitert werden:
+```text
+Goal: Update docs to match the current code (Ist-Zustand).
 
-* Füge konkrete, bewährte Prompts hinzu, die gut funktioniert haben.
-* Markiere, welche Prompts eher für **Implementierung**, welche für **Refactoring** und welche für **Testgenerierung** gedacht sind.
-
-So entsteht ein wachsender „Prompt-Werkzeugkasten“, mit dem Codex-CLI effizient auf das Projekt ausgerichtet werden kann.
+Rules:
+- Do not invent features.
+- Keep docs concise and aligned to the actual packages and APIs.
+- Avoid mechanical reflows.
+- If code behavior is ambiguous, add a short NOTE and point to the relevant source file.
+```

@@ -1,55 +1,68 @@
-# ToDo & Meilensteine
+# ToDo & Roadmap
 
-Status: `[x]` erledigt, `[ ]` offen
+Diese Datei ist ein **lebendes** Team-Dokument (2 Menschen + 1 Codex-Agent).
+Bitte bei Änderungen:
+- Items klein halten, klar formulieren, mit Akzeptanzkriterium.
+- Erledigte Punkte regelmäßig bereinigen (oder nach `docs/ChangeLog.md` übernehmen).
 
-## Setup & Infrastruktur
-- [x] Gradle-Basis + Compose/CameraX/Coroutines/TFLite-Dependencies ergänzt.
-- [x] Manifest-Berechtigungen/Konfiguration für Kamera/Audio/Vibration ergänzt.
-- [x] Basis-Paketstruktur unter `com.owlitech.owli.assist.*` angelegt (camera, pipeline, processing, ml, domain, audio, util, ui).
-- [x] Logging-Utility `util/AppLogger`.
-- [ ] Dispatcher-Provider für testbares Threading.
+Legende:
+- `[x]` erledigt
+- `[ ]` offen
+- `[~]` teilweise / experimentell
 
-## Kamera & Pipeline
-- [x] `camera/FrameListener`.
-- [x] `camera/CameraFrameSource` mit CameraX Preview + ImageAnalysis, Frame-Weitergabe.
-- [x] `pipeline/VisionPipeline` Interface.
-- [x] `pipeline/DefaultVisionPipeline` mit einfachem Throttle (ca. 250 ms) und Latest-Wins-Processing.
-- [x] ImageProxy→Tensor Helper (YUV→ARGB/Resize/Rotate) im Preprocessor.
-- [ ] NMS-/BoundingBox-Utilities.
+---
 
-## Processing & ML
-- [x] `processing/ModelInputSpec`.
-- [x] `processing/Preprocessor` Interface.
-- [x] `processing/DefaultPreprocessor` mit YUV→ARGB, Rotation, optional Downscale.
-- [x] `ml/BoundingBox`, `ml/Detection`.
-- [x] `ml/ModelSpec`, `ml/DetectorConfig` inkl. Backend-Enum.
-- [x] `ml/Detector`, `ml/DetectorFactory` Interfaces.
-- [x] `ml/tflite/TfliteTaskDetector` (EfficientDet-Lite2, Task API).
-- [ ] Fehler-/Result-Wrapping für Detector-Init/Inference.
+## A) Developer Workflow / Qualität
 
-## Domain & Audio
-- [x] `domain/HazardModels` (HazardLevel, HazardType, Direction, HazardEvent).
-- [x] `domain/SceneState`.
-- [x] `domain/SceneAnalyzer` Interface + `DefaultSceneAnalyzer`.
-- [x] OwliAI: Announce-/Speech-Planner, Uhrzeit/Distanz-Mapping, DE-Labels, IoU-Tracker (EMA/Confidence/Max-Age/Min-Hits).
-- [x] `audio/AudioFeedbackEngine` mit Cooldown/Speech-Rate/Spam-Schutz.
+- [x] Fast Checks definiert und in `AGENTS.md` verankert (`:app:testDebugUnitTest`, optional `:app:lintDebug`, `:app:assembleDebug`).
+- [x] Lint-Setup etabliert (`app/lint.xml`) und Baseline bereinigt.
+- [x] Unit-Test-Suite ausgebaut (u. a. BlindView Planner/Tracker/Formatter/Distance, SceneAnalyzer, StreamingTTS).
 
-## UI & App-Orchestrierung
-- [x] DI/Factory für VisionPipeline (`VisionPipelineModule`, AppMode).
-- [ ] Test-Fakes (`FakeDetector`, `FakeCameraFrameSource`) im Test-Quellbaum.
-- [x] `ui/MainViewModel` (start/stop, StateFlow, Auto-Start nach Rotation).
-- [x] UI-Komponenten: `SceneOverlay` (BBox/Status) inkl. Overlay-Labels (Label + Confidence) per Toggle.
-- [x] UI-Komponenten: `ControlPanel` (Status).
-- [x] `MainActivity`-Integration: CameraX-Preview + Pipeline + Audio-Hooks + Lifecycle + Auto-Restart bei Rotation/Settings-Änderung.
-- [x] Settings-Screen (DataStore) mit Reset-to-Defaults und Debug-Toggles.
-- [x] Diagnostics-Screen (Live-Metriken, Copy-to-Clipboard Report).
+**Nächste sinnvolle Verbesserungen**
+- [ ] CI Workflow (ohne Emulator): `:app:testDebugUnitTest` + `:app:lintDebug` bei PR/Push.
+- [ ] Optional: `DispatcherProvider`/Clock-Injection an zentralen Stellen, um Tests einfacher/deterministischer zu machen.
+- [ ] Dokument: `docs/DEVELOPMENT.md` aktuell halten (Setup + Checks + Troubleshooting).
 
-## Assets & Tests
-- [x] Assets-Struktur für Modelle/Labels (`app/src/main/assets/models/...`).
-- [ ] Initiale Test-Suite/Dependencies (JUnit/Compose test) konfigurieren.
-- [x] Unit-Tests: SceneAnalyzer-Heuristiken.
-- [ ] Unit-Tests: Pipeline mit Fakes (Frame→SceneState).
-- [ ] Unit-Tests: Preprocessor (YUV→RGB/Normalize) mit synthetischen Daten.
-- [ ] Unit-Tests: NMS/BoundingBox-Mapper.
-- [ ] Manuelle Rotation/Lifecycle-Tests dokumentieren (Start, drehen Portrait/Landscape, Home/Zurück, Start/Stop mehrfach, keine Black Screens).
-- [ ] Modell-Asset ablegen: `app/src/main/assets/models/efficientdet_lite2_int8.tflite` (COCO, EfficientDet-Lite2).
+---
+
+## B) CV Pipeline / Stabilisierung
+
+- [x] CameraX Preview + ImageAnalysis (latest wins).
+- [x] Preprocessing: Rotation, 448×448 Input, FrameMapping.
+- [~] IMU Roll-Derotation (experimentell, quality-gated).
+- [~] Translation-Stabilisierung des Crop-Windows (Patch-Matching; quality-gated).
+
+**Nächste sinnvolle Verbesserungen**
+- [ ] Mehr Unit-Tests für `processing/` (Mapping, crop update, dx/dy smoothing, quality gating).
+- [ ] Optional: NMS-/BoundingBox-Utilities (nur wenn Model/Backend es benötigt).
+- [ ] Performance-Messung: einfache Timing-Metriken in Diagnostics verifizieren (kein Benchmarking-Overkill).
+
+---
+
+## C) Scene / BlindView / Hazard
+
+- [x] IoU-Tracking + EMA + Consecutive Hits.
+- [x] Announce Planner Tests vorhanden (Basis).
+- [~] Hazard-Logik heuristisch (Person/Fahrzeug/Ampel) + Decay.
+
+**Nächste sinnvolle Verbesserungen**
+- [ ] Tests für Hazard-Priorisierung & Message-Auswahl (Regressionen vermeiden).
+- [ ] Bessere Distanz-Heuristik / Kategorien (nur wenn Produktziel es braucht).
+
+---
+
+## D) VLM (OpenRouter)
+
+- [x] On-Demand VLM mit Profilen (`vlm-profiles.json`), optional Autoscan.
+- [x] Streaming-Handling (SSE) + Raw-Debug.
+
+**Nächste sinnvolle Verbesserungen**
+- [ ] Dokumentation der Profile/Parameter in `docs/VLM.md` konsolidieren (nur wenn Team es braucht).
+- [ ] UX: klare „Privacy“-Hinweise im UI (On-Demand, kein Dauerupload).
+
+---
+
+## E) Optional / Später
+
+- [ ] Haptisches Feedback (Vibration) – nur wenn gewünscht.
+- [ ] Instrumented Tests – nur wenn ein konkreter Android-Bug ohne JVM-Test nicht abdeckbar ist.

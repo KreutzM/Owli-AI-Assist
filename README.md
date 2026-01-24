@@ -38,13 +38,29 @@ Owli-AI Assist ist eine Android-App fuer blinde Nutzer als AI Assistenz-App mit 
 - Android 12 oder hoeher empfohlen
 
 ## Installation & Build
-1. Repository oeffnen.
-2. Modell ablegen: `app/src/main/assets/models/efficientdet_lite2_int8.tflite`
-  --> getModel.sh laedt es automatisch aus dem Web.
+
+1. Repository öffnen.
+2. Modell ablegen: `app/src/main/assets/models/efficientdet_lite2_int8.tflite`  
+   Details (inkl. Windows/PowerShell) siehe `docs/MODEL-ASSETS.md`.
+
+   **Schnell-Download (PowerShell):**
+   ```powershell
+   New-Item -ItemType Directory -Force -Path "app\src\main\assets\models" | Out-Null
+   Invoke-WebRequest -Uri "https://tfhub.dev/tensorflow/lite-model/efficientdet/lite2/detection/metadata/1?lite-format=tflite" `
+     -OutFile "app\src\main\assets\models\efficientdet_lite2_int8.tflite"
+   ```
+
+   **Alternative (WSL/Git Bash):**
+   ```bash
+   ./getModel.sh
+   ```
+
 3. OpenRouter API-Key in `local.properties` setzen: `OPENROUTER_API_KEY=...` (nicht committen).
 4. Labels liegen unter `app/src/main/assets/models/labels.txt` (COCO-80).
 5. Build (PowerShell/Windows): `gradlew.bat :app:assembleDebug`
-6. Installieren und starten (ADB/Android Studio).
+6. Starten via Android Studio (oder ADB).
+
+**Team-Workflow (empfohlen):** `docs/DEVELOPMENT.md` und `AGENTS.md` lesen (Fast Checks, Lint, keine Device-Tests im Standard-Flow).
 
 ## Bedienung
 1. App starten, Kamera-Permission erlauben.
