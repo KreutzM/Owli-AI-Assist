@@ -1,7 +1,7 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Owli-AI</string>
 
-    <string name="nav_title_settings">Settings</string>
+    <string name="nav_title_settings">Detector Settings</string>
     <string name="nav_title_vlm_settings">VLM Settings</string>
     <string name="nav_title_diagnostics">Diagnostics</string>
     <string name="nav_title_vlm">VLM</string>
@@ -76,6 +76,9 @@
     <string name="settings_language_system">System default</string>
     <string name="settings_language_german">German</string>
     <string name="settings_language_english">English</string>
+    <string name="settings_detector_experimental_title">Offline Detector (Experimental)</string>
+    <string name="settings_section_detector">Detector</string>
+    <string name="settings_section_tracking">Tracking</string>
     <string name="settings_section_developer">Developer / Experimental</string>
     <string name="settings_detector_enable_experimental">Enable Offline Detector (Experimental)</string>
     <string name="settings_open_detector_settings">Open Detector Settings</string>

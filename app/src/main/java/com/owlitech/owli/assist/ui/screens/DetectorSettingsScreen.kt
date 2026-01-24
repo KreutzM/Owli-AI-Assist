@@ -7,24 +7,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import com.owlitech.owli.assist.R
 import com.owlitech.owli.assist.settings.AppSettings
-import com.owlitech.owli.assist.settings.LanguagePreference
 
 @Composable
-fun SettingsScreen(
+fun DetectorSettingsScreen(
     settings: AppSettings,
     onUpdate: (((AppSettings) -> AppSettings)) -> Unit,
     onReset: () -> Unit
@@ -36,16 +32,17 @@ fun SettingsScreen(
             .verticalScroll(rememberScrollState()),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
+        Text(
+            stringResource(R.string.settings_detector_experimental_title),
+            style = MaterialTheme.typography.titleSmall
+        )
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.End
         ) {
             Button(onClick = onReset) { Text(stringResource(R.string.settings_reset)) }
         }
-        LanguageSetting(
-            selected = settings.languagePreference,
-            onSelected = { pref -> onUpdate { it.copy(languagePreference = pref) } }
-        )
+        Text(stringResource(R.string.settings_section_detector), style = MaterialTheme.typography.titleSmall)
         SettingSlider(
             label = stringResource(R.string.settings_detector_min_confidence),
             value = settings.detectorMinConfidence,
@@ -74,6 +71,7 @@ fun SettingsScreen(
             onCheckedChange = { v -> onUpdate { it.copy(detectorUseNnapi = v) } },
             helper = stringResource(R.string.settings_detector_nnapi_helper)
         )
+        Text(stringResource(R.string.settings_section_tracking), style = MaterialTheme.typography.titleSmall)
         SettingSlider(
             label = stringResource(R.string.settings_track_min_confidence),
             value = settings.minConfidenceTrack,
@@ -191,22 +189,6 @@ fun SettingsScreen(
             onValueChange = { v -> onUpdate { it.copy(maxItemsSpoken = v) } },
             helper = stringResource(R.string.settings_blindview_max_items_helper)
         )
-        SettingSlider(
-            label = stringResource(R.string.settings_tts_speech_rate),
-            value = settings.ttsSpeechRate,
-            valueRange = 0.5f..3.0f,
-            steps = 10,
-            onValueChange = { v -> onUpdate { it.copy(ttsSpeechRate = v) } },
-            helper = stringResource(R.string.settings_tts_speech_rate_helper)
-        )
-        SettingSlider(
-            label = stringResource(R.string.settings_tts_pitch),
-            value = settings.ttsPitch,
-            valueRange = 0.5f..2.0f,
-            steps = 6,
-            onValueChange = { v -> onUpdate { it.copy(ttsPitch = v) } },
-            helper = stringResource(R.string.settings_tts_pitch_helper)
-        )
         SettingIntSlider(
             label = stringResource(R.string.settings_analysis_interval),
             value = settings.analysisIntervalMs.toInt(),
@@ -295,39 +277,5 @@ private fun SettingSwitch(
             helper?.let { Text(it, style = MaterialTheme.typography.bodySmall) }
         }
         androidx.compose.material3.Switch(checked = checked, onCheckedChange = onCheckedChange)
-    }
-}
-
-@Composable
-private fun LanguageSetting(
-    selected: LanguagePreference,
-    onSelected: (LanguagePreference) -> Unit
-) {
-    val options = listOf(
-        LanguagePreference.SYSTEM to stringResource(R.string.settings_language_system),
-        LanguagePreference.DE to stringResource(R.string.settings_language_german),
-        LanguagePreference.EN to stringResource(R.string.settings_language_english)
-    )
-    Column(
-        modifier = Modifier.fillMaxWidth(),
-        verticalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
-        Text(stringResource(R.string.settings_language_title), style = MaterialTheme.typography.titleSmall)
-        Text(stringResource(R.string.settings_language_hint), style = MaterialTheme.typography.bodySmall)
-        options.forEach { (option, label) ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .selectable(
-                        selected = option == selected,
-                        onClick = { onSelected(option) },
-                        role = Role.RadioButton
-                    ),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                RadioButton(selected = option == selected, onClick = null)
-                Text(label, modifier = Modifier.padding(start = 8.dp))
-            }
-        }
     }
 }

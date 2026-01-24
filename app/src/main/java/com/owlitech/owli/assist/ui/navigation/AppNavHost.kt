@@ -25,7 +25,7 @@ import com.owlitech.owli.assist.vlm.VlmProfilesConfig
 import com.owlitech.owli.assist.ui.screens.AboutScreen
 import com.owlitech.owli.assist.ui.screens.DiagnosticsScreen
 import com.owlitech.owli.assist.ui.screens.HomeScreen
-import com.owlitech.owli.assist.ui.screens.SettingsScreen
+import com.owlitech.owli.assist.ui.screens.DetectorSettingsScreen
 import com.owlitech.owli.assist.ui.screens.VlmSettingsScreen
 import com.owlitech.owli.assist.ui.screens.VlmProfilesScreen
 import com.owlitech.owli.assist.ui.screens.VlmScreen
@@ -106,7 +106,7 @@ fun AppNavHost(
             }
             composable(AppRoute.Settings.route) {
                 Box(modifier = Modifier.padding(defaultPadding)) {
-                    SettingsScreen(
+                    DetectorSettingsScreen(
                         settings = settings,
                         onUpdate = { update -> settingsViewModel.update { update(it) } },
                         onReset = { settingsViewModel.reset() }

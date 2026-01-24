@@ -1,7 +1,7 @@
 <resources>
     <string name="app_name">Owli-AI</string>
 
-    <string name="nav_title_settings">Einstellungen</string>
+    <string name="nav_title_settings">Detektor-Einstellungen</string>
     <string name="nav_title_vlm_settings">VLM Einstellungen</string>
     <string name="nav_title_diagnostics">Diagnostik</string>
     <string name="nav_title_vlm">VLM</string>
@@ -76,6 +76,9 @@
     <string name="settings_language_system">Systemsprache</string>
     <string name="settings_language_german">Deutsch</string>
     <string name="settings_language_english">English</string>
+    <string name="settings_detector_experimental_title">Offline-Detektor (experimentell)</string>
+    <string name="settings_section_detector">Detektor</string>
+    <string name="settings_section_tracking">Tracking</string>
     <string name="settings_section_developer">Entwickler / Experimentell</string>
     <string name="settings_detector_enable_experimental">Offline-Detektor aktivieren (experimentell)</string>
     <string name="settings_open_detector_settings">Detektor-Einstellungen oeffnen</string>
