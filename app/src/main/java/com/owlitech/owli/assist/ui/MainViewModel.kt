@@ -185,6 +185,24 @@ class MainViewModel(
         }
     }
 
+    fun requestNewSceneWithSnapshot(jpegBytes: ByteArray) {
+        if (isVlmBusy()) {
+            AppLogger.d("VLM", "Neue Szene uebersprungen: VLM ist beschaeftigt")
+            return
+        }
+        if (!vlmRequestInFlight.compareAndSet(false, true)) {
+            AppLogger.d("VLM", "Neue Szene uebersprungen: Request bereits aktiv")
+            return
+        }
+        viewModelScope.launch {
+            try {
+                performNewSceneWithSnapshot(jpegBytes)
+            } finally {
+                vlmRequestInFlight.set(false)
+            }
+        }
+    }
+
     fun startAutoScan() {
         val autoScan = vlmProfile.autoScan ?: run {
             AppLogger.w("VLM", "Autoscan angefordert, aber Profil hat kein auto_scan")
@@ -304,6 +322,16 @@ class MainViewModel(
             _vlmUiState.value = VlmUiState.Error("Kein Kamerabild verfuegbar.")
             return
         }
+        performNewSceneWithSnapshot(jpeg)
+    }
+
+    private suspend fun performNewSceneWithSnapshot(jpeg: ByteArray) {
+        if (!vlmClient.isConfigured || BuildConfig.OPENROUTER_API_KEY.isBlank()) {
+            AppLogger.e("VLM", "OpenRouter API-Key fehlt")
+            _vlmUiState.value = VlmUiState.Error("OpenRouter API-Key fehlt. Bitte OPENROUTER_API_KEY in local.properties setzen.")
+            return
+        }
+        clearVlmAttachments()
         _lastVlmImageBytes.value = jpeg
         _vlmUiState.value = VlmUiState.LoadingOverview("VLM anfragen...", snapshotBytes = jpeg)
         val session = VlmSession(snapshotBytes = jpeg, messageHistory = mutableListOf())

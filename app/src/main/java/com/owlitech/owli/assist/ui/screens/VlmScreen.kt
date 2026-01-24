@@ -4,6 +4,8 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.graphics.BitmapFactory
 import android.speech.RecognizerIntent
+import androidx.camera.core.ImageCapture
+import androidx.camera.core.ImageCaptureException
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -62,7 +64,6 @@ import androidx.compose.ui.graphics.ColorMatrix
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.layout.onSizeChanged
-import androidx.compose.ui.draw.alpha
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.ImeAction
@@ -73,13 +74,13 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalContext
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import com.owlitech.owli.assist.R
-import com.owlitech.owli.assist.camera.CameraFrameSource
 import com.owlitech.owli.assist.vlm.VlmAttachment
 import com.owlitech.owli.assist.vlm.VlmUiState
-import com.owlitech.owli.assist.ui.components.CameraPreview
 import com.owlitech.owli.assist.ui.components.VlmCameraPreview
 import com.owlitech.owli.assist.ui.overlay.CameraOverlayDefaults
 import com.owlitech.owli.assist.ui.overlay.CameraOverlayLabel
@@ -89,6 +90,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
+import java.io.File
 
 private enum class CaptureUiMode { Preview, Frozen }
 
@@ -96,7 +98,7 @@ private enum class CaptureUiMode { Preview, Frozen }
 @Composable
 fun VlmScreen(
     state: VlmUiState,
-    onNewScene: () -> Unit,
+    onNewScene: (ByteArray) -> Unit,
     onAsk: (String) -> Unit,
     onRepeatLastResponse: (String?, String?) -> Unit,
     onAddImage: suspend () -> Int?,
@@ -105,7 +107,6 @@ fun VlmScreen(
     lastImageBytes: ByteArray?,
     onReset: () -> Unit,
     onVoiceInputActiveChanged: (Boolean) -> Unit,
-    cameraFrameSource: CameraFrameSource,
     autoScanAvailable: Boolean,
     isAutoScanRunning: Boolean,
     onStartAutoScan: () -> Unit,
@@ -128,6 +129,7 @@ fun VlmScreen(
     val coroutineScope = rememberCoroutineScope()
     var composerHeightPx by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
+    val context = LocalContext.current
     val dimFilter = remember {
         ColorFilter.colorMatrix(
             ColorMatrix().apply { setToScale(0.85f, 0.85f, 0.85f, 1f) }
@@ -200,7 +202,14 @@ fun VlmScreen(
     val moreActionsLabel = stringResource(R.string.vlm_more_actions)
     val repeatLastAnswerLabel = stringResource(R.string.vlm_repeat_last_answer)
     val addImageLabel = stringResource(R.string.vlm_add_image)
+    val captureFailedText = stringResource(R.string.vlm_capture_failed)
     val canRepeatLastAnswer = lastSpeakable != null
+    val imageCapture = remember {
+        ImageCapture.Builder()
+            .setCaptureMode(ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+            .build()
+    }
+    val cameraExecutor = remember { ContextCompat.getMainExecutor(context) }
     val speechLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -255,6 +264,36 @@ fun VlmScreen(
             onVoiceInputActiveChanged(false)
         }
     }
+    val captureNewScene = {
+        val file = File(context.cacheDir, "vlm_capture_${System.currentTimeMillis()}.jpg")
+        val outputOptions = ImageCapture.OutputFileOptions.Builder(file).build()
+        imageCapture.takePicture(
+            outputOptions,
+            cameraExecutor,
+            object : ImageCapture.OnImageSavedCallback {
+                override fun onError(exception: ImageCaptureException) {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(message = captureFailedText)
+                    }
+                }
+
+                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                    coroutineScope.launch {
+                        val bytes = runCatching {
+                            withContext(Dispatchers.IO) { file.readBytes() }
+                        }.getOrNull()
+                        runCatching { file.delete() }
+                        if (bytes == null) {
+                            snackbarHostState.showSnackbar(message = captureFailedText)
+                            return@launch
+                        }
+                        onNewScene(bytes)
+                        captureMode = CaptureUiMode.Frozen
+                    }
+                }
+            }
+        )
+    }
     val startVoiceIntent = { autoSend: Boolean ->
         speechError = null
         autoSendOnVoiceResult = autoSend
@@ -277,12 +316,6 @@ fun VlmScreen(
         }
     }
     Box(modifier = Modifier.fillMaxSize()) {
-        CameraPreview(
-            cameraFrameSource = cameraFrameSource,
-            modifier = Modifier
-                .matchParentSize()
-                .alpha(0f)
-        )
         if (captureMode == CaptureUiMode.Frozen) {
             backgroundBitmap?.let { image ->
                 Image(
@@ -297,7 +330,8 @@ fun VlmScreen(
             VlmCameraPreview(
                 modifier = Modifier
                     .matchParentSize()
-                    .semantics { contentDescription = cameraPreviewLabel }
+                    .semantics { contentDescription = cameraPreviewLabel },
+                imageCapture = imageCapture
             )
         }
         Column(
@@ -497,8 +531,7 @@ fun VlmScreen(
                                     if (isAutoScanRunning) {
                                         onStopAutoScan()
                                     }
-                                    onNewScene()
-                                    captureMode = CaptureUiMode.Frozen
+                                    captureNewScene()
                                 } else {
                                     onReset()
                                     captureMode = CaptureUiMode.Preview

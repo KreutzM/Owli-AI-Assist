@@ -62,6 +62,7 @@
     <string name="vlm_action_new_scene">New scene</string>
     <string name="vlm_action_reset">Reset</string>
     <string name="vlm_camera_preview">Camera preview</string>
+    <string name="vlm_capture_failed">Capture failed</string>
     <string name="vlm_more_actions">More actions</string>
     <string name="vlm_repeat_last_answer">Repeat last answer</string>
     <string name="vlm_add_image">Add image</string>

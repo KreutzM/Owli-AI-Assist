@@ -1,6 +1,7 @@
 package com.owlitech.owli.assist.ui.components
 
 import androidx.camera.core.CameraSelector
+import androidx.camera.core.ImageCapture
 import androidx.camera.core.Preview
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.view.PreviewView
@@ -16,7 +17,8 @@ import androidx.core.content.ContextCompat
 @Composable
 fun VlmCameraPreview(
     modifier: Modifier = Modifier,
-    cameraSelector: CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+    cameraSelector: CameraSelector = CameraSelector.DEFAULT_BACK_CAMERA,
+    imageCapture: ImageCapture? = null
 ) {
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -30,7 +32,8 @@ fun VlmCameraPreview(
             val preview = Preview.Builder().build()
             preview.setSurfaceProvider(previewView.surfaceProvider)
             runCatching { provider.unbindAll() }
-            provider.bindToLifecycle(lifecycleOwner, cameraSelector, preview)
+            val useCases = listOfNotNull(preview, imageCapture)
+            provider.bindToLifecycle(lifecycleOwner, cameraSelector, *useCases.toTypedArray())
         }
         cameraProviderFuture.addListener(listener, executor)
         onDispose {

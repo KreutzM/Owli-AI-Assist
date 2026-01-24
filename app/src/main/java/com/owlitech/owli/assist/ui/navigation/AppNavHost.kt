@@ -140,7 +140,7 @@ fun AppNavHost(
             Box(modifier = Modifier.padding(topOnlyPadding)) {
                 VlmScreen(
                     state = vlmState,
-                    onNewScene = { mainViewModel.requestNewScene() },
+                    onNewScene = { jpegBytes -> mainViewModel.requestNewSceneWithSnapshot(jpegBytes) },
                     onAsk = { question -> mainViewModel.askVlm(question) },
                     onRepeatLastResponse = onRepeatLastVlmResponse,
                     onAddImage = onAddVlmImage,
@@ -149,7 +149,6 @@ fun AppNavHost(
                     lastImageBytes = lastVlmImageBytes,
                     onReset = { mainViewModel.closeVlm() },
                     onVoiceInputActiveChanged = onVoiceInputActiveChanged,
-                    cameraFrameSource = cameraFrameSource,
                     autoScanAvailable = activeVlmProfile.autoScan != null,
                     isAutoScanRunning = isAutoScanRunning,
                     onStartAutoScan = { mainViewModel.startAutoScan() },
