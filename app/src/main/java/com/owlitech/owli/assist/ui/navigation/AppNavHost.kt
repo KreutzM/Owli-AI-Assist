@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -172,6 +173,11 @@ fun AppNavHost(
                         navController.popBackStack()
                     }
                 )
+            }
+        }
+        composable(AppRoute.Help.route) {
+            Box(modifier = Modifier.padding(defaultPadding)) {
+                Text(text = stringResource(R.string.nav_title_help))
             }
         }
         composable(AppRoute.About.route) {

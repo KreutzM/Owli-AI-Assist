@@ -33,6 +33,7 @@ fun AppTopBar(
     onOpenSettings: () -> Unit,
     onOpenVlmSettings: () -> Unit,
     onOpenDiagnostics: () -> Unit,
+    onOpenHelp: () -> Unit,
     onOpenAbout: () -> Unit
 ) {
     var menuExpanded by remember { mutableStateOf(false) }
@@ -91,6 +92,13 @@ fun AppTopBar(
                         }
                     )
                 }
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.nav_title_help)) },
+                    onClick = {
+                        menuExpanded = false
+                        onOpenHelp()
+                    }
+                )
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.nav_title_about)) },
                     onClick = {

@@ -13,6 +13,7 @@ sealed class AppRoute(
     data object Diagnostics : AppRoute("diagnostics", R.string.nav_title_diagnostics)
     data object Vlm : AppRoute("vlm", R.string.nav_title_app)
     data object VlmProfiles : AppRoute("vlm_profiles", R.string.nav_title_vlm_profiles)
+    data object Help : AppRoute("help", R.string.nav_title_help)
     data object About : AppRoute("about", R.string.nav_title_about)
 
     companion object {
@@ -22,6 +23,7 @@ sealed class AppRoute(
             Diagnostics.route -> Diagnostics
             Vlm.route -> Vlm
             VlmProfiles.route -> VlmProfiles
+            Help.route -> Help
             About.route -> About
             else -> Home
         }

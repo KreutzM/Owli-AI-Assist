@@ -145,6 +145,9 @@ class MainActivity : AppCompatActivity() {
                             onOpenDiagnostics = {
                                 navController.navigate(AppRoute.Diagnostics.route) { launchSingleTop = true }
                             },
+                            onOpenHelp = {
+                                navController.navigate(AppRoute.Help.route) { launchSingleTop = true }
+                            },
                             onOpenAbout = {
                                 navController.navigate(AppRoute.About.route) { launchSingleTop = true }
                             }
