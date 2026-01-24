@@ -4,7 +4,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
@@ -26,6 +25,7 @@ import com.owlitech.owli.assist.ui.screens.AboutScreen
 import com.owlitech.owli.assist.ui.screens.DiagnosticsScreen
 import com.owlitech.owli.assist.ui.screens.HomeScreen
 import com.owlitech.owli.assist.ui.screens.DetectorSettingsScreen
+import com.owlitech.owli.assist.ui.screens.HelpScreen
 import com.owlitech.owli.assist.ui.screens.VlmSettingsScreen
 import com.owlitech.owli.assist.ui.screens.VlmProfilesScreen
 import com.owlitech.owli.assist.ui.screens.VlmScreen
@@ -177,7 +177,7 @@ fun AppNavHost(
         }
         composable(AppRoute.Help.route) {
             Box(modifier = Modifier.padding(defaultPadding)) {
-                Text(text = stringResource(R.string.nav_title_help))
+                HelpScreen(modifier = Modifier.fillMaxSize())
             }
         }
         composable(AppRoute.About.route) {
