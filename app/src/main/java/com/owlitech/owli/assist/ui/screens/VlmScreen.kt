@@ -161,6 +161,7 @@ fun VlmScreen(
             }
             is VlmUiState.Inactive -> {
                 lastSpeakable = null
+                captureMode = CaptureUiMode.Preview
             }
             else -> Unit
         }
