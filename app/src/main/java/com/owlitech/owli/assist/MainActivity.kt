@@ -164,7 +164,7 @@ class MainActivity : AppCompatActivity() {
                         onRepeatLastVlmResponse = { primary, secondary ->
                             repeatLastVlmResponse(primary, secondary)
                         },
-                        onAddVlmImage = { mainViewModel.addVlmAttachmentFromSnapshot() }
+                        onAddVlmImage = { bytes -> mainViewModel.addVlmAttachmentForActiveSession(bytes) }
                     )
                 }
             }

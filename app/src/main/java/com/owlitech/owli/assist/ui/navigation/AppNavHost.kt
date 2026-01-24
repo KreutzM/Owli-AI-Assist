@@ -41,7 +41,7 @@ fun AppNavHost(
     onStop: () -> Unit,
     onVoiceInputActiveChanged: (Boolean) -> Unit,
     onRepeatLastVlmResponse: (String?, String?) -> Unit,
-    onAddVlmImage: suspend () -> Int?
+    onAddVlmImage: (ByteArray) -> Int?
 ) {
     val sceneState by mainViewModel.sceneState.collectAsState()
     val isRunning by mainViewModel.isRunning.collectAsState()
@@ -133,7 +133,11 @@ fun AppNavHost(
         }
         composable(AppRoute.Vlm.route) {
             DisposableEffect(Unit) {
-                onDispose { mainViewModel.closeVlm() }
+                mainViewModel.pauseDetectorForVlm()
+                onDispose {
+                    mainViewModel.closeVlm()
+                    mainViewModel.resumeDetectorAfterVlm()
+                }
             }
             Box(modifier = Modifier.padding(topOnlyPadding)) {
                 VlmScreen(

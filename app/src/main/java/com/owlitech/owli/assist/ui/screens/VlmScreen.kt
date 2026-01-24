@@ -101,7 +101,7 @@ fun VlmScreen(
     onNewScene: (ByteArray) -> Unit,
     onAsk: (String) -> Unit,
     onRepeatLastResponse: (String?, String?) -> Unit,
-    onAddImage: suspend () -> Int?,
+    onAddImage: (ByteArray) -> Int?,
     attachments: List<VlmAttachment>,
     onRemoveAttachment: (String) -> Unit,
     lastImageBytes: ByteArray?,
@@ -295,6 +295,47 @@ fun VlmScreen(
             }
         )
     }
+    val captureAttachment = {
+        val file = File(context.cacheDir, "vlm_attachment_${System.currentTimeMillis()}.jpg")
+        val outputOptions = ImageCapture.OutputFileOptions.Builder(file).build()
+        imageCapture.takePicture(
+            outputOptions,
+            cameraExecutor,
+            object : ImageCapture.OnImageSavedCallback {
+                override fun onError(exception: ImageCaptureException) {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(message = addImageFailedText)
+                    }
+                }
+
+                override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
+                    coroutineScope.launch {
+                        val bytes = runCatching {
+                            withContext(Dispatchers.IO) { file.readBytes() }
+                        }.getOrNull()
+                        runCatching { file.delete() }
+                        if (bytes == null) {
+                            snackbarHostState.showSnackbar(message = addImageFailedText)
+                            return@launch
+                        }
+                        val count = onAddImage(bytes)
+                        if (count == null) {
+                            snackbarHostState.showSnackbar(message = addImageFailedText)
+                            return@launch
+                        }
+                        val countLabel = if (count == 1) {
+                            attachmentCountSingle
+                        } else {
+                            attachmentCountFormat.format(count)
+                        }
+                        snackbarHostState.showSnackbar(
+                            message = "$addImageAddedText. $countLabel"
+                        )
+                    }
+                }
+            }
+        )
+    }
     val startVoiceIntent = { autoSend: Boolean ->
         speechError = null
         autoSendOnVoiceResult = autoSend
@@ -317,6 +358,17 @@ fun VlmScreen(
         }
     }
     Box(modifier = Modifier.fillMaxSize()) {
+        val previewSemantics = if (captureMode == CaptureUiMode.Preview) {
+            Modifier.semantics { contentDescription = cameraPreviewLabel }
+        } else {
+            Modifier
+        }
+        VlmCameraPreview(
+            modifier = Modifier
+                .matchParentSize()
+                .then(previewSemantics),
+            imageCapture = imageCapture
+        )
         if (captureMode == CaptureUiMode.Frozen) {
             backgroundBitmap?.let { image ->
                 Image(
@@ -327,13 +379,6 @@ fun VlmScreen(
                     colorFilter = dimFilter
                 )
             }
-        } else {
-            VlmCameraPreview(
-                modifier = Modifier
-                    .matchParentSize()
-                    .semantics { contentDescription = cameraPreviewLabel },
-                imageCapture = imageCapture
-            )
         }
         Column(
             modifier = Modifier
@@ -497,27 +542,13 @@ fun VlmScreen(
                                 enabled = canRepeatLastAnswer
                             )
                             DropdownMenuItem(
-                            text = { Text(addImageLabel) },
-                            onClick = {
-                                actionsMenuExpanded = false
-                                coroutineScope.launch {
-                                    val count = onAddImage()
-                                    if (count == null) {
-                                        snackbarHostState.showSnackbar(message = addImageFailedText)
-                                    } else {
-                                        val countLabel = if (count == 1) {
-                                            attachmentCountSingle
-                                        } else {
-                                            attachmentCountFormat.format(count)
-                                        }
-                                        snackbarHostState.showSnackbar(
-                                            message = "$addImageAddedText. $countLabel"
-                                        )
-                                    }
-                                }
-                            },
-                            leadingIcon = {
-                                Icon(
+                                text = { Text(addImageLabel) },
+                                onClick = {
+                                    actionsMenuExpanded = false
+                                    captureAttachment()
+                                },
+                                leadingIcon = {
+                                    Icon(
                                         imageVector = Icons.Filled.AddPhotoAlternate,
                                         contentDescription = null
                                     )

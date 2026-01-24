@@ -76,6 +76,8 @@ class MainViewModel(
     private val useStructuredVlmParsing = false
     private var autoScanJob: Job? = null
     private val vlmRequestInFlight = AtomicBoolean(false)
+    private var detectorPausedForVlm = false
+    private var detectorResumePending = false
 
     fun setPipeline(handle: VisionPipelineHandle) {
         // stop old pipeline if running
@@ -108,6 +110,10 @@ class MainViewModel(
 
     fun start() {
         if (_isRunning.value) return
+        if (detectorPausedForVlm) {
+            detectorResumePending = true
+            return
+        }
         val current = pipeline ?: return
         runCatching { current.start() }
             .onSuccess {
@@ -133,11 +139,31 @@ class MainViewModel(
 
     fun stopUser() {
         _shouldAutoStart.value = false
+        detectorResumePending = false
         stopInternal(resetAutoStart = false)
     }
 
     fun stopForLifecycle() {
+        detectorResumePending = false
         stopInternal(resetAutoStart = false)
+    }
+
+    fun pauseDetectorForVlm() {
+        if (detectorPausedForVlm) return
+        detectorPausedForVlm = true
+        if (_isRunning.value) {
+            detectorResumePending = true
+            stopInternal(resetAutoStart = false)
+        }
+    }
+
+    fun resumeDetectorAfterVlm() {
+        if (!detectorPausedForVlm) return
+        detectorPausedForVlm = false
+        if (detectorResumePending) {
+            detectorResumePending = false
+            start()
+        }
     }
 
     private fun stopInternal(resetAutoStart: Boolean = true) {
@@ -235,6 +261,15 @@ class MainViewModel(
         return attachment
     }
 
+    fun addVlmAttachmentForActiveSession(jpegBytes: ByteArray): Int? {
+        if (vlmSession == null) {
+            AppLogger.w("VLM", "Add image requested without active session")
+            return null
+        }
+        addVlmAttachment(jpegBytes)
+        return attachmentStore.attachments.value.size
+    }
+
     fun removeVlmAttachment(id: String): Boolean {
         val removed = attachmentStore.remove(id)
         if (removed) {
@@ -250,31 +285,6 @@ class MainViewModel(
 
     fun clearVlmAttachments() {
         attachmentStore.clear()
-    }
-
-    suspend fun addVlmAttachmentFromSnapshot(): Int? {
-        if (vlmSession == null) {
-            AppLogger.w("VLM", "Add image requested without active session")
-            return null
-        }
-        val provider = snapshotProvider ?: run {
-            AppLogger.w("VLM", "SnapshotProvider not ready - skipping add image")
-            return null
-        }
-        val imageSettings = vlmProfile.imageSettings
-        val jpeg = withContext(Dispatchers.Default) {
-            provider.requestFreshJpegSnapshot(
-                maxSidePx = imageSettings.maxSidePx,
-                quality = imageSettings.jpegQuality
-            )
-        }
-        if (jpeg == null) {
-            AppLogger.e("VLM", "Kein JPEG-Snapshot verfuegbar fuer Anhang")
-            return null
-        }
-        attachmentStore.add(jpeg)
-        _lastVlmImageBytes.value = jpeg
-        return attachmentStore.attachments.value.size
     }
 
     private fun isVlmBusy(): Boolean {
