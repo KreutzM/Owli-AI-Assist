@@ -54,7 +54,7 @@
    - `./gradlew.bat :app:check` (or, if too slow: `:app:test` + `:app:lintDebug` + `:app:assembleDebug`).
 5. If any check fails, fix before committing.
 
-> **Never** run device/emulator tests automatically (e.g. `connectedDebugAndroidTest`, `installDebug`) unless explicitly instructed.
+> **Never** run device/emulator tasks unless explicitly instructed (e.g. `connectedAndroidTest`, `connectedDebugAndroidTest`, `connectedCheck`, `installDebug`).
 
 ## Testing policy
 - Prefer **JVM unit tests** (`app/src/test`) for:
