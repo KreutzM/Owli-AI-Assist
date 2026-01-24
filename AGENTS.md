@@ -18,7 +18,7 @@
 
 ## Work style
 - Work in **small, meaningful increments**.
-- Prefer **short feedback loops**: implement → verify → commit.
+- Prefer **short feedback loops**: implement -> verify -> commit.
 - Avoid speculative rewrites.
 
 ### Commit policy (required)
@@ -64,7 +64,7 @@
   - settings/defaults.
 - Only add **instrumented tests** (`app/src/androidTest`) when unavoidable and explicitly requested.
 - For bugfixes: add a **regression test** (fails before, passes after).
-- For new features/behavior changes: add **1–3 focused tests** for the critical logic and edge cases.
+- For new features/behavior changes: add **1-3 focused tests** for the critical logic and edge cases.
 - Tests must be deterministic:
   - no real network, no `Thread.sleep`, use fakes/clocks.
 
@@ -98,4 +98,3 @@
 ## When uncertain
 - Make the smallest reasonable change, leave a TODO with context, and commit.
 - Prefer adding diagnostics/logging over guessing.
-
