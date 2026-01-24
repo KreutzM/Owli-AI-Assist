@@ -71,41 +71,52 @@ fun AppNavHost(
 
     NavHost(
         navController = navController,
-        startDestination = AppRoute.Home.route,
+        startDestination = AppRoute.Vlm.route,
         modifier = Modifier.fillMaxSize()
     ) {
-        composable(AppRoute.Home.route) {
-            Box(modifier = Modifier.padding(defaultPadding)) {
-                HomeScreen(
-                    isRunning = isRunning,
-                    sceneMessage = sceneState?.primaryMessage,
-                    detections = sceneState?.detections.orEmpty(),
-                    lastError = lastError,
-                    statusMessage = status,
-                    detectionsCount = sceneState?.detections?.size ?: 0,
-                    hazardLevel = hazardLabel,
-                    trafficLights = sceneState?.trafficLights.orEmpty(),
-                    blindViewPreview = if (settings.showBlindViewPreview) sceneState?.blindViewUtterancePreview else null,
-                    showOverlay = settings.showOverlay,
-                    showLabels = settings.showOverlayLabels,
-                    frameMapping = sceneState?.frameMapping,
-                    detectorDebugBitmap = sceneState?.detectorDebugBitmap,
-                    showDetectorDebugView = settings.enableDetectorDebugView,
-                    onStart = onStart,
-                    onStop = onStop,
-                    cameraFrameSource = cameraFrameSource,
-                    rotationDegrees = cameraFrameSource.lastRotationDegrees,
-                    modifier = Modifier.fillMaxSize()
-                )
+        if (settings.detectorModeEnabled) {
+            composable(AppRoute.Home.route) {
+                Box(modifier = Modifier.padding(defaultPadding)) {
+                    HomeScreen(
+                        isRunning = isRunning,
+                        sceneMessage = sceneState?.primaryMessage,
+                        detections = sceneState?.detections.orEmpty(),
+                        lastError = lastError,
+                        statusMessage = status,
+                        detectionsCount = sceneState?.detections?.size ?: 0,
+                        hazardLevel = hazardLabel,
+                        trafficLights = sceneState?.trafficLights.orEmpty(),
+                        blindViewPreview = if (settings.showBlindViewPreview) {
+                            sceneState?.blindViewUtterancePreview
+                        } else {
+                            null
+                        },
+                        showOverlay = settings.showOverlay,
+                        showLabels = settings.showOverlayLabels,
+                        frameMapping = sceneState?.frameMapping,
+                        detectorDebugBitmap = sceneState?.detectorDebugBitmap,
+                        showDetectorDebugView = settings.enableDetectorDebugView,
+                        onStart = onStart,
+                        onStop = onStop,
+                        cameraFrameSource = cameraFrameSource,
+                        rotationDegrees = cameraFrameSource.lastRotationDegrees,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
-        }
-        composable(AppRoute.Settings.route) {
-            Box(modifier = Modifier.padding(defaultPadding)) {
-                SettingsScreen(
-                    settings = settings,
-                    onUpdate = { update -> settingsViewModel.update { update(it) } },
-                    onReset = { settingsViewModel.reset() }
-                )
+            composable(AppRoute.Settings.route) {
+                Box(modifier = Modifier.padding(defaultPadding)) {
+                    SettingsScreen(
+                        settings = settings,
+                        onUpdate = { update -> settingsViewModel.update { update(it) } },
+                        onReset = { settingsViewModel.reset() }
+                    )
+                }
+            }
+            composable(AppRoute.Diagnostics.route) {
+                Box(modifier = Modifier.padding(defaultPadding)) {
+                    DiagnosticsScreen(settings = settings)
+                }
             }
         }
         composable(AppRoute.VlmSettings.route) {
@@ -116,11 +127,6 @@ fun AppNavHost(
                     onOpenVlmProfiles = { navController.navigate(AppRoute.VlmProfiles.route) },
                     onUpdate = { update -> settingsViewModel.update { update(it) } }
                 )
-            }
-        }
-        composable(AppRoute.Diagnostics.route) {
-            Box(modifier = Modifier.padding(defaultPadding)) {
-                DiagnosticsScreen(settings = settings)
             }
         }
         composable(AppRoute.Vlm.route) {
