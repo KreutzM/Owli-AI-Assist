@@ -160,7 +160,11 @@ class MainActivity : AppCompatActivity() {
                         vlmProfilesConfig = vlmProfilesConfig,
                         onStart = { onUserStart() },
                         onStop = { onUserStop() },
-                        onVoiceInputActiveChanged = { active -> setVoiceInputActive(active) }
+                        onVoiceInputActiveChanged = { active -> setVoiceInputActive(active) },
+                        onRepeatLastVlmResponse = { primary, secondary ->
+                            repeatLastVlmResponse(primary, secondary)
+                        },
+                        onAddVlmImage = { addVlmImagePlaceholder() }
                     )
                 }
             }
@@ -439,5 +443,14 @@ class MainActivity : AppCompatActivity() {
         } else {
             updateSceneSpeechSuppression()
         }
+    }
+
+    private fun repeatLastVlmResponse(primary: String?, secondary: String?) {
+        if (primary.isNullOrBlank() && secondary.isNullOrBlank()) return
+        audioFeedbackEngine.speakVlmResponse(primary, secondary)
+    }
+
+    private fun addVlmImagePlaceholder() {
+        // TODO: Wire image picker or snapshot add flow for VLM follow-up.
     }
 }

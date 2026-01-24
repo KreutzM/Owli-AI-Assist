@@ -88,6 +88,8 @@ fun VlmScreen(
     state: VlmUiState,
     onNewScene: () -> Unit,
     onAsk: (String) -> Unit,
+    onRepeatLastResponse: (String?, String?) -> Unit,
+    onAddImage: () -> Unit,
     onVoiceInputActiveChanged: (Boolean) -> Unit,
     cameraFrameSource: CameraFrameSource,
     autoScanAvailable: Boolean,
@@ -105,6 +107,7 @@ fun VlmScreen(
     var autoSendOnVoiceResult by rememberSaveable { mutableStateOf(false) }
     var pendingAutoSendText by remember { mutableStateOf<String?>(null) }
     var actionsMenuExpanded by remember { mutableStateOf(false) }
+    var lastSpeakable by remember { mutableStateOf<Pair<String?, String?>?>(null) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     var composerHeightPx by remember { mutableIntStateOf(0) }
@@ -122,6 +125,25 @@ fun VlmScreen(
                 BitmapFactory.decodeByteArray(bytes, 0, bytes.size)
             }
             backgroundBitmap = decoded?.asImageBitmap()
+        }
+    }
+    LaunchedEffect(state) {
+        when (state) {
+            is VlmUiState.OverviewReady -> {
+                lastSpeakable = state.description.ttsOneLiner to state.description.actionSuggestion
+            }
+            is VlmUiState.OverviewReadyRaw -> {
+                lastSpeakable = state.rawText to null
+            }
+            is VlmUiState.Asking -> {
+                state.current?.let {
+                    lastSpeakable = it.ttsOneLiner to it.actionSuggestion
+                }
+            }
+            is VlmUiState.Inactive -> {
+                lastSpeakable = null
+            }
+            else -> Unit
         }
     }
     val sendQuestion = {
@@ -147,12 +169,7 @@ fun VlmScreen(
     val moreActionsLabel = stringResource(R.string.vlm_more_actions)
     val repeatLastAnswerLabel = stringResource(R.string.vlm_repeat_last_answer)
     val addImageLabel = stringResource(R.string.vlm_add_image)
-    val canRepeatLastAnswer = when (state) {
-        is VlmUiState.OverviewReady -> true
-        is VlmUiState.OverviewReadyRaw -> true
-        is VlmUiState.Asking -> state.current != null
-        else -> false
-    }
+    val canRepeatLastAnswer = lastSpeakable != null
     val speechLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -404,7 +421,12 @@ fun VlmScreen(
                     ) {
                         DropdownMenuItem(
                             text = { Text(repeatLastAnswerLabel) },
-                            onClick = { actionsMenuExpanded = false },
+                            onClick = {
+                                actionsMenuExpanded = false
+                                lastSpeakable?.let { (primary, secondary) ->
+                                    onRepeatLastResponse(primary, secondary)
+                                }
+                            },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Filled.Replay,
@@ -415,7 +437,10 @@ fun VlmScreen(
                         )
                         DropdownMenuItem(
                             text = { Text(addImageLabel) },
-                            onClick = { actionsMenuExpanded = false },
+                            onClick = {
+                                actionsMenuExpanded = false
+                                onAddImage()
+                            },
                             leadingIcon = {
                                 Icon(
                                     imageVector = Icons.Filled.AddPhotoAlternate,

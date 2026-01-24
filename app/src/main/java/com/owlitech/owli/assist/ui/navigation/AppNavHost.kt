@@ -39,7 +39,9 @@ fun AppNavHost(
     vlmProfilesConfig: VlmProfilesConfig,
     onStart: () -> Unit,
     onStop: () -> Unit,
-    onVoiceInputActiveChanged: (Boolean) -> Unit
+    onVoiceInputActiveChanged: (Boolean) -> Unit,
+    onRepeatLastVlmResponse: (String?, String?) -> Unit,
+    onAddVlmImage: () -> Unit
 ) {
     val sceneState by mainViewModel.sceneState.collectAsState()
     val isRunning by mainViewModel.isRunning.collectAsState()
@@ -138,6 +140,8 @@ fun AppNavHost(
                     state = vlmState,
                     onNewScene = { mainViewModel.requestNewScene() },
                     onAsk = { question -> mainViewModel.askVlm(question) },
+                    onRepeatLastResponse = onRepeatLastVlmResponse,
+                    onAddImage = onAddVlmImage,
                     onVoiceInputActiveChanged = onVoiceInputActiveChanged,
                     cameraFrameSource = cameraFrameSource,
                     autoScanAvailable = activeVlmProfile.autoScan != null,
