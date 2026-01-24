@@ -186,6 +186,158 @@ Diese Analyse basiert auf dem aktuellen Quellstand im Repo. Es wurden keine Runt
 
 ---
 
+## 6) Ergaenzungen vor Refactor-Plan (soweit moeglich gefuellt)
+
+Diese Punkte sind soweit moeglich mit Ist-Stand aus Code und Doku gefuellt. Wo Messungen oder Entscheidungen fehlen, ist das als Luecke markiert.
+
+### 6.1 Zielbild und Anforderungen
+- **Ist-Stand (Dokumente):** `docs/System-Spezifikation.md` beschreibt die Zielsetzung (assistive echtzeitnahe Umgebungswahrnehmung), On-Device-Detektion und optionales VLM. Hinweis: kein Sicherheits- oder Medizinprodukt.
+- **Nicht-Ziele (explizit):** keine sicherheitskritische Garantie, kein kontinuierlicher Cloud-Upload, keine automatischen Device-Tests im Standard-Workflow.
+- **Luecke:** keine messbaren KPIs (FPS/Latenz/Qualitaet) als akzeptanzreife Zielwerte, keine formale Safety-Analyse.
+
+### 6.2 Architektur-Abhaengigkeiten (Layering)
+- **Ist-Stand (High-Level):**
+  - UI (Compose Screens) -> `MainViewModel`, `SettingsViewModel`
+  - `MainViewModel` -> `VisionPipelineHandle` (Pipeline + SnapshotProvider), VLM Client/Attachment Store
+  - Pipeline -> `CameraFrameSource` -> CameraX (ImageAnalysis, Preview)
+  - Pipeline -> `Preprocessor` -> `YuvToRgbConverter`, `GlobalMotionEstimator`
+  - Pipeline -> `Detector` (`TfliteTaskDetector`/`FakeDetector`)
+  - Pipeline -> `SceneAnalyzer` -> BlindView (Tracking/Planner) + `TrafficLightPhaseClassifier`
+  - `MainActivity` -> `AudioFeedbackEngine`, `MotionEstimator`, `VisionPipelineModule`, `SettingsRepository`
+  - `DiagnosticsCollector` wird aus mehreren Schichten beschrieben
+- **Kopplungspunkte:** `DiagnosticsCollector`, `AppLogger`, `Settings` (DataStore), VLM Streaming State.
+- **Luecke:** kein dokumentierter Layering-Guide (z. B. "UI darf nicht direkt X"), kein Modul-Schnitt.
+
+#### Abhaengigkeitsgraph (ASCII)
+```text
+[UI: Compose Screens]
+  -> [MainViewModel] -> [VisionPipelineHandle]
+                        -> [VisionPipeline] -> [CameraFrameSource] -> [CameraX]
+                                            -> [Preprocessor] -> [YuvToRgbConverter]
+                                                              -> [GlobalMotionEstimator]
+                                            -> [Detector] -> [TfliteTaskDetector | FakeDetector]
+                                            -> [SceneAnalyzer] -> [BlindView Tracker/Planner]
+                                                              -> [TrafficLightPhaseClassifier]
+  -> [SettingsViewModel] -> [SettingsRepository] -> [DataStore]
+
+[MainActivity]
+  -> [AudioFeedbackEngine] -> [TTS]
+  -> [MotionEstimator] -> [Sensors]
+  -> [VisionPipelineModule] (builds pipeline)
+  -> [SettingsRepository]
+  -> [DiagnosticsCollector] (global)
+
+[VLM]
+  [MainViewModel] -> [OpenRouterVlmClient] -> [OpenRouterProvider] -> [HttpURLConnection]
+                  -> [VlmAttachmentStore]
+
+[Cross-cut]
+  [DiagnosticsCollector] <- updates from Pipeline, MainViewModel, MainActivity
+  [AppLogger] <- used by most packages
+```
+
+### 6.3 Laufzeit-Profiling (Baseline)
+- **Ist-Stand:**
+  - `DiagnosticsCollector.updateFrameProcessed` berechnet Frame-Interval und FPS.
+  - `DefaultPreprocessor` loggt Zeit alle N Frames (`logInterval`).
+  - `TrafficLightPhaseClassifier` loggt Heuristikdaten alle N Frames.
+- **Luecke:** keine gespeicherten Baselines (FPS/P95/Memory/GC), keine Trace/Perfetto-Messungen im Repo.
+
+### 6.4 Energie/Throttling
+- **Ist-Stand:**
+  - `analysisIntervalMs` begrenzt die Pipeline-Frequenz (Default 250ms).
+  - CameraX `STRATEGY_KEEP_ONLY_LATEST` reduziert Backpressure.
+  - Motion-Gating reduziert Ansagefrequenz bei hoher Bewegung.
+- **Luecke:** keine Battery/thermal Messungen; kein gezieltes Throttling bei Hitze/low battery.
+
+### 6.5 Concurrency & Lifecycle
+- **Ist-Stand:**
+  - `MainActivity.onStart/onStop` steuert Motion + Pipeline; `repeatOnLifecycle` fuer Flows.
+  - `CameraFrameSource` nutzt Single-Thread Executor; Pipeline nutzt "latest wins" und `processing` Flag.
+  - VLM Requests laufen in `viewModelScope` und sind nur durch `vlmRequestInFlight` serialisiert.
+- **Risiken/Beobachtungen:**
+  - `CameraFrameSource` schliesst `ImageProxy` im Analyzer, `DefaultVisionPipeline` schliesst es erneut (moeglicher Double-Close).
+  - `MainViewModel.closeVlm()` beendet UI-State, bricht aber laufende VLM Jobs nicht ab.
+- **Luecke:** keine dokumentierten Threading-Regeln; kein Cancel-Design fuer laufende Requests.
+
+#### Risiko-Matrix (Lifecycle/Concurrency/Privacy)
+| Area | Risk | Impact | Likelihood | Evidence | Mitigation |
+| --- | --- | --- | --- | --- | --- |
+| Lifecycle/Concurrency | ImageProxy double-close | Medium | Medium | CameraFrameSource closes ImageProxy; DefaultVisionPipeline closes again | Ensure single ownership of close |
+| Lifecycle/Concurrency | VLM job continues after close | Medium | Medium | closeVlm resets UI but no Job cancel | Track Job and cancel on closeVlm/onStop |
+| Privacy/Security | Full VLM responses logged | Medium | Medium | OpenRouterProvider logs response body | Limit logs in release, add redaction |
+
+### 6.6 Fehlerbehandlung & Resilienz
+- **Ist-Stand (Beispiele):**
+  - Kamera: Permission-Handling in `MainActivity` (Log, kein explizites UI-Fallback).
+  - Sensoren: `MotionEstimator.start()` loggt fehlende Sensoren, aber kein UI-Feedback.
+  - TTS: Init-Fehler werden geloggt; UI bekommt kein explizites Signal.
+  - VLM: fehlender API-Key -> `VlmUiState.Error`; Netzfehler -> Catch und Error-State.
+- **Luecke:** keine Retry/Backoff-Strategie fuer Netzwerk; keine standardisierte User-Fehlerkommunikation.
+
+### 6.7 Security & Privacy
+- **Ist-Stand:**
+  - Kamera-Pipeline ist lokal; VLM sendet Snapshot als data URL (`MainViewModel.jpegToDataUrl`).
+  - `OpenRouterProvider` redigiert image_url in Logs, text wird gekuerzt; Responses werden jedoch teilweise vollstaendig geloggt.
+  - API-Key wird via `local.properties` in BuildConfig injiziert.
+- **Luecke:** keine dokumentierte Consent/Privacy-UX; Logging-Policy fuer Release fehlt.
+
+### 6.8 Testabdeckung und Luecken
+- **Ist-Stand (Tests vorhanden):**
+  - BlindView: Tracker/Planner/Formatter
+  - Audio: `StreamingTtsController`
+  - Domain: `DefaultSceneAnalyzer`
+  - VLM: Payload/Parser/SSE/AttachmentStore
+- **Luecke:** keine Tests fuer Pipeline/Preprocessor/MotionEstimator/CameraFrameSource; keine Integrationstests fuer VLM + UI; kaum Lifecycle/Cancel-Tests.
+
+### 6.9 Dependency-Status
+- **Ist-Stand:** Versionskatalog in `gradle/libs.versions.toml` (u. a. AGP 8.13.1, Kotlin 2.0.21, Compose BOM 2024.09.00, CameraX 1.4.0, TFLite 2.16.1, Task Vision 0.4.4, Coroutines 1.9.0, DataStore 1.1.1).
+- **Luecke:** kein Upgrade-Plan; keine dokumentierten Kompatibilitaetstests fuer neue Modelle oder CameraX.
+
+### 6.10 Asset/Model-Management
+- **Ist-Stand:**
+  - Modellpfad erwartet: `app/src/main/assets/models/efficientdet_lite2_int8.tflite`.
+  - Labels: `app/src/main/assets/models/labels.txt`.
+  - `VisionPipelineModule.modelExists()` prueft Assets; Fallback auf `FakeDetector` bei Fehlschlag.
+  - `docs/MODEL-ASSETS.md` beschreibt Download und Verifikation.
+- **Luecke:** keine Checksums/Signaturen, keine Versionierung der Modelle, keine automatisierte Asset-Pruefung.
+
+### 6.11 Observability
+- **Ist-Stand:**
+  - `DiagnosticsCollector` trackt Pipeline-Status, FPS, Motion, Stabilisierung, Translation, TTS.
+  - Diagnostics-Screen zeigt Live-Metriken und Report (siehe `diagnostics/`).
+  - Logging ist umfangreich (VLM Payload/Response, Pipeline Status).
+- **Luecke:** keine dauerhafte Telemetrie/Export; Logging-Policy fuer Release unklar.
+
+#### Logging-Audit (logcat)
+- **Ist-Stand:** Mischung aus `AppLogger` und direkten `Log.*` Aufrufen (z. B. `AudioFeedbackEngine`, `DefaultPreprocessor`, `TrafficLightPhaseClassifier`). Tags und Formate sind inkonsistent, keine standardisierte Korrelation (Session/Frame/Request IDs).
+- **Luecken fuer Performance-Refactor:**
+  - Keine konsistente, strukturierte Stage-Timing Logs (Preprocess/Detect/Analyze/Overlay) pro Frame.
+  - Keine Sampling- oder Rate-Limits fuer sehr haeufige Logs (Frame-Pfad).
+  - Keine einheitliche Schicht-/Feature-Tags (z. B. `PIPELINE`, `PREPROCESS`, `VLM`, `AUDIO`).
+  - Keine zentrale Umschaltung fuer Debug-Logging (BuildConfig oder Setting).
+  - VLM Logs koennen sehr gross sein; redaction ist partiell, aber die Response wird teils vollstaendig geloggt.
+  - Fehlende Marker bei zentralen Zustandswechseln (z. B. Pipeline-Config-Change, Settings-Diff, Pipeline-Rebuild).
+
+### 6.12 Accessibility & UX Audit
+- **Ist-Stand:**
+  - VLM Screen nutzt Semantics (contentDescription, stateDescription) und Snackbar-Feedback.
+  - TTS ist primare Ausgabe; Voice-Input ueber `RecognizerIntent` vorhanden.
+- **Luecke:** keine systematische Accessibility-Pruefung fuer alle Screens; kein globaler Flow fuer Permission-Fehler.
+
+### 6.13 Release- und Rollback-Strategie
+- **Ist-Stand:**
+  - Build Types: Debug/Release; Feature-Toggles via DataStore (z. B. Detector an/aus, Debug-View).
+- **Luecke:** kein Feature-Flag-System fuer stufenweise Rollouts; kein dokumentiertes Rollback.
+
+### Minimal-Deliverables fuer Refactor-Start (Status)
+1. Baseline-Metriken (FPS, Latenz, GC, VLM) - fehlen.
+2. Abhaengigkeitsgraph (High-level, 1 Seite) - initial vorhanden (ASCII), keine Grafik.
+3. Risiko-Matrix (Lifecycle/Concurrency/Privacy) - initial vorhanden (qualitativ).
+4. Test-Lueckenliste mit Prioritaet - teilweise hier, aber ohne Priorisierung.
+5. Zielkriterien (messbar, 3-5 KPIs) - fehlen.
+
+---
 ## Priorisierte Empfehlung (Kurzliste)
 
 1. **Pipeline-Rebuild nur bei relevanten Settings** (MainActivity/Settings diffing) - grosser Performancegewinn mit geringem Risiko.
