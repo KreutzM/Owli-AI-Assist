@@ -16,11 +16,13 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -29,11 +31,14 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.Mic
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -59,7 +64,6 @@ import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.disabled
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalDensity
@@ -100,6 +104,7 @@ fun VlmScreen(
     var speechError by remember { mutableStateOf<String?>(null) }
     var autoSendOnVoiceResult by rememberSaveable { mutableStateOf(false) }
     var pendingAutoSendText by remember { mutableStateOf<String?>(null) }
+    var actionsMenuExpanded by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     var composerHeightPx by remember { mutableIntStateOf(0) }
@@ -139,6 +144,15 @@ fun VlmScreen(
     val voiceInputLabel = stringResource(R.string.vlm_voice_input)
     val voiceListeningLabel = stringResource(R.string.vlm_voice_listening)
     val voiceAutoSendLabel = stringResource(R.string.vlm_voice_listening_auto_send)
+    val moreActionsLabel = stringResource(R.string.vlm_more_actions)
+    val repeatLastAnswerLabel = stringResource(R.string.vlm_repeat_last_answer)
+    val addImageLabel = stringResource(R.string.vlm_add_image)
+    val canRepeatLastAnswer = when (state) {
+        is VlmUiState.OverviewReady -> true
+        is VlmUiState.OverviewReadyRaw -> true
+        is VlmUiState.Asking -> state.current != null
+        else -> false
+    }
     val speechLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -330,54 +344,87 @@ fun VlmScreen(
             horizontalAlignment = Alignment.End
         ) {
             Row(
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                if (autoScanAvailable) {
-                    val autoLabel = if (isAutoScanRunning) {
-                        stringResource(R.string.vlm_auto_on)
-                    } else {
-                        stringResource(R.string.vlm_auto_off)
-                    }
-                    FilterChip(
-                        selected = isAutoScanRunning,
-                        onClick = { if (isAutoScanRunning) onStopAutoScan() else onStartAutoScan() },
-                        enabled = autoScanAvailable,
-                        label = { Text(stringResource(R.string.vlm_auto_label)) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Filled.Autorenew,
-                                contentDescription = null
-                            )
-                        },
-                        modifier = Modifier.semantics { contentDescription = autoLabel }
-                    )
-                }
-                ExtendedFloatingActionButton(
-                    onClick = {
-                        if (!isBusy) {
-                            if (isAutoScanRunning) {
-                                onStopAutoScan()
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TextButton(
+                        onClick = {
+                            if (!isBusy) {
+                                if (isAutoScanRunning) {
+                                    onStopAutoScan()
+                                }
+                                onNewScene()
                             }
-                            onNewScene()
-                        }
-                    },
-                    icon = {
-                        Icon(
-                            imageVector = Icons.Filled.Add,
-                            contentDescription = null
-                        )
-                    },
-                    text = { Text(newSceneLabel) },
-                    expanded = true,
-                    modifier = Modifier.semantics {
-                        contentDescription = newSceneLabel
-                        if (isBusy) {
-                            disabled()
-                        }
+                        },
+                        enabled = !isBusy
+                    ) {
+                        Text(newSceneLabel)
                     }
-                )
+                    if (autoScanAvailable) {
+                        val autoLabel = if (isAutoScanRunning) {
+                            stringResource(R.string.vlm_auto_on)
+                        } else {
+                            stringResource(R.string.vlm_auto_off)
+                        }
+                        FilterChip(
+                            selected = isAutoScanRunning,
+                            onClick = { if (isAutoScanRunning) onStopAutoScan() else onStartAutoScan() },
+                            enabled = autoScanAvailable,
+                            label = { Text(stringResource(R.string.vlm_auto_label)) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Autorenew,
+                                    contentDescription = null
+                                )
+                            },
+                            modifier = Modifier.semantics { contentDescription = autoLabel }
+                        )
+                    }
+                }
+                Box {
+                    IconButton(
+                        onClick = { actionsMenuExpanded = true },
+                        modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Filled.MoreVert,
+                            contentDescription = moreActionsLabel
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = actionsMenuExpanded,
+                        onDismissRequest = { actionsMenuExpanded = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text(repeatLastAnswerLabel) },
+                            onClick = { actionsMenuExpanded = false },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Filled.Replay,
+                                    contentDescription = null
+                                )
+                            },
+                            enabled = canRepeatLastAnswer
+                        )
+                        DropdownMenuItem(
+                            text = { Text(addImageLabel) },
+                            onClick = { actionsMenuExpanded = false },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Filled.AddPhotoAlternate,
+                                    contentDescription = null
+                                )
+                            }
+                        )
+                    }
+                }
             }
             Surface(
                 color = Color.Black.copy(alpha = 0.45f),

@@ -60,6 +60,9 @@
     <string name="vlm_auto_on">Auto on</string>
     <string name="vlm_auto_off">Auto off</string>
     <string name="vlm_action_new_scene">New scene</string>
+    <string name="vlm_more_actions">More actions</string>
+    <string name="vlm_repeat_last_answer">Repeat last answer</string>
+    <string name="vlm_add_image">Add image</string>
     <string name="vlm_voice_long_press_send">Send immediately</string>
     <string name="vlm_voice_listening">Voice input running</string>
     <string name="vlm_voice_listening_auto_send">Voice input and send now</string>
