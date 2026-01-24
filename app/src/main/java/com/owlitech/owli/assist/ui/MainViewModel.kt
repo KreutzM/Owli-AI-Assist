@@ -226,8 +226,7 @@ class MainViewModel(
             return
         }
         val provider = snapshotProvider ?: run {
-            AppLogger.e("VLM", "SnapshotProvider ist null - Pipeline noch nicht aktiv?")
-            _vlmUiState.value = VlmUiState.Error("Snapshot ist nicht verfuegbar. Pipeline noch nicht aktiv?")
+            AppLogger.w("VLM", "SnapshotProvider not ready - skipping new scene request")
             return
         }
         _vlmUiState.value = VlmUiState.LoadingOverview("Snapshot vorbereiten...")
