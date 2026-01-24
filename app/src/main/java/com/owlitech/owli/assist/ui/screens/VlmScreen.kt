@@ -99,6 +99,7 @@ fun VlmScreen(
     onAddImage: suspend () -> Int?,
     attachments: List<VlmAttachment>,
     onRemoveAttachment: (String) -> Unit,
+    lastImageBytes: ByteArray?,
     onVoiceInputActiveChanged: (Boolean) -> Unit,
     cameraFrameSource: CameraFrameSource,
     autoScanAvailable: Boolean,
@@ -127,9 +128,10 @@ fun VlmScreen(
             ColorMatrix().apply { setToScale(0.85f, 0.85f, 0.85f, 1f) }
         )
     }
-    LaunchedEffect(state.snapshotBytes) {
+    val previewBytes = lastImageBytes ?: state.snapshotBytes
+    LaunchedEffect(previewBytes) {
         backgroundBitmap = null
-        val bytes = state.snapshotBytes
+        val bytes = previewBytes
         if (bytes != null) {
             val decoded = withContext(Dispatchers.Default) {
                 BitmapFactory.decodeByteArray(bytes, 0, bytes.size)

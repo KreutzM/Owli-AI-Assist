@@ -61,6 +61,8 @@ class MainViewModel(
     val isAutoScanRunning: StateFlow<Boolean> = _isAutoScanRunning
     private val attachmentStore = VlmAttachmentStore()
     val vlmAttachments: StateFlow<List<VlmAttachment>> = attachmentStore.attachments
+    private val _lastVlmImageBytes = MutableStateFlow<ByteArray?>(null)
+    val lastVlmImageBytes: StateFlow<ByteArray?> = _lastVlmImageBytes
 
     private var collectJob: Job? = null
     private var pipeline: VisionPipeline? = null
@@ -210,11 +212,22 @@ class MainViewModel(
     }
 
     fun addVlmAttachment(jpegBytes: ByteArray): VlmAttachment {
-        return attachmentStore.add(jpegBytes)
+        val attachment = attachmentStore.add(jpegBytes)
+        _lastVlmImageBytes.value = attachment.jpegBytes
+        return attachment
     }
 
     fun removeVlmAttachment(id: String): Boolean {
-        return attachmentStore.remove(id)
+        val removed = attachmentStore.remove(id)
+        if (removed) {
+            val remaining = attachmentStore.attachments.value
+            if (remaining.isNotEmpty()) {
+                _lastVlmImageBytes.value = remaining.last().jpegBytes
+            } else {
+                _lastVlmImageBytes.value = vlmSession?.snapshotBytes
+            }
+        }
+        return removed
     }
 
     fun clearVlmAttachments() {
@@ -242,6 +255,7 @@ class MainViewModel(
             return null
         }
         attachmentStore.add(jpeg)
+        _lastVlmImageBytes.value = jpeg
         return attachmentStore.attachments.value.size
     }
 
@@ -290,6 +304,7 @@ class MainViewModel(
             _vlmUiState.value = VlmUiState.Error("Kein Kamerabild verfuegbar.")
             return
         }
+        _lastVlmImageBytes.value = jpeg
         _vlmUiState.value = VlmUiState.LoadingOverview("VLM anfragen...", snapshotBytes = jpeg)
         val session = VlmSession(snapshotBytes = jpeg, messageHistory = mutableListOf())
         val messages = buildOverviewMessages(session)
@@ -517,6 +532,7 @@ class MainViewModel(
         _vlmUiState.value = VlmUiState.Inactive
         vlmSession = null
         lastVlmDescription = null
+        _lastVlmImageBytes.value = null
     }
 
     fun applyVlmConfig(config: VlmConfig) {
