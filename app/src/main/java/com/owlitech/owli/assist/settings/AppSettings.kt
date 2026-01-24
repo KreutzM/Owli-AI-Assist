@@ -33,6 +33,7 @@ data class AppSettings(
     val maxItemsSpoken: Int = AppSettingsDefaults.maxItemsSpoken,
     val minSpeakIntervalMs: Long = AppSettingsDefaults.minSpeakIntervalMs,
     val repeatSamePlanIntervalMs: Long = AppSettingsDefaults.repeatSamePlanIntervalMs,
+    val ttsEnabled: Boolean = AppSettingsDefaults.ttsEnabled,
     val ttsSpeechRate: Float = AppSettingsDefaults.ttsSpeechRate,
     val ttsPitch: Float = AppSettingsDefaults.ttsPitch,
     val streamingVlmTtsEnabled: Boolean = AppSettingsDefaults.streamingVlmTtsEnabled,
@@ -110,6 +111,7 @@ object AppSettingsDefaults {
     const val maxItemsSpoken: Int = 8
     const val minSpeakIntervalMs: Long = 2_500L
     const val repeatSamePlanIntervalMs: Long = 8_000L
+    const val ttsEnabled: Boolean = true
     const val ttsSpeechRate: Float = 2.0f
     const val ttsPitch: Float = 1.0f
     const val streamingVlmTtsEnabled: Boolean = true

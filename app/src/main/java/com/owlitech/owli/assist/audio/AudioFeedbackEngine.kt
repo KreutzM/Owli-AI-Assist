@@ -55,6 +55,7 @@ class AudioFeedbackEngine(
     private var desiredSpeechRate: Float =
         blindViewConfig.ttsSpeechRate.coerceIn(MIN_SPEECH_RATE, MAX_SPEECH_RATE)
     private var desiredPitch: Float = DEFAULT_PITCH
+    private var ttsEnabled: Boolean = true
     private var sceneSpeechSuppressed: Boolean = false
     private var onVlmStreamIdle: (() -> Unit)? = null
 
@@ -83,6 +84,11 @@ class AudioFeedbackEngine(
     }
 
     fun onSceneUpdated(state: SceneState) {
+        if (!ttsEnabled) {
+            pendingMessage = null
+            pendingLevel = HazardLevel.NONE
+            return
+        }
         if (sceneSpeechSuppressed) {
             pendingMessage = null
             pendingLevel = HazardLevel.NONE
@@ -141,6 +147,9 @@ class AudioFeedbackEngine(
     }
 
     private fun speak(text: String) {
+        if (!ttsEnabled) {
+            return
+        }
         if (!ttsReady) {
             Log.d(TAG, "speak skipped, ttsReady=false, text=$text")
             return
@@ -149,6 +158,9 @@ class AudioFeedbackEngine(
     }
 
     fun speakVlmResponse(ttsOneLiner: String?, actionSuggestion: String?) {
+        if (!ttsEnabled) {
+            return
+        }
         val combined = listOfNotNull(ttsOneLiner?.trim(), actionSuggestion?.trim())
             .filter { it.isNotEmpty() }
             .joinToString(". ")
@@ -182,6 +194,17 @@ class AudioFeedbackEngine(
         desiredPitch = clamped
         tts?.setPitch(clamped)
         Log.d(TAG, "updatePitch to $clamped")
+    }
+
+    fun setTtsEnabled(enabled: Boolean) {
+        if (ttsEnabled == enabled) return
+        ttsEnabled = enabled
+        if (!enabled) {
+            pendingMessage = null
+            pendingLevel = HazardLevel.NONE
+            stopAllTts()
+        }
+        Log.d(TAG, "ttsEnabled=$ttsEnabled")
     }
 
     private fun maxHazard(a: HazardLevel, b: HazardLevel): HazardLevel {
@@ -274,6 +297,10 @@ class AudioFeedbackEngine(
         utterancePrefix: String,
         queueMode: QueueMode
     ) {
+        if (!ttsEnabled) {
+            Log.d(TAG, "speak skipped, ttsEnabled=false, text=$text")
+            return
+        }
         if (!ttsReady) {
             Log.d(TAG, "speak skipped, ttsReady=false, text=$text")
             return

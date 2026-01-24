@@ -44,6 +44,7 @@ class SettingsRepository(private val context: Context) {
             prefs[PrefKeys.maxItemsSpoken] = updated.maxItemsSpoken
             prefs[PrefKeys.minSpeakIntervalMs] = updated.minSpeakIntervalMs
             prefs[PrefKeys.repeatSamePlanIntervalMs] = updated.repeatSamePlanIntervalMs
+            prefs[PrefKeys.ttsEnabled] = updated.ttsEnabled
             prefs[PrefKeys.ttsSpeechRate] = updated.ttsSpeechRate
             prefs[PrefKeys.ttsPitch] = updated.ttsPitch
             prefs[PrefKeys.streamingVlmTtsEnabled] = updated.streamingVlmTtsEnabled
@@ -96,6 +97,7 @@ private object PrefKeys {
     val maxItemsSpoken = intPreferencesKey("maxItemsSpoken")
     val minSpeakIntervalMs = longPreferencesKey("minSpeakIntervalMs")
     val repeatSamePlanIntervalMs = longPreferencesKey("repeatSamePlanIntervalMs")
+    val ttsEnabled = booleanPreferencesKey("ttsEnabled")
     val ttsSpeechRate = floatPreferencesKey("ttsSpeechRate")
     val ttsPitch = floatPreferencesKey("ttsPitch")
     val streamingVlmTtsEnabled = booleanPreferencesKey("streamingVlmTtsEnabled")
@@ -144,6 +146,7 @@ private fun androidx.datastore.preferences.core.Preferences.toSettings(): AppSet
         maxItemsSpoken = this[PrefKeys.maxItemsSpoken] ?: AppSettingsDefaults.maxItemsSpoken,
         minSpeakIntervalMs = this[PrefKeys.minSpeakIntervalMs] ?: AppSettingsDefaults.minSpeakIntervalMs,
         repeatSamePlanIntervalMs = this[PrefKeys.repeatSamePlanIntervalMs] ?: AppSettingsDefaults.repeatSamePlanIntervalMs,
+        ttsEnabled = this[PrefKeys.ttsEnabled] ?: AppSettingsDefaults.ttsEnabled,
         ttsSpeechRate = this[PrefKeys.ttsSpeechRate] ?: AppSettingsDefaults.ttsSpeechRate,
         ttsPitch = this[PrefKeys.ttsPitch] ?: AppSettingsDefaults.ttsPitch,
         streamingVlmTtsEnabled = this[PrefKeys.streamingVlmTtsEnabled] ?: AppSettingsDefaults.streamingVlmTtsEnabled,

@@ -57,6 +57,12 @@ fun VlmSettingsScreen(
             onCheckedChange = { v -> onUpdate { it.copy(streamingVlmTtsEnabled = v) } },
             helper = stringResource(R.string.vlm_settings_streaming_tts_helper)
         )
+        SettingSwitch(
+            label = stringResource(R.string.settings_tts_enabled),
+            checked = settings.ttsEnabled,
+            onCheckedChange = { v -> onUpdate { it.copy(ttsEnabled = v) } },
+            helper = stringResource(R.string.settings_tts_enabled_helper)
+        )
         LanguageSetting(
             selected = settings.languagePreference,
             onSelected = { pref -> onUpdate { it.copy(languagePreference = pref) } }

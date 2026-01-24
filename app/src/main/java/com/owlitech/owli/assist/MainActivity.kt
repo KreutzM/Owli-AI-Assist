@@ -82,6 +82,7 @@ class MainActivity : AppCompatActivity() {
     private var streamingActive = false
     private var lastStreamingText = ""
     private var streamingTtsEnabled: Boolean = AppSettingsDefaults.streamingVlmTtsEnabled
+    private var ttsEnabled: Boolean = AppSettingsDefaults.ttsEnabled
     private var voiceInputActive = false
     private lateinit var activeVlmProfile: VlmProfile
 
@@ -287,7 +288,12 @@ class MainActivity : AppCompatActivity() {
         }
         audioFeedbackEngine.updateSpeechRate(settings.ttsSpeechRate)
         audioFeedbackEngine.updatePitch(settings.ttsPitch)
+        audioFeedbackEngine.setTtsEnabled(settings.ttsEnabled)
+        ttsEnabled = settings.ttsEnabled
         streamingTtsEnabled = settings.streamingVlmTtsEnabled
+        if (!ttsEnabled) {
+            streamingTtsController.cancel()
+        }
         updateSceneSpeechSuppression()
         motionEstimator.updateThresholds(
             medThresholdRadS = settings.motionMedThresholdRadS,
@@ -420,7 +426,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun shouldUseStreamingTts(): Boolean {
-        return streamingTtsEnabled && activeVlmProfile.streamingEnabled
+        return ttsEnabled && streamingTtsEnabled && activeVlmProfile.streamingEnabled
     }
 
     private fun setVoiceInputActive(active: Boolean) {

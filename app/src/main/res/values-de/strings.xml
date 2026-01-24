@@ -128,6 +128,8 @@
     <string name="settings_tts_speech_rate_helper">Sprechgeschwindigkeit</string>
     <string name="settings_tts_pitch">TTS Stimmhoehe</string>
     <string name="settings_tts_pitch_helper">Stimmhoehe</string>
+    <string name="settings_tts_enabled">TTS aktiviert</string>
+    <string name="settings_tts_enabled_helper">Sprachausgabe deaktivieren (fuer TalkBack)</string>
     <string name="settings_analysis_interval">Analyse Intervall (ms)</string>
     <string name="settings_analysis_interval_helper">Min Abstand zwischen Frames</string>
     <string name="settings_show_overlay">Overlay anzeigen</string>
