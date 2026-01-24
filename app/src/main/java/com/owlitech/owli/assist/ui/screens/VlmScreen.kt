@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -19,6 +20,7 @@ import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -30,7 +32,6 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AddPhotoAlternate
@@ -364,14 +365,80 @@ fun VlmScreen(
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.Start,
                 verticalAlignment = Alignment.CenterVertically
             ) {
+                if (autoScanAvailable) {
+                    val autoLabel = if (isAutoScanRunning) {
+                        stringResource(R.string.vlm_auto_on)
+                    } else {
+                        stringResource(R.string.vlm_auto_off)
+                    }
+                    FilterChip(
+                        selected = isAutoScanRunning,
+                        onClick = { if (isAutoScanRunning) onStopAutoScan() else onStartAutoScan() },
+                        enabled = autoScanAvailable,
+                        label = { Text(stringResource(R.string.vlm_auto_label)) },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Filled.Autorenew,
+                                contentDescription = null
+                            )
+                        },
+                        modifier = Modifier.semantics { contentDescription = autoLabel }
+                    )
+                }
+                Spacer(modifier = Modifier.weight(1f))
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    TextButton(
+                    Box {
+                        IconButton(
+                            onClick = { actionsMenuExpanded = true },
+                            modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.MoreVert,
+                                contentDescription = moreActionsLabel
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = actionsMenuExpanded,
+                            onDismissRequest = { actionsMenuExpanded = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text(repeatLastAnswerLabel) },
+                                onClick = {
+                                    actionsMenuExpanded = false
+                                    lastSpeakable?.let { (primary, secondary) ->
+                                        onRepeatLastResponse(primary, secondary)
+                                    }
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Filled.Replay,
+                                        contentDescription = null
+                                    )
+                                },
+                                enabled = canRepeatLastAnswer
+                            )
+                            DropdownMenuItem(
+                                text = { Text(addImageLabel) },
+                                onClick = {
+                                    actionsMenuExpanded = false
+                                    onAddImage()
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Filled.AddPhotoAlternate,
+                                        contentDescription = null
+                                    )
+                                }
+                            )
+                        }
+                    }
+                    Button(
                         onClick = {
                             if (!isBusy) {
                                 if (isAutoScanRunning) {
@@ -380,74 +447,12 @@ fun VlmScreen(
                                 onNewScene()
                             }
                         },
-                        enabled = !isBusy
+                        enabled = !isBusy,
+                        modifier = Modifier
+                            .sizeIn(minHeight = 48.dp)
+                            .semantics { contentDescription = newSceneLabel }
                     ) {
                         Text(newSceneLabel)
-                    }
-                    if (autoScanAvailable) {
-                        val autoLabel = if (isAutoScanRunning) {
-                            stringResource(R.string.vlm_auto_on)
-                        } else {
-                            stringResource(R.string.vlm_auto_off)
-                        }
-                        FilterChip(
-                            selected = isAutoScanRunning,
-                            onClick = { if (isAutoScanRunning) onStopAutoScan() else onStartAutoScan() },
-                            enabled = autoScanAvailable,
-                            label = { Text(stringResource(R.string.vlm_auto_label)) },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Filled.Autorenew,
-                                    contentDescription = null
-                                )
-                            },
-                            modifier = Modifier.semantics { contentDescription = autoLabel }
-                        )
-                    }
-                }
-                Box {
-                    IconButton(
-                        onClick = { actionsMenuExpanded = true },
-                        modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Filled.MoreVert,
-                            contentDescription = moreActionsLabel
-                        )
-                    }
-                    DropdownMenu(
-                        expanded = actionsMenuExpanded,
-                        onDismissRequest = { actionsMenuExpanded = false }
-                    ) {
-                        DropdownMenuItem(
-                            text = { Text(repeatLastAnswerLabel) },
-                            onClick = {
-                                actionsMenuExpanded = false
-                                lastSpeakable?.let { (primary, secondary) ->
-                                    onRepeatLastResponse(primary, secondary)
-                                }
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Filled.Replay,
-                                    contentDescription = null
-                                )
-                            },
-                            enabled = canRepeatLastAnswer
-                        )
-                        DropdownMenuItem(
-                            text = { Text(addImageLabel) },
-                            onClick = {
-                                actionsMenuExpanded = false
-                                onAddImage()
-                            },
-                            leadingIcon = {
-                                Icon(
-                                    imageVector = Icons.Filled.AddPhotoAlternate,
-                                    contentDescription = null
-                                )
-                            }
-                        )
                     }
                 }
             }
