@@ -2,7 +2,8 @@
     <string name="app_name">Owli-AI</string>
 
     <string name="nav_title_settings">Detektor-Einstellungen</string>
-    <string name="nav_title_vlm_settings">VLM Einstellungen</string>
+    <string name="nav_title_vlm_settings">Einstellungen</string>
+    <string name="nav_title_app">OwliAi Assist</string>
     <string name="nav_title_diagnostics">Diagnostik</string>
     <string name="nav_title_vlm">VLM</string>
     <string name="nav_title_vlm_profiles">VLM Profile</string>
