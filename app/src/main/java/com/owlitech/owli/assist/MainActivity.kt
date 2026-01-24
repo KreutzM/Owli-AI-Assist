@@ -88,8 +88,12 @@ class MainActivity : AppCompatActivity() {
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (isGranted) {
-                AppLogger.d("Permission granted -> autoStartIfNeeded")
-                mainViewModel.autoStartIfNeeded()
+                if (settingsViewModel.settings.value.detectorModeEnabled) {
+                    AppLogger.d("Permission granted -> autoStartIfNeeded")
+                    mainViewModel.autoStartIfNeeded()
+                } else {
+                    AppLogger.d("Permission granted but detector disabled -> skip autoStart")
+                }
             } else {
                 AppLogger.d("Permission denied -> no start")
             }
@@ -164,9 +168,14 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        AppLogger.d("Activity onStart, shouldAutoStart=${mainViewModel.shouldAutoStart.value}")
-        motionEstimator.start()
-        ensurePermissionAndAutoStart()
+        val detectorEnabled = settingsViewModel.settings.value.detectorModeEnabled
+        AppLogger.d(
+            "Activity onStart, detectorEnabled=$detectorEnabled shouldAutoStart=${mainViewModel.shouldAutoStart.value}"
+        )
+        if (detectorEnabled) {
+            motionEstimator.start()
+            ensurePermissionAndAutoStart()
+        }
     }
 
     override fun onStop() {
@@ -199,6 +208,10 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun ensurePermissionAndAutoStart() {
+        if (!settingsViewModel.settings.value.detectorModeEnabled) {
+            AppLogger.d("Detector disabled -> skip auto-start")
+            return
+        }
         when (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)) {
             PackageManager.PERMISSION_GRANTED -> mainViewModel.autoStartIfNeeded()
             else -> {
@@ -249,6 +262,12 @@ class MainActivity : AppCompatActivity() {
 
     private fun applySettings(settings: AppSettings) {
         applyLocale(settings.languagePreference)
+        if (settings.detectorModeEnabled) {
+            motionEstimator.start()
+        } else {
+            mainViewModel.stopUser()
+            motionEstimator.stop()
+        }
         val migratedProfileId = when (settings.vlmProfileId) {
             "nano_safe" -> "nano-low"
             "nano_fast" -> "nano-high"
