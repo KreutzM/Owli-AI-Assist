@@ -11,6 +11,7 @@ import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
@@ -113,6 +114,7 @@ class MainActivity : AppCompatActivity() {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = AppRoute.fromRoute(navBackStackEntry?.destination?.route)
                 val canNavigateBack = navController.previousBackStackEntry != null
+                val settings by settingsViewModel.settings.collectAsState()
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -120,10 +122,14 @@ class MainActivity : AppCompatActivity() {
                         AppTopBar(
                             titleRes = currentRoute.titleRes,
                             canNavigateBack = canNavigateBack,
-                            showVlmAction = currentRoute == AppRoute.Home,
+                            showVlmAction = settings.detectorModeEnabled && currentRoute == AppRoute.Home,
+                            detectorModeEnabled = settings.detectorModeEnabled,
                             onNavigateBack = { navController.popBackStack() },
                             onOpenVlm = {
                                 navController.navigate(AppRoute.Vlm.route) { launchSingleTop = true }
+                            },
+                            onOpenDetector = {
+                                navController.navigate(AppRoute.Home.route) { launchSingleTop = true }
                             },
                             onOpenSettings = {
                                 navController.navigate(AppRoute.Settings.route) { launchSingleTop = true }

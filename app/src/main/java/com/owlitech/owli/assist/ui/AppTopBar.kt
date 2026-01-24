@@ -26,8 +26,10 @@ fun AppTopBar(
     @StringRes titleRes: Int,
     canNavigateBack: Boolean,
     showVlmAction: Boolean,
+    detectorModeEnabled: Boolean,
     onNavigateBack: () -> Unit,
     onOpenVlm: () -> Unit,
+    onOpenDetector: () -> Unit,
     onOpenSettings: () -> Unit,
     onOpenVlmSettings: () -> Unit,
     onOpenDiagnostics: () -> Unit,
@@ -60,26 +62,35 @@ fun AppTopBar(
             }
             DropdownMenu(expanded = menuExpanded, onDismissRequest = { menuExpanded = false }) {
                 DropdownMenuItem(
-                    text = { Text(stringResource(R.string.nav_title_settings)) },
-                    onClick = {
-                        menuExpanded = false
-                        onOpenSettings()
-                    }
-                )
-                DropdownMenuItem(
                     text = { Text(stringResource(R.string.nav_title_vlm_settings)) },
                     onClick = {
                         menuExpanded = false
                         onOpenVlmSettings()
                     }
                 )
-                DropdownMenuItem(
-                    text = { Text(stringResource(R.string.nav_title_diagnostics)) },
-                    onClick = {
-                        menuExpanded = false
-                        onOpenDiagnostics()
-                    }
-                )
+                if (detectorModeEnabled) {
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.nav_title_offline_detector)) },
+                        onClick = {
+                            menuExpanded = false
+                            onOpenDetector()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.nav_title_settings)) },
+                        onClick = {
+                            menuExpanded = false
+                            onOpenSettings()
+                        }
+                    )
+                    DropdownMenuItem(
+                        text = { Text(stringResource(R.string.nav_title_diagnostics)) },
+                        onClick = {
+                            menuExpanded = false
+                            onOpenDiagnostics()
+                        }
+                    )
+                }
                 DropdownMenuItem(
                     text = { Text(stringResource(R.string.nav_title_about)) },
                     onClick = {
