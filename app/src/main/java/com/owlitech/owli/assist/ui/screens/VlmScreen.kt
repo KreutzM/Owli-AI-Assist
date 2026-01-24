@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.imePadding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -65,6 +64,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalDensity
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -445,26 +445,6 @@ fun VlmScreen(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         val micEnabled = !isBusy && !isListening
-                        Box(
-                            modifier = Modifier
-                                .size(48.dp)
-                                .combinedClickable(
-                                    enabled = micEnabled,
-                                    onClick = { startVoiceIntent(false) },
-                                    onLongClick = { startVoiceIntent(true) },
-                                    onLongClickLabel = longPressSendLabel
-                                )
-                                .semantics {
-                                    contentDescription = when {
-                                        isListening -> voiceListeningLabel
-                                        autoSendOnVoiceResult -> voiceAutoSendLabel
-                                        else -> voiceInputLabel
-                                    }
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(imageVector = Icons.Filled.Mic, contentDescription = null)
-                        }
                         OutlinedTextField(
                             value = question,
                             onValueChange = { question = it },
@@ -481,19 +461,39 @@ fun VlmScreen(
                         )
                         IconButton(
                             onClick = { sendQuestion() },
-                            modifier = Modifier.semantics {
-                                contentDescription = sendMessageLabel
-                            },
+                            modifier = Modifier
+                                .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                .semantics { contentDescription = sendMessageLabel },
                             enabled = !isBusy && question.isNotBlank()
                         ) {
                             Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = null)
+                        }
+                        Box(
+                            modifier = Modifier
+                                .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                .combinedClickable(
+                                    enabled = micEnabled,
+                                    onClick = { startVoiceIntent(false) },
+                                    onLongClick = { startVoiceIntent(true) },
+                                    onLongClickLabel = longPressSendLabel
+                                )
+                                .semantics {
+                                    contentDescription = voiceInputLabel
+                                    when {
+                                        isListening -> stateDescription = voiceListeningLabel
+                                        autoSendOnVoiceResult -> stateDescription = voiceAutoSendLabel
+                                    }
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(imageVector = Icons.Filled.Mic, contentDescription = null)
                         }
                     }
                     if (!isListening) {
                         Text(
                             text = stringResource(R.string.vlm_voice_hint),
                             style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(start = 56.dp, bottom = 4.dp)
+                            modifier = Modifier.padding(bottom = 4.dp)
                         )
                     }
                     val statusText = when {
@@ -505,7 +505,7 @@ fun VlmScreen(
                         Text(
                             text = statusText,
                             style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(start = 56.dp, bottom = 8.dp)
+                            modifier = Modifier.padding(bottom = 8.dp)
                         )
                     }
                 }
