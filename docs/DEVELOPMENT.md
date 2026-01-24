@@ -21,6 +21,13 @@ Dieses Dokument ist die **einzige** Einstiegstelle für den täglichen Workflow 
 
 ---
 
+## 1a) VLM-First (Beta UX)
+- App startet standardmaessig im VLM-Modus.
+- Offline Detector ist nur sichtbar, wenn aktiviert: Settings -> VLM Settings -> Developer / Experimental -> "Enable Offline Detector (Experimental)".
+- Detector Settings sind im VLM-Settings-Screen verlinkt ("Open Detector Settings") und zusaetzlich im Top-Menue sichtbar, sobald aktiviert.
+
+---
+
 ## 2) Daily Workflow (empfohlen)
 
 ### Branching
