@@ -532,6 +532,7 @@ class MainViewModel(
         _vlmUiState.value = VlmUiState.Inactive
         vlmSession = null
         lastVlmDescription = null
+        clearVlmAttachments()
         _lastVlmImageBytes.value = null
     }
 

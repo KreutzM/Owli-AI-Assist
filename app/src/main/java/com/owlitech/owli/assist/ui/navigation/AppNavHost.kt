@@ -147,6 +147,7 @@ fun AppNavHost(
                     attachments = vlmAttachments,
                     onRemoveAttachment = { id -> mainViewModel.removeVlmAttachment(id) },
                     lastImageBytes = lastVlmImageBytes,
+                    onReset = { mainViewModel.closeVlm() },
                     onVoiceInputActiveChanged = onVoiceInputActiveChanged,
                     cameraFrameSource = cameraFrameSource,
                     autoScanAvailable = activeVlmProfile.autoScan != null,

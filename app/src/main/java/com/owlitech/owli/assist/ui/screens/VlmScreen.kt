@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -89,6 +90,8 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 
+private enum class CaptureUiMode { Preview, Frozen }
+
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun VlmScreen(
@@ -100,6 +103,7 @@ fun VlmScreen(
     attachments: List<VlmAttachment>,
     onRemoveAttachment: (String) -> Unit,
     lastImageBytes: ByteArray?,
+    onReset: () -> Unit,
     onVoiceInputActiveChanged: (Boolean) -> Unit,
     cameraFrameSource: CameraFrameSource,
     autoScanAvailable: Boolean,
@@ -119,6 +123,7 @@ fun VlmScreen(
     var actionsMenuExpanded by remember { mutableStateOf(false) }
     var lastSpeakable by remember { mutableStateOf<Pair<String?, String?>?>(null) }
     var attachmentsDialogVisible by remember { mutableStateOf(false) }
+    var captureMode by rememberSaveable { mutableStateOf(CaptureUiMode.Preview) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     var composerHeightPx by remember { mutableIntStateOf(0) }
@@ -183,8 +188,10 @@ fun VlmScreen(
     val attachmentsClose = stringResource(R.string.vlm_attachments_close)
     val attachmentsRemoveLabel = stringResource(R.string.vlm_attachment_remove)
     val attachmentsRemoveContentDescription = stringResource(R.string.vlm_attachment_remove_cd)
+    val cameraPreviewLabel = stringResource(R.string.vlm_camera_preview)
     val voicePrompt = stringResource(R.string.vlm_voice_prompt)
     val newSceneLabel = stringResource(R.string.vlm_action_new_scene)
+    val resetLabel = stringResource(R.string.vlm_action_reset)
     val longPressSendLabel = stringResource(R.string.vlm_voice_long_press_send)
     val sendMessageLabel = stringResource(R.string.vlm_send_message)
     val voiceInputLabel = stringResource(R.string.vlm_voice_input)
@@ -276,13 +283,22 @@ fun VlmScreen(
                 .matchParentSize()
                 .alpha(0f)
         )
-        backgroundBitmap?.let { image ->
-            Image(
-                bitmap = image,
-                contentDescription = null,
-                modifier = Modifier.matchParentSize(),
-                contentScale = ContentScale.Crop,
-                colorFilter = dimFilter
+        if (captureMode == CaptureUiMode.Frozen) {
+            backgroundBitmap?.let { image ->
+                Image(
+                    bitmap = image,
+                    contentDescription = cameraPreviewLabel,
+                    modifier = Modifier.matchParentSize(),
+                    contentScale = ContentScale.Crop,
+                    colorFilter = dimFilter
+                )
+            }
+        } else {
+            Box(
+                modifier = Modifier
+                    .matchParentSize()
+                    .background(Color.Black.copy(alpha = 0.15f))
+                    .semantics { contentDescription = cameraPreviewLabel }
             )
         }
         Column(
@@ -478,18 +494,30 @@ fun VlmScreen(
                     Button(
                         onClick = {
                             if (!isBusy) {
-                                if (isAutoScanRunning) {
-                                    onStopAutoScan()
+                                if (captureMode == CaptureUiMode.Preview) {
+                                    if (isAutoScanRunning) {
+                                        onStopAutoScan()
+                                    }
+                                    onNewScene()
+                                    captureMode = CaptureUiMode.Frozen
+                                } else {
+                                    onReset()
+                                    captureMode = CaptureUiMode.Preview
                                 }
-                                onNewScene()
                             }
                         },
                         enabled = !isBusy,
                         modifier = Modifier
                             .sizeIn(minHeight = 48.dp)
-                            .semantics { contentDescription = newSceneLabel }
+                            .semantics {
+                                contentDescription = if (captureMode == CaptureUiMode.Preview) {
+                                    newSceneLabel
+                                } else {
+                                    resetLabel
+                                }
+                            }
                     ) {
-                        Text(newSceneLabel)
+                        Text(if (captureMode == CaptureUiMode.Preview) newSceneLabel else resetLabel)
                     }
                 }
             }

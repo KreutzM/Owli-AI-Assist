@@ -60,6 +60,8 @@
     <string name="vlm_auto_on">Auto an</string>
     <string name="vlm_auto_off">Auto aus</string>
     <string name="vlm_action_new_scene">Neue Szene</string>
+    <string name="vlm_action_reset">Reset</string>
+    <string name="vlm_camera_preview">Kamera Vorschau</string>
     <string name="vlm_more_actions">Weitere Aktionen</string>
     <string name="vlm_repeat_last_answer">Wiederhole letzte Antwort</string>
     <string name="vlm_add_image">Bild hinzufuegen</string>
