@@ -10,7 +10,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
@@ -81,6 +80,7 @@ import com.owlitech.owli.assist.camera.CameraFrameSource
 import com.owlitech.owli.assist.vlm.VlmAttachment
 import com.owlitech.owli.assist.vlm.VlmUiState
 import com.owlitech.owli.assist.ui.components.CameraPreview
+import com.owlitech.owli.assist.ui.components.VlmCameraPreview
 import com.owlitech.owli.assist.ui.overlay.CameraOverlayDefaults
 import com.owlitech.owli.assist.ui.overlay.CameraOverlayLabel
 import com.owlitech.owli.assist.ui.overlay.CameraOverlayRow
@@ -294,10 +294,9 @@ fun VlmScreen(
                 )
             }
         } else {
-            Box(
+            VlmCameraPreview(
                 modifier = Modifier
                     .matchParentSize()
-                    .background(Color.Black.copy(alpha = 0.15f))
                     .semantics { contentDescription = cameraPreviewLabel }
             )
         }
