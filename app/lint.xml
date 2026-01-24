@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- Dependency/toolchain versions are pinned; upgrades are deliberate. -->
+    <issue id="AndroidGradlePluginVersion" severity="ignore" />
+    <issue id="GradleDependency" severity="ignore" />
+    <issue id="NewerVersionAvailable" severity="ignore" />
+    <!-- Third-party native libs are aligned by upstream; track separately. -->
+    <issue id="Aligned16KB" severity="ignore" />
+</lint>

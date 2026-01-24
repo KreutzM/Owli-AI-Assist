@@ -16,7 +16,7 @@
     <string name="action_stop">Stop</string>
     <string name="home_hazard_format">Gefahr: %1$s</string>
     <string name="home_detections_format">Erkennungen: %1$d</string>
-    <string name="home_rotation_format">Rotation: %1$ddeg</string>
+    <string name="home_rotation_format">Rotation: %1$d&#176;</string>
     <string name="home_traffic_light_format">TL: %1$s (conf=%2$.2f)</string>
     <string name="home_blindview_format">BV: %1$s</string>
     <string name="home_status_format">Status: %1$s</string>
@@ -42,9 +42,9 @@
     <string name="vlm_voice_prompt">Spracheingabe</string>
     <string name="vlm_speech_not_available">Spracherkennung nicht verfuegbar</string>
     <string name="vlm_state_ready_format">Bereit. Tippe auf %1$s.</string>
-    <string name="vlm_state_loading">Lade VLM...</string>
-    <string name="vlm_state_sending_question">Sende Frage...</string>
-    <string name="vlm_state_streaming">Streaming...</string>
+    <string name="vlm_state_loading">Lade VLM&#8230;</string>
+    <string name="vlm_state_sending_question">Sende Frage&#8230;</string>
+    <string name="vlm_state_streaming">Streaming&#8230;</string>
     <string name="vlm_state_error_format">Fehler: %1$s</string>
     <string name="vlm_state_answer">Antwort:</string>
     <string name="vlm_state_brief_format">Kurz: %1$s</string>
@@ -65,8 +65,8 @@
     <string name="vlm_question_label">Frage stellen</string>
     <string name="vlm_send_message">Nachricht senden</string>
     <string name="vlm_voice_hint">Tippen: diktieren  Gedrueckt halten: sofort senden</string>
-    <string name="vlm_voice_status_listening">Hoere zu...</string>
-    <string name="vlm_voice_status_processing">Verarbeite...</string>
+    <string name="vlm_voice_status_listening">Hoere zu&#8230;</string>
+    <string name="vlm_voice_status_processing">Verarbeite&#8230;</string>
 
     <string name="settings_reset">Reset</string>
     <string name="settings_reset_defaults">Standardwerte zuruecksetzen</string>
@@ -103,11 +103,11 @@
     <string name="settings_imu_derotation">IMU Roll-Lock</string>
     <string name="settings_imu_derotation_helper">Input per Roll stabilisieren (experimentell)</string>
     <string name="settings_stabilization_quality_min">Stabilisierung: Quality min</string>
-    <string name="settings_stabilization_quality_min_helper">IMU-Qualitaetsschwelle fuer Roll-Lock</string>
+    <string name="settings_stabilization_quality_min_helper">IMU-Qualitaetsschwelle f&#252;r Roll-Lock</string>
     <string name="settings_translation_stabilization">Translations-Stabilisierung</string>
     <string name="settings_translation_stabilization_helper">Crop-Fenster gegen Bewegung stabilisieren (experimentell)</string>
     <string name="settings_translation_quality_min">Translation: Quality min</string>
-    <string name="settings_translation_quality_min_helper">Minimale Match-Qualitaet fuer Translation</string>
+    <string name="settings_translation_quality_min_helper">Minimale Match-Qualitaet f&#252;r Translation</string>
     <string name="settings_translation_search_radius">Translation Suchradius (low-res)</string>
     <string name="settings_translation_search_radius_helper">Suchradius in Low-Res Pixeln</string>
     <string name="settings_translation_patch_offset">Translation Patch-Offset (low-res)</string>

@@ -6,6 +6,7 @@ import android.graphics.Matrix
 import android.graphics.Paint
 import android.util.Log
 import androidx.camera.core.ImageProxy
+import androidx.core.graphics.createBitmap
 import androidx.core.graphics.scale
 import com.owlitech.owli.assist.motion.MotionSnapshot
 import kotlin.math.min
@@ -170,7 +171,7 @@ class DefaultPreprocessor(
 
     private fun rotateKeepingSize(source: Bitmap, degrees: Float): Bitmap {
         if (degrees == 0f) return source
-        val output = Bitmap.createBitmap(
+        val output = createBitmap(
             source.width,
             source.height,
             source.config ?: Bitmap.Config.ARGB_8888

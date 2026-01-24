@@ -1,6 +1,7 @@
 ﻿package com.owlitech.owli.assist.processing
 
 import android.graphics.Bitmap
+import androidx.core.graphics.scale
 import kotlin.math.abs
 import kotlin.math.min
 
@@ -157,7 +158,7 @@ class GlobalMotionEstimator(
     }
 
     private fun downsampleLuma(source: Bitmap): IntArray {
-        val scaled = Bitmap.createScaledBitmap(source, lowWidth, lowHeight, false)
+        val scaled = source.scale(lowWidth, lowHeight, false)
         val pixels = IntArray(lowWidth * lowHeight)
         scaled.getPixels(pixels, 0, lowWidth, 0, 0, lowWidth, lowHeight)
         if (scaled !== source) {

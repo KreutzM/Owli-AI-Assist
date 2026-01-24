@@ -1,4 +1,4 @@
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <string name="app_name">Owli-AI</string>
 
     <string name="nav_title_settings">Settings</string>
@@ -16,7 +16,7 @@
     <string name="action_stop">Stop</string>
     <string name="home_hazard_format">Hazard: %1$s</string>
     <string name="home_detections_format">Detections: %1$d</string>
-    <string name="home_rotation_format">Rotation: %1$ddeg</string>
+    <string name="home_rotation_format">Rotation: %1$d&#176;</string>
     <string name="home_traffic_light_format">TL: %1$s (conf=%2$.2f)</string>
     <string name="home_blindview_format">BV: %1$s</string>
     <string name="home_status_format">Status: %1$s</string>
@@ -42,9 +42,9 @@
     <string name="vlm_voice_prompt">Voice input</string>
     <string name="vlm_speech_not_available">Speech recognition not available</string>
     <string name="vlm_state_ready_format">Ready. Tap %1$s.</string>
-    <string name="vlm_state_loading">Loading VLM...</string>
-    <string name="vlm_state_sending_question">Sending question...</string>
-    <string name="vlm_state_streaming">Streaming...</string>
+    <string name="vlm_state_loading">Loading VLM&#8230;</string>
+    <string name="vlm_state_sending_question">Sending question&#8230;</string>
+    <string name="vlm_state_streaming">Streaming&#8230;</string>
     <string name="vlm_state_error_format">Error: %1$s</string>
     <string name="vlm_state_answer">Answer:</string>
     <string name="vlm_state_brief_format">Brief: %1$s</string>
@@ -65,8 +65,8 @@
     <string name="vlm_question_label">Ask a question</string>
     <string name="vlm_send_message">Send message</string>
     <string name="vlm_voice_hint">Tap: dictate  Press and hold: send now</string>
-    <string name="vlm_voice_status_listening">Listening...</string>
-    <string name="vlm_voice_status_processing">Processing...</string>
+    <string name="vlm_voice_status_listening">Listening&#8230;</string>
+    <string name="vlm_voice_status_processing">Processing&#8230;</string>
 
     <string name="settings_reset">Reset</string>
     <string name="settings_reset_defaults">Reset defaults</string>
@@ -157,7 +157,7 @@
     <string name="diagnostics_detector_info_format">DetectorInfo: %1$s</string>
     <string name="diagnostics_analysis_interval_format">AnalysisIntervalMs: %1$d</string>
     <string name="diagnostics_debug_detector_view_format">debugDetectorView=%1$s</string>
-    <string name="diagnostics_threads_format">Threads=%1$d Score&gt;=%2$.2f MaxResults=%3$d</string>
+    <string name="diagnostics_threads_format" tools:ignore="PluralsCandidate">Threads=%1$d Score&gt;=%2$.2f MaxResults=%3$d</string>
     <string name="diagnostics_tts_ready_format">ttsReady=%1$s speechRate=%2$.2f</string>
     <string name="diagnostics_speak_interval_format">speakInterval=%1$d repeatInterval=%2$d maxItems=%3$d</string>
     <string name="diagnostics_tracking_format">iou=%1$.2f trackMaxAgeMs=%2$d minHits=%3$d</string>
@@ -165,7 +165,7 @@
     <string name="diagnostics_motion_format">motion=%1$s gyro=%2$.2f roll=%3$.1f pitch=%4$.1f q=%5$.2f</string>
     <string name="diagnostics_stabilization_format">stabilization=%1$s appliedRoll=%2$.1f mapping=%3$s</string>
     <string name="diagnostics_translation_format">translation dx=%1$d dy=%2$d q=%3$.2f</string>
-    <string name="diagnostics_crop_format">crop left=%1$d top=%2$d</string>
+    <string name="diagnostics_crop_format" tools:ignore="PluralsCandidate">crop left=%1$d top=%2$d</string>
     <string name="diagnostics_detections_format">detectionsRaw=%1$d detectionsStable=%2$d</string>
     <string name="diagnostics_top_labels_format">topLabels=%1$s</string>
     <string name="diagnostics_last_preview_format">lastPreview=%1$s</string>

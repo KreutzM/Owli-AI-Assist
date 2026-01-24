@@ -216,7 +216,7 @@ class DefaultVisionPipeline(
         return if (source.width == DEBUG_DETECTOR_SIZE && source.height == DEBUG_DETECTOR_SIZE) {
             source.copy(source.config ?: Bitmap.Config.ARGB_8888, false)
         } else {
-            Bitmap.createScaledBitmap(source, DEBUG_DETECTOR_SIZE, DEBUG_DETECTOR_SIZE, true)
+            source.scale(DEBUG_DETECTOR_SIZE, DEBUG_DETECTOR_SIZE, true)
         }
     }
 
