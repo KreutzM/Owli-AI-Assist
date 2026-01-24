@@ -12,6 +12,7 @@ enum class LanguagePreference {
 
 data class AppSettings(
     val appMode: AppMode = AppSettingsDefaults.appMode,
+    val detectorModeEnabled: Boolean = AppSettingsDefaults.detectorModeEnabled,
     val vlmProfileId: String = AppSettingsDefaults.vlmProfileId,
     val vlmProfileIdUserSet: Boolean = AppSettingsDefaults.vlmProfileIdUserSet,
     val detectorMinConfidence: Float = AppSettingsDefaults.detectorMinConfidence,
@@ -88,6 +89,7 @@ data class AppSettings(
 
 object AppSettingsDefaults {
     val appMode = AppMode.BLINDVIEW
+    const val detectorModeEnabled: Boolean = false
     const val vlmProfileId: String = "gpt4o_default"
     const val vlmProfileIdUserSet: Boolean = false
     const val detectorMinConfidence: Float = 0.3f

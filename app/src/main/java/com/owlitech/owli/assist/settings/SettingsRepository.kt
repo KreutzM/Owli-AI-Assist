@@ -23,6 +23,7 @@ class SettingsRepository(private val context: Context) {
             val current = prefs.toSettings()
             val updated = transform(current)
             prefs[PrefKeys.appMode] = updated.appMode.name
+            prefs[PrefKeys.detectorModeEnabled] = updated.detectorModeEnabled
             prefs[PrefKeys.vlmProfileId] = updated.vlmProfileId
             prefs[PrefKeys.vlmProfileIdUserSet] = updated.vlmProfileIdUserSet
             prefs[PrefKeys.detectorMinConfidence] = updated.detectorMinConfidence
@@ -74,6 +75,7 @@ class SettingsRepository(private val context: Context) {
 
 private object PrefKeys {
     val appMode = stringPreferencesKey("appMode")
+    val detectorModeEnabled = booleanPreferencesKey("detectorModeEnabled")
     val vlmProfileId = stringPreferencesKey("vlmProfileId")
     val vlmProfileIdUserSet = booleanPreferencesKey("vlmProfileIdUserSet")
     val detectorMinConfidence = floatPreferencesKey("detectorMinConfidence")
@@ -120,6 +122,7 @@ private fun androidx.datastore.preferences.core.Preferences.toSettings(): AppSet
     val profileIdUserSet = this[PrefKeys.vlmProfileIdUserSet] ?: (storedProfileId != null)
     return AppSettings(
         appMode = AppMode.valueOf(this[PrefKeys.appMode] ?: AppSettingsDefaults.appMode.name),
+        detectorModeEnabled = this[PrefKeys.detectorModeEnabled] ?: AppSettingsDefaults.detectorModeEnabled,
         vlmProfileId = storedProfileId ?: AppSettingsDefaults.vlmProfileId,
         vlmProfileIdUserSet = profileIdUserSet,
         detectorMinConfidence = this[PrefKeys.detectorMinConfidence] ?: AppSettingsDefaults.detectorMinConfidence,
