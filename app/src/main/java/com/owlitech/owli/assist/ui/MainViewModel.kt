@@ -15,6 +15,8 @@ import com.owlitech.owli.assist.vlm.VlmSceneDescription
 import com.owlitech.owli.assist.vlm.VlmSession
 import com.owlitech.owli.assist.vlm.VlmUiState
 import com.owlitech.owli.assist.vlm.VlmClient
+import com.owlitech.owli.assist.vlm.VlmAttachment
+import com.owlitech.owli.assist.vlm.VlmAttachmentStore
 import com.owlitech.owli.assist.vlm.VlmProfile
 import com.owlitech.owli.assist.vlm.VlmProfileLoader
 import com.owlitech.owli.assist.vlm.VlmStreamingCallback
@@ -57,6 +59,8 @@ class MainViewModel(
 
     private val _isAutoScanRunning = MutableStateFlow(false)
     val isAutoScanRunning: StateFlow<Boolean> = _isAutoScanRunning
+    private val attachmentStore = VlmAttachmentStore()
+    val vlmAttachments: StateFlow<List<VlmAttachment>> = attachmentStore.attachments
 
     private var collectJob: Job? = null
     private var pipeline: VisionPipeline? = null
@@ -203,6 +207,18 @@ class MainViewModel(
         autoScanJob?.cancel()
         autoScanJob = null
         _isAutoScanRunning.value = false
+    }
+
+    fun addVlmAttachment(jpegBytes: ByteArray): VlmAttachment {
+        return attachmentStore.add(jpegBytes)
+    }
+
+    fun removeVlmAttachment(id: String): Boolean {
+        return attachmentStore.remove(id)
+    }
+
+    fun clearVlmAttachments() {
+        attachmentStore.clear()
     }
 
     private fun isVlmBusy(): Boolean {
