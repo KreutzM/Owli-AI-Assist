@@ -63,6 +63,10 @@
     <string name="vlm_more_actions">More actions</string>
     <string name="vlm_repeat_last_answer">Repeat last answer</string>
     <string name="vlm_add_image">Add image</string>
+    <string name="vlm_attachment_added">Image added</string>
+    <string name="vlm_attachment_add_failed">Image could not be captured</string>
+    <string name="vlm_attachment_count_single">1 image attached</string>
+    <string name="vlm_attachment_count_format">%1$d images attached</string>
     <string name="vlm_voice_long_press_send">Send immediately</string>
     <string name="vlm_voice_listening">Voice input running</string>
     <string name="vlm_voice_listening_auto_send">Voice input and send now</string>

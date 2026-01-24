@@ -90,7 +90,7 @@ fun VlmScreen(
     onNewScene: () -> Unit,
     onAsk: (String) -> Unit,
     onRepeatLastResponse: (String?, String?) -> Unit,
-    onAddImage: () -> Unit,
+    onAddImage: suspend () -> Int?,
     onVoiceInputActiveChanged: (Boolean) -> Unit,
     cameraFrameSource: CameraFrameSource,
     autoScanAvailable: Boolean,
@@ -160,6 +160,10 @@ fun VlmScreen(
     val undoText = stringResource(R.string.vlm_snackbar_undo)
     val noSpeechText = stringResource(R.string.vlm_speech_no_speech)
     val speechNotAvailableText = stringResource(R.string.vlm_speech_not_available)
+    val addImageAddedText = stringResource(R.string.vlm_attachment_added)
+    val addImageFailedText = stringResource(R.string.vlm_attachment_add_failed)
+    val attachmentCountSingle = stringResource(R.string.vlm_attachment_count_single)
+    val attachmentCountFormat = stringResource(R.string.vlm_attachment_count_format)
     val voicePrompt = stringResource(R.string.vlm_voice_prompt)
     val newSceneLabel = stringResource(R.string.vlm_action_new_scene)
     val longPressSendLabel = stringResource(R.string.vlm_voice_long_press_send)
@@ -424,13 +428,27 @@ fun VlmScreen(
                                 enabled = canRepeatLastAnswer
                             )
                             DropdownMenuItem(
-                                text = { Text(addImageLabel) },
-                                onClick = {
-                                    actionsMenuExpanded = false
-                                    onAddImage()
-                                },
-                                leadingIcon = {
-                                    Icon(
+                            text = { Text(addImageLabel) },
+                            onClick = {
+                                actionsMenuExpanded = false
+                                coroutineScope.launch {
+                                    val count = onAddImage()
+                                    if (count == null) {
+                                        snackbarHostState.showSnackbar(message = addImageFailedText)
+                                    } else {
+                                        val countLabel = if (count == 1) {
+                                            attachmentCountSingle
+                                        } else {
+                                            attachmentCountFormat.format(count)
+                                        }
+                                        snackbarHostState.showSnackbar(
+                                            message = "$addImageAddedText. $countLabel"
+                                        )
+                                    }
+                                }
+                            },
+                            leadingIcon = {
+                                Icon(
                                         imageVector = Icons.Filled.AddPhotoAlternate,
                                         contentDescription = null
                                     )

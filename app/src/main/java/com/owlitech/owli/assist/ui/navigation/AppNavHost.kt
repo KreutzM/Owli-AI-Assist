@@ -41,7 +41,7 @@ fun AppNavHost(
     onStop: () -> Unit,
     onVoiceInputActiveChanged: (Boolean) -> Unit,
     onRepeatLastVlmResponse: (String?, String?) -> Unit,
-    onAddVlmImage: () -> Unit
+    onAddVlmImage: suspend () -> Int?
 ) {
     val sceneState by mainViewModel.sceneState.collectAsState()
     val isRunning by mainViewModel.isRunning.collectAsState()

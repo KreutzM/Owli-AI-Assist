@@ -221,6 +221,30 @@ class MainViewModel(
         attachmentStore.clear()
     }
 
+    suspend fun addVlmAttachmentFromSnapshot(): Int? {
+        if (vlmSession == null) {
+            AppLogger.w("VLM", "Add image requested without active session")
+            return null
+        }
+        val provider = snapshotProvider ?: run {
+            AppLogger.w("VLM", "SnapshotProvider not ready - skipping add image")
+            return null
+        }
+        val imageSettings = vlmProfile.imageSettings
+        val jpeg = withContext(Dispatchers.Default) {
+            provider.requestFreshJpegSnapshot(
+                maxSidePx = imageSettings.maxSidePx,
+                quality = imageSettings.jpegQuality
+            )
+        }
+        if (jpeg == null) {
+            AppLogger.e("VLM", "Kein JPEG-Snapshot verfuegbar fuer Anhang")
+            return null
+        }
+        attachmentStore.add(jpeg)
+        return attachmentStore.attachments.value.size
+    }
+
     private fun isVlmBusy(): Boolean {
         return when (_vlmUiState.value) {
             is VlmUiState.LoadingOverview,

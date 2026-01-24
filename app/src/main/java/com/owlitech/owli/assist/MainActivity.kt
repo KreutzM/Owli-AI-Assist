@@ -164,7 +164,7 @@ class MainActivity : AppCompatActivity() {
                         onRepeatLastVlmResponse = { primary, secondary ->
                             repeatLastVlmResponse(primary, secondary)
                         },
-                        onAddVlmImage = { addVlmImagePlaceholder() }
+                        onAddVlmImage = { mainViewModel.addVlmAttachmentFromSnapshot() }
                     )
                 }
             }
@@ -450,7 +450,4 @@ class MainActivity : AppCompatActivity() {
         audioFeedbackEngine.speakVlmResponse(primary, secondary)
     }
 
-    private fun addVlmImagePlaceholder() {
-        // TODO: Wire image picker or snapshot add flow for VLM follow-up.
-    }
 }
