@@ -1,130 +1,101 @@
-# AGENTS.md – Owli-AI Assist (Android)
+# AGENTS.md
 
-Diese Datei ist die **Single Source of Truth** für Codex-CLI-Arbeit in diesem Repo: Setup, Regeln, Checks, Doku-Pflege.
+> This file contains project-wide instructions for Codex/CLI agents. Keep these rules short, specific, and actionable.
 
-## Projekt-Identität (fix)
-- **Produkt/Brand (sichtbar):** Owli-AI
-- **App (diese Repo-Instanz):** Owli-AI Assist
-- **applicationId / namespace (Gradle):** `com.owlitech.owli.assist`
-- **Code-Root-Package:** `com.owlitech.owli.assist.*`
-- Historische Begriffe (BikeBuddy/BikeAssist/BlindView) können im Repo vorkommen und sollen bei passenden Refactors **konsistent auf Owli-AI / Owli-AI Assist** umgestellt werden – **wenn** der Nutzer es beauftragt.
+## Goals
+- Deliver small, correct, reviewable improvements.
+- Keep Android app behavior stable unless explicitly requested.
+- Prefer measurable progress over large refactors.
 
----
+## Model & reasoning defaults
+- **Default model:** `gpt-5.2-codex`.
+- **Default reasoning/effort:** **medium**.
+- Use **high / xhigh** only for:
+  - multi-step refactors spanning multiple modules,
+  - subtle concurrency/lifecycle bugs,
+  - performance profiling/tuning,
+  - complex architecture changes.
 
-## 1) Arbeitsmodus
+## Work style
+- Work in **small, meaningful increments**.
+- Prefer **short feedback loops**: implement → verify → commit.
+- Avoid speculative rewrites.
 
-### Autonomie (wenig Nachfragen)
-- Standardannahme: Der Nutzer möchte, dass Codex **30+ Minuten selbständig** arbeiten kann.
-- Stelle nur Rückfragen, wenn du **blockiert** bist (z.B. fehlende Datei, uneindeutiger Zielwert, gefährlicher Befehl außerhalb Workspace).
-- Triff bei kleinen Detailentscheidungen sinnvolle Defaults und dokumentiere sie kurz in der Batch-Zusammenfassung.
+### Commit policy (required)
+- Make progress via **frequent, small commits**.
+- Each commit must be:
+  - **Buildable** (at least `assembleDebug` passes),
+  - **Focused** (one logical change),
+  - **Documented** (clear message + brief rationale in body if non-obvious).
+- When a change touches public behavior, settings, or architecture, update docs **in the same commit**.
 
-### Kleine, sichere Änderungen
-- Arbeite in **kleinen Batches** (max. ~200 Zeilen Diff pro Batch, wenn möglich).
-- Nach jedem Batch:
-  1) `git diff` zeigen
-  2) Build/Test-Check ausführen (siehe „Checks“)
-  3) **Docs aktualisieren** (README/CHANGELOG/docs). Hinweis: - Docs niemals mit BOM oder CRLF neu schreiben; UTF-8 ohne BOM + LF beibehalten.
-  4) Kurze Zusammenfassung (3–7 Bulletpoints)
+**Commit message format**
+- `area: short summary`
+  - Examples: `pipeline: gate IMU derotation by quality`, `ui: show stabilized input preview toggle`, `docs: update stabilization notes`.
 
-### Keine unnötige Format-/Churn-Änderungen
-- Kein großflächiges Reformatting „nebenbei“.
-- Bei Rename/Move: **`git mv`** bevorzugen (History erhalten).
+## Command execution (Windows / PowerShell)
+- Prefer **single commands** over long chains; avoid `|`, `&&`, bash-only syntax.
+- Use `git grep` instead of `grep`.
+- Use the Gradle wrapper on Windows: **`gradlew.bat`**.
+- Quote paths when needed and keep them repo-relative.
 
----
+## Verification checklist (do this in each increment)
+1. Review changes:
+   - `git status`
+   - `git diff`
+2. Run **fast checks (default)**:
+   - `./gradlew.bat :app:testDebugUnitTest`
+   - If you touched resources/manifest/Compose UI, or changed Gradle config: `./gradlew.bat :app:assembleDebug`
+3. Run **static checks when relevant**:
+   - If you touched Android components (manifest, resources), threading/lifecycle code, or introduced new APIs: `./gradlew.bat :app:lintDebug`
+   - Keep lint output clean; only suppress with a short comment explaining why.
+4. Run **full checks** when:
+   - changes span multiple areas, refactors are non-trivial, or before merging:
+   - `./gradlew.bat :app:check` (or, if too slow: `:app:test` + `:app:lintDebug` + `:app:assembleDebug`).
+5. If any check fails, fix before committing.
 
-## 2) Windows 10 (PowerShell) – verbindliche Konventionen
+> **Never** run device/emulator tests automatically (e.g. `connectedDebugAndroidTest`, `installDebug`) unless explicitly instructed.
 
-### Gradle Wrapper
-- Verwende unter PowerShell **immer** `gradlew.bat` (nicht `./gradlew`).
-- Beispiele:
-  - `gradlew.bat test`
-  - `gradlew.bat assembleDebug`
+## Testing policy
+- Prefer **JVM unit tests** (`app/src/test`) for:
+  - domain logic (analyzer, hazard rules),
+  - math/geometry/mapping, stabilization heuristics, trackers,
+  - parsers/formatters (VLM, TTS chunking),
+  - settings/defaults.
+- Only add **instrumented tests** (`app/src/androidTest`) when unavoidable and explicitly requested.
+- For bugfixes: add a **regression test** (fails before, passes after).
+- For new features/behavior changes: add **1–3 focused tests** for the critical logic and edge cases.
+- Tests must be deterministic:
+  - no real network, no `Thread.sleep`, use fakes/clocks.
 
-### Pfade & Shell
-- Verwende Windows-Pfade robust (keine Bash-Only Syntax).
-- Bevorzuge `git grep` statt `grep`.
+## Android-specific guidance
+- Respect lifecycle: start/stop camera and sensors safely.
+- Avoid work on the main thread; use coroutines/dispatchers appropriately.
+- Be explicit about threading when interacting with CameraX/TFLite.
+- If you change:
+  - permissions,
+  - manifests,
+  - Gradle config,
+  - model assets paths,
+  - settings defaults,
+  then update documentation.
 
----
+## Docs policy
+- Update docs **only when behavior, setup, settings, or architecture changes**.
+- Avoid mechanical reflows or large-format-only diffs.
+- Do not add secrets to docs/logs.
 
-## 3) Setup & Checks (genau so ausführen) (genau so ausführen)
+## Safety & secrets
+- Never commit API keys, tokens, or credentials.
+- `local.properties` may contain secrets; do not copy its contents into source.
+- `BuildConfig` constants are acceptable **only** if sourced from local, untracked config.
 
-> Codex soll zuerst feststellen, ob es in **WSL/Linux** oder **Windows (PowerShell)** läuft und dann den passenden Wrapper nutzen.
+## Repo hygiene
+- Do not rename packages/namespaces unless explicitly requested.
+- Do not introduce or upgrade dependencies without explicit instruction.
+- Avoid touching generated files and IDE configs (`.idea/`, `build/`, etc.) unless requested.
 
-### Minimal (immer nach Code-Änderungen)
-- WSL/Linux/macOS:
-  - `./gradlew test`
-  - `./gradlew assembleDebug`
-- Windows/PowerShell:
-  - `gradlew.bat test`
-  - `gradlew.bat assembleDebug`
-
-### Optional (wenn Build/CI/Release betroffen)
-- WSL/Linux/macOS: `./gradlew lintDebug`
-- Windows: `gradlew.bat lintDebug`
-
----
-
-## 4) Doku-Pflege ist Pflicht (nach JEDEM Code-Change)
-
-Nach **jeder** Code-Änderung (Refactor, Bugfix, Feature) muss Codex **in derselben Änderung** prüfen und bei Bedarf aktualisieren:
-- `README.md`
-- `CHANGELOG.md`
-- `docs/*.md` (alle relevanten Dateien)
-
-Regeln:
-- Doku muss **konsistent** sein (Namen, Packages, Screens, Setup-Commands, Feature-Beschreibung).
-- Wenn Terminologie umgestellt wird (BikeBuddy/BikeAssist → Owli-AI), muss die Doku das widerspiegeln.
-- Keine „leeren“ Changelog-Einträge: nur wenn sich Nutzer-/Dev-relevantes Verhalten, Setup oder Architektur ändert.
-
----
-
-## 5) Security / Secrets (hart)
-- **Keine Secrets** in Repo-Dateien (auch nicht „nur testweise“).
-- `local.properties` darf **niemals getrackt** sein.
-- Wenn ein Secret (z.B. `OPENROUTER_API_KEY`) im Repo war: Nutzer auf **Key-Rotation** hinweisen.
-
----
-
-## 6) Was Codex ohne Rückfrage darf
-- Lesen/Analysieren von Dateien im Workspace
-- Ausführen von:
-  - `git status`, `git diff`, `git grep`
-  - Gradle Checks aus Abschnitt „Setup & Checks“
-  - einfache Diagnose-Commands (`pwd`, `ls`)
-
-## 7) Was Codex nur nach expliziter Freigabe darf
-- `git commit`, `git push`, `git rebase/merge`, Branch-Wechsel
-- Löschen größerer Bereiche / riskante Moves außerhalb klarer Pfade
-- Neue Dependencies / Plugin-Upgrades / Kotlin-/AGP-/Gradle-Versionssprünge
-- Architektur-Umbauten (z.B. Multi-Module Split) – nur wenn Nutzer das beauftragt
-
----
-
-## 8) Android-spezifische Leitplanken
-- Keine teure Arbeit auf dem Main Thread (Camera/ML/TTS müssen lifecycle-sicher bleiben).
-- Compose/UI bleibt „dünn“; Pipeline/ML/IO bleibt in separaten Schichten.
-- `applicationId` ist stabil (Play-Store Identität); UI-Name wird über `app_name`/Store gepflegt.
-- Beim Package-Rename immer prüfen:
-  - `AndroidManifest.xml`
-  - Theme-Namen/Refs
-  - `BuildConfig`-Imports
-  - Tests (`ExampleInstrumentedTest` packageName)
-
----
-
-## 9) Typischer Codex-Flow (empfohlen)
-1) **Inventory**: relevante Dateien/Touchpoints nennen, Plan in 5–10 Bulletpoints.
-2) Batchweise implementieren.
-3) Nach jedem Batch: diff + Checks.
-4) Zum Schluss: Rest-Suche (`git grep`) nach alten Namen/Packages und Doku-Update.
-
----
-
-## 10) Repo-Dateien, die Codex als „Leitdokumente“ behandeln soll
-- `README.md`
-- `CHANGELOG.md`
-- `docs/*.md`
-- Diese `AGENTS.md`
-
-Codex soll bei Widersprüchen **den Nutzer fragen** oder einen klaren Vorschlag machen, welche Quelle „gewinnt“.
+## When uncertain
+- Make the smallest reasonable change, leave a TODO with context, and commit.
+- Prefer adding diagnostics/logging over guessing.
 
