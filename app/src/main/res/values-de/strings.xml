@@ -67,6 +67,12 @@
     <string name="vlm_attachment_add_failed">Bild konnte nicht aufgenommen werden</string>
     <string name="vlm_attachment_count_single">1 Bild angehaengt</string>
     <string name="vlm_attachment_count_format">%1$d Bilder angehaengt</string>
+    <string name="vlm_attachments_manage_format">%1$d Bilder angehaengt, zum Verwalten</string>
+    <string name="vlm_attachments_title">Anhaenge</string>
+    <string name="vlm_attachments_close">Schliessen</string>
+    <string name="vlm_attachment_item_format">Bild %1$d</string>
+    <string name="vlm_attachment_remove">Entfernen</string>
+    <string name="vlm_attachment_remove_cd">Bild entfernen</string>
     <string name="vlm_voice_long_press_send">Sofort senden</string>
     <string name="vlm_voice_listening">Spracheingabe laeuft</string>
     <string name="vlm_voice_listening_auto_send">Spracheingabe &amp; sofort senden</string>

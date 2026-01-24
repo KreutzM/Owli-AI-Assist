@@ -17,9 +17,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.sizeIn
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.combinedClickable
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
@@ -28,12 +30,15 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.AddPhotoAlternate
 import androidx.compose.material.icons.filled.Autorenew
 import androidx.compose.material.icons.filled.Mic
@@ -72,6 +77,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import com.owlitech.owli.assist.R
 import com.owlitech.owli.assist.camera.CameraFrameSource
+import com.owlitech.owli.assist.vlm.VlmAttachment
 import com.owlitech.owli.assist.vlm.VlmUiState
 import com.owlitech.owli.assist.ui.components.CameraPreview
 import com.owlitech.owli.assist.ui.overlay.CameraOverlayDefaults
@@ -91,6 +97,8 @@ fun VlmScreen(
     onAsk: (String) -> Unit,
     onRepeatLastResponse: (String?, String?) -> Unit,
     onAddImage: suspend () -> Int?,
+    attachments: List<VlmAttachment>,
+    onRemoveAttachment: (String) -> Unit,
     onVoiceInputActiveChanged: (Boolean) -> Unit,
     cameraFrameSource: CameraFrameSource,
     autoScanAvailable: Boolean,
@@ -109,6 +117,7 @@ fun VlmScreen(
     var pendingAutoSendText by remember { mutableStateOf<String?>(null) }
     var actionsMenuExpanded by remember { mutableStateOf(false) }
     var lastSpeakable by remember { mutableStateOf<Pair<String?, String?>?>(null) }
+    var attachmentsDialogVisible by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     var composerHeightPx by remember { mutableIntStateOf(0) }
@@ -164,6 +173,14 @@ fun VlmScreen(
     val addImageFailedText = stringResource(R.string.vlm_attachment_add_failed)
     val attachmentCountSingle = stringResource(R.string.vlm_attachment_count_single)
     val attachmentCountFormat = stringResource(R.string.vlm_attachment_count_format)
+    val attachmentsManageLabel = stringResource(
+        R.string.vlm_attachments_manage_format,
+        attachments.size
+    )
+    val attachmentsTitle = stringResource(R.string.vlm_attachments_title)
+    val attachmentsClose = stringResource(R.string.vlm_attachments_close)
+    val attachmentsRemoveLabel = stringResource(R.string.vlm_attachment_remove)
+    val attachmentsRemoveContentDescription = stringResource(R.string.vlm_attachment_remove_cd)
     val voicePrompt = stringResource(R.string.vlm_voice_prompt)
     val newSceneLabel = stringResource(R.string.vlm_action_new_scene)
     val longPressSendLabel = stringResource(R.string.vlm_voice_long_press_send)
@@ -487,6 +504,21 @@ fun VlmScreen(
                         .padding(horizontal = 12.dp, vertical = 10.dp),
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
+                    if (attachments.isNotEmpty()) {
+                        OutlinedButton(
+                            onClick = { attachmentsDialogVisible = true },
+                            modifier = Modifier
+                                .sizeIn(minHeight = 48.dp)
+                                .semantics { contentDescription = attachmentsManageLabel }
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.AttachFile,
+                                contentDescription = null
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(text = attachments.size.toString())
+                        }
+                    }
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.Bottom,
@@ -558,6 +590,43 @@ fun VlmScreen(
                     }
                 }
             }
+        }
+        if (attachmentsDialogVisible) {
+            AlertDialog(
+                onDismissRequest = { attachmentsDialogVisible = false },
+                title = { Text(attachmentsTitle) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        attachments.forEachIndexed { index, attachment ->
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = stringResource(
+                                        R.string.vlm_attachment_item_format,
+                                        index + 1
+                                    )
+                                )
+                                TextButton(
+                                    onClick = { onRemoveAttachment(attachment.id) },
+                                    modifier = Modifier.semantics {
+                                        contentDescription = attachmentsRemoveContentDescription
+                                    }
+                                ) {
+                                    Text(attachmentsRemoveLabel)
+                                }
+                            }
+                        }
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = { attachmentsDialogVisible = false }) {
+                        Text(attachmentsClose)
+                    }
+                }
+            )
         }
     }
 }

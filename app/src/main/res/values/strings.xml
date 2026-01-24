@@ -67,6 +67,12 @@
     <string name="vlm_attachment_add_failed">Image could not be captured</string>
     <string name="vlm_attachment_count_single">1 image attached</string>
     <string name="vlm_attachment_count_format">%1$d images attached</string>
+    <string name="vlm_attachments_manage_format">%1$d images attached, tap to manage</string>
+    <string name="vlm_attachments_title">Attachments</string>
+    <string name="vlm_attachments_close">Close</string>
+    <string name="vlm_attachment_item_format">Image %1$d</string>
+    <string name="vlm_attachment_remove">Remove</string>
+    <string name="vlm_attachment_remove_cd">Remove image</string>
     <string name="vlm_voice_long_press_send">Send immediately</string>
     <string name="vlm_voice_listening">Voice input running</string>
     <string name="vlm_voice_listening_auto_send">Voice input and send now</string>
