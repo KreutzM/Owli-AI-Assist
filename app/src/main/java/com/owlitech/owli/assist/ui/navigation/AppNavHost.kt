@@ -53,6 +53,7 @@ fun AppNavHost(
     val vlmAttachments by mainViewModel.vlmAttachments.collectAsState()
     val lastVlmImageBytes by mainViewModel.lastVlmImageBytes.collectAsState()
     val activeVlmProfile = vlmProfilesConfig.resolve(settings.vlmProfileId)
+    val autoScanIntervalMs = activeVlmProfile.autoScan?.intervalMs?.takeIf { it > 0 } ?: 2000L
     val hazardLabel = when (sceneState?.overallHazardLevel) {
         HazardLevel.WARNING -> stringResource(R.string.hazard_level_warning)
         HazardLevel.DANGER -> stringResource(R.string.hazard_level_danger)
@@ -153,6 +154,7 @@ fun AppNavHost(
                     onVoiceInputActiveChanged = onVoiceInputActiveChanged,
                     autoScanAvailable = activeVlmProfile.autoScan != null,
                     isAutoScanRunning = isAutoScanRunning,
+                    autoScanIntervalMs = autoScanIntervalMs,
                     onStartAutoScan = { mainViewModel.startAutoScan() },
                     onStopAutoScan = { mainViewModel.stopAutoScan() }
                 )

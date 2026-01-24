@@ -26,7 +26,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -74,7 +73,6 @@ class MainViewModel(
     private var vlmOverviewPrompt: String = VlmConfig.DEFAULT_OVERVIEW_PROMPT
     private var vlmProfile: VlmProfile = VlmProfileLoader.fallbackProfiles().first()
     private val useStructuredVlmParsing = false
-    private var autoScanJob: Job? = null
     private val vlmRequestInFlight = AtomicBoolean(false)
     private var detectorPausedForVlm = false
     private var detectorResumePending = false
@@ -234,24 +232,11 @@ class MainViewModel(
             AppLogger.w("VLM", "Autoscan angefordert, aber Profil hat kein auto_scan")
             return
         }
-        if (autoScanJob?.isActive == true) return
-        val intervalMs = autoScan.intervalMs.takeIf { it > 0 } ?: 2000L
+        if (_isAutoScanRunning.value) return
         _isAutoScanRunning.value = true
-        autoScanJob = viewModelScope.launch {
-            try {
-                while (isActive) {
-                    requestNewScene()
-                    delay(intervalMs)
-                }
-            } finally {
-                _isAutoScanRunning.value = false
-            }
-        }
     }
 
     fun stopAutoScan() {
-        autoScanJob?.cancel()
-        autoScanJob = null
         _isAutoScanRunning.value = false
     }
 

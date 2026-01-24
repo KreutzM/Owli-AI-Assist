@@ -55,6 +55,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -88,6 +89,7 @@ import com.owlitech.owli.assist.ui.overlay.CameraOverlayRow
 import com.owlitech.owli.assist.ui.overlay.CameraOverlayScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.launch
 import java.io.File
@@ -109,6 +111,7 @@ fun VlmScreen(
     onVoiceInputActiveChanged: (Boolean) -> Unit,
     autoScanAvailable: Boolean,
     isAutoScanRunning: Boolean,
+    autoScanIntervalMs: Long,
     onStartAutoScan: () -> Unit,
     onStopAutoScan: () -> Unit
 ) {
@@ -125,6 +128,7 @@ fun VlmScreen(
     var lastSpeakable by remember { mutableStateOf<Pair<String?, String?>?>(null) }
     var attachmentsDialogVisible by remember { mutableStateOf(false) }
     var captureMode by rememberSaveable { mutableStateOf(CaptureUiMode.Preview) }
+    var captureInFlight by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
     var composerHeightPx by remember { mutableIntStateOf(0) }
@@ -164,6 +168,11 @@ fun VlmScreen(
                 captureMode = CaptureUiMode.Preview
             }
             else -> Unit
+        }
+    }
+    LaunchedEffect(isAutoScanRunning) {
+        if (isAutoScanRunning && captureMode != CaptureUiMode.Preview) {
+            captureMode = CaptureUiMode.Preview
         }
     }
     val sendQuestion = {
@@ -211,6 +220,9 @@ fun VlmScreen(
             .build()
     }
     val cameraExecutor = remember { ContextCompat.getMainExecutor(context) }
+    val latestState by rememberUpdatedState(state)
+    val latestCaptureMode by rememberUpdatedState(captureMode)
+    val latestAutoScanRunning by rememberUpdatedState(isAutoScanRunning)
     val speechLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) { result ->
@@ -265,7 +277,9 @@ fun VlmScreen(
             onVoiceInputActiveChanged(false)
         }
     }
-    val captureNewScene = {
+    val captureNewScene: (Boolean) -> Unit = newScene@{ freezeOnSuccess ->
+        if (captureInFlight) return@newScene
+        captureInFlight = true
         val file = File(context.cacheDir, "vlm_capture_${System.currentTimeMillis()}.jpg")
         val outputOptions = ImageCapture.OutputFileOptions.Builder(file).build()
         imageCapture.takePicture(
@@ -273,6 +287,7 @@ fun VlmScreen(
             cameraExecutor,
             object : ImageCapture.OnImageSavedCallback {
                 override fun onError(exception: ImageCaptureException) {
+                    captureInFlight = false
                     coroutineScope.launch {
                         snackbarHostState.showSnackbar(message = captureFailedText)
                     }
@@ -284,18 +299,23 @@ fun VlmScreen(
                             withContext(Dispatchers.IO) { file.readBytes() }
                         }.getOrNull()
                         runCatching { file.delete() }
+                        captureInFlight = false
                         if (bytes == null) {
                             snackbarHostState.showSnackbar(message = captureFailedText)
                             return@launch
                         }
                         onNewScene(bytes)
-                        captureMode = CaptureUiMode.Frozen
+                        if (freezeOnSuccess) {
+                            captureMode = CaptureUiMode.Frozen
+                        }
                     }
                 }
             }
         )
     }
-    val captureAttachment = {
+    val captureAttachment = attachment@{
+        if (captureInFlight) return@attachment
+        captureInFlight = true
         val file = File(context.cacheDir, "vlm_attachment_${System.currentTimeMillis()}.jpg")
         val outputOptions = ImageCapture.OutputFileOptions.Builder(file).build()
         imageCapture.takePicture(
@@ -303,6 +323,7 @@ fun VlmScreen(
             cameraExecutor,
             object : ImageCapture.OnImageSavedCallback {
                 override fun onError(exception: ImageCaptureException) {
+                    captureInFlight = false
                     coroutineScope.launch {
                         snackbarHostState.showSnackbar(message = addImageFailedText)
                     }
@@ -314,6 +335,7 @@ fun VlmScreen(
                             withContext(Dispatchers.IO) { file.readBytes() }
                         }.getOrNull()
                         runCatching { file.delete() }
+                        captureInFlight = false
                         if (bytes == null) {
                             snackbarHostState.showSnackbar(message = addImageFailedText)
                             return@launch
@@ -335,6 +357,21 @@ fun VlmScreen(
                 }
             }
         )
+    }
+    LaunchedEffect(isAutoScanRunning, autoScanIntervalMs) {
+        if (!isAutoScanRunning) return@LaunchedEffect
+        while (isActive) {
+            val busy = when (latestState) {
+                is VlmUiState.LoadingOverview,
+                is VlmUiState.Asking,
+                is VlmUiState.Streaming -> true
+                else -> false
+            }
+            if (latestAutoScanRunning && latestCaptureMode == CaptureUiMode.Preview && !busy) {
+                captureNewScene(false)
+            }
+            delay(autoScanIntervalMs)
+        }
     }
     val startVoiceIntent = { autoSend: Boolean ->
         speechError = null
@@ -563,7 +600,7 @@ fun VlmScreen(
                                     if (isAutoScanRunning) {
                                         onStopAutoScan()
                                     }
-                                    captureNewScene()
+                                    captureNewScene(true)
                                 } else {
                                     onReset()
                                     captureMode = CaptureUiMode.Preview
