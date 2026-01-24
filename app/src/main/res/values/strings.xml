@@ -76,6 +76,9 @@
     <string name="settings_language_system">System default</string>
     <string name="settings_language_german">German</string>
     <string name="settings_language_english">English</string>
+    <string name="settings_section_developer">Developer / Experimental</string>
+    <string name="settings_detector_enable_experimental">Enable Offline Detector (Experimental)</string>
+    <string name="settings_open_detector_settings">Open Detector Settings</string>
     <string name="settings_detector_min_confidence">Detector min confidence</string>
     <string name="settings_detector_min_confidence_helper">Score threshold</string>
     <string name="settings_detector_max_results">Detector max results</string>

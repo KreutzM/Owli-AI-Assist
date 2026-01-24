@@ -125,6 +125,7 @@ fun AppNavHost(
                     settings = settings,
                     activeVlmProfileLabel = activeVlmProfile.label,
                     onOpenVlmProfiles = { navController.navigate(AppRoute.VlmProfiles.route) },
+                    onOpenDetectorSettings = { navController.navigate(AppRoute.Settings.route) },
                     onUpdate = { update -> settingsViewModel.update { update(it) } }
                 )
             }
