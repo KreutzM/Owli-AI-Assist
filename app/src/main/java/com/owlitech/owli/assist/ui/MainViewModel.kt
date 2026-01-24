@@ -399,12 +399,13 @@ class MainViewModel(
             _vlmUiState.value = VlmUiState.Error("Keine aktive VLM-Session. Bitte zuerst 'Neue Szene' ausfuehren.")
             return
         }
+        val attachments = attachmentStore.attachments.value
         val snapshotBytes = session.snapshotBytes
-        if (questionText.isBlank()) return
+        if (questionText.isBlank() && attachments.isEmpty()) return
         _vlmUiState.value = VlmUiState.Asking(lastVlmDescription, questionText, snapshotBytes = snapshotBytes)
         AppLogger.i("VLM", "askVlm started questionLength=${questionText.length}")
         viewModelScope.launch {
-            val messages = buildFollowUpMessages(session, questionText)
+            val messages = buildFollowUpMessages(session, questionText, attachments)
             try {
                 val result = if (vlmProfile.streamingEnabled && !useStructuredVlmParsing) {
                     val buffer = StringBuilder()
@@ -463,12 +464,15 @@ class MainViewModel(
                     val parsed = VlmSceneDescription.parse(result.assistantContent)
                     if (parsed.isSuccess) {
                         lastVlmDescription = parsed.getOrNull()
-                        session.messageHistory.add(
-                            VlmChatMessage(role = "user", content = listOf(VlmContentPart.Text(questionText)))
-                        )
+                        if (questionText.isNotBlank()) {
+                            session.messageHistory.add(
+                                VlmChatMessage(role = "user", content = listOf(VlmContentPart.Text(questionText)))
+                            )
+                        }
                         session.messageHistory.add(
                             VlmChatMessage(role = "assistant", content = listOf(VlmContentPart.Text(result.assistantContent)))
                         )
+                        clearVlmAttachments()
                         _vlmUiState.value = VlmUiState.OverviewReady(
                             lastVlmDescription!!,
                             System.currentTimeMillis(),
@@ -482,13 +486,16 @@ class MainViewModel(
                     }
                 } else {
                     val raw = result.assistantContent.trim()
-                    session.messageHistory.add(
-                        VlmChatMessage(role = "user", content = listOf(VlmContentPart.Text(questionText)))
-                    )
+                    if (questionText.isNotBlank()) {
+                        session.messageHistory.add(
+                            VlmChatMessage(role = "user", content = listOf(VlmContentPart.Text(questionText)))
+                        )
+                    }
                     session.messageHistory.add(
                         VlmChatMessage(role = "assistant", content = listOf(VlmContentPart.Text(result.assistantContent)))
                     )
                     lastVlmDescription = null
+                    clearVlmAttachments()
                     _vlmUiState.value = VlmUiState.OverviewReadyRaw(
                         raw,
                         System.currentTimeMillis(),
@@ -545,7 +552,11 @@ class MainViewModel(
         return listOf(system, user)
     }
 
-    private fun buildFollowUpMessages(session: VlmSession, questionText: String): List<VlmChatMessage> {
+    private fun buildFollowUpMessages(
+        session: VlmSession,
+        questionText: String,
+        attachments: List<VlmAttachment>
+    ): List<VlmChatMessage> {
         val messages = mutableListOf<VlmChatMessage>()
         messages += VlmChatMessage(
             role = "system",
@@ -559,9 +570,16 @@ class MainViewModel(
             )
         )
         messages += session.messageHistory
+        val userParts = mutableListOf<VlmContentPart>()
+        if (questionText.isNotBlank()) {
+            userParts += VlmContentPart.Text(questionText)
+        }
+        attachments.forEach { attachment ->
+            userParts += VlmContentPart.ImageUrl(jpegToDataUrl(attachment.jpegBytes))
+        }
         messages += VlmChatMessage(
             role = "user",
-            content = listOf(VlmContentPart.Text(questionText))
+            content = userParts
         )
         return messages
     }
