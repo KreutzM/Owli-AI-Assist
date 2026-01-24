@@ -13,6 +13,8 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 
 @Composable
 fun VlmCameraPreview(
@@ -26,18 +28,47 @@ fun VlmCameraPreview(
     val cameraProviderFuture = remember { ProcessCameraProvider.getInstance(context) }
     val executor = remember { ContextCompat.getMainExecutor(context) }
 
-    DisposableEffect(lifecycleOwner, cameraSelector) {
-        val listener = Runnable {
-            val provider = cameraProviderFuture.get()
+    DisposableEffect(lifecycleOwner, cameraSelector, imageCapture) {
+        var provider: ProcessCameraProvider? = null
+        var isBound = false
+
+        fun bindIfNeeded() {
+            if (isBound) return
+            val cameraProvider = provider ?: return
             val preview = Preview.Builder().build()
             preview.setSurfaceProvider(previewView.surfaceProvider)
-            runCatching { provider.unbindAll() }
+            runCatching { cameraProvider.unbindAll() }
             val useCases = listOfNotNull(preview, imageCapture)
-            provider.bindToLifecycle(lifecycleOwner, cameraSelector, *useCases.toTypedArray())
+            cameraProvider.bindToLifecycle(lifecycleOwner, cameraSelector, *useCases.toTypedArray())
+            isBound = true
+        }
+
+        fun unbindIfNeeded() {
+            if (!isBound) return
+            runCatching { provider?.unbindAll() }
+            isBound = false
+        }
+
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_RESUME -> bindIfNeeded()
+                Lifecycle.Event.ON_PAUSE,
+                Lifecycle.Event.ON_STOP -> unbindIfNeeded()
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+
+        val listener = Runnable {
+            provider = cameraProviderFuture.get()
+            if (lifecycleOwner.lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED)) {
+                bindIfNeeded()
+            }
         }
         cameraProviderFuture.addListener(listener, executor)
         onDispose {
-            runCatching { cameraProviderFuture.get().unbindAll() }
+            lifecycleOwner.lifecycle.removeObserver(observer)
+            unbindIfNeeded()
         }
     }
 
