@@ -60,8 +60,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
@@ -129,6 +132,7 @@ fun VlmScreen(
     var speechError by remember { mutableStateOf<String?>(null) }
     var autoSendOnVoiceResult by rememberSaveable { mutableStateOf(false) }
     var pendingAutoSendText by remember { mutableStateOf<String?>(null) }
+    var focusSendAfterVoice by remember { mutableStateOf(false) }
     var actionsMenuExpanded by remember { mutableStateOf(false) }
     var lastSpeakable by remember { mutableStateOf<Pair<String?, String?>?>(null) }
     var attachmentsDialogVisible by remember { mutableStateOf(false) }
@@ -225,6 +229,7 @@ fun VlmScreen(
             .build()
     }
     val cameraExecutor = remember { ContextCompat.getMainExecutor(context) }
+    val sendFocusRequester = remember { FocusRequester() }
     val latestState by rememberUpdatedState(state)
     val latestCaptureMode by rememberUpdatedState(captureMode)
     val latestAutoScanRunning by rememberUpdatedState(isAutoScanRunning)
@@ -271,6 +276,7 @@ fun VlmScreen(
                 val current = question.trim()
                 question = if (current.isBlank()) trimmed else "$current $trimmed"
                 speechError = null
+                focusSendAfterVoice = true
             } else {
                 speechError = noSpeechText
             }
@@ -317,6 +323,15 @@ fun VlmScreen(
                 }
             }
         )
+    }
+    val sendEnabled = !isBusy && question.isNotBlank()
+    LaunchedEffect(focusSendAfterVoice, sendEnabled) {
+        if (!focusSendAfterVoice) return@LaunchedEffect
+        if (sendEnabled) {
+            withFrameNanos { }
+            sendFocusRequester.requestFocus()
+        }
+        focusSendAfterVoice = false
     }
     val captureAttachment = attachment@{
         if (captureInFlight) return@attachment
@@ -567,8 +582,9 @@ fun VlmScreen(
                                         onClick = { sendQuestion() },
                                         modifier = Modifier
                                             .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                            .focusRequester(sendFocusRequester)
                                             .semantics { contentDescription = sendMessageLabel },
-                                        enabled = !isBusy && question.isNotBlank()
+                                        enabled = sendEnabled
                                     ) {
                                         Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = null)
                                     }
