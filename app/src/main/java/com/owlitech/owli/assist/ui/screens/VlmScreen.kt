@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.speech.RecognizerIntent
+import android.view.View
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.compose.foundation.Image
@@ -35,6 +36,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
@@ -59,8 +61,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.ColorMatrix
@@ -78,9 +83,13 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
+import androidx.core.view.accessibility.AccessibilityNodeProviderCompat
 import android.media.ExifInterface
 import com.owlitech.owli.assist.R
 import com.owlitech.owli.assist.vlm.VlmAttachment
@@ -119,7 +128,7 @@ fun VlmScreen(
     onStartAutoScan: () -> Unit,
     onStopAutoScan: () -> Unit
 ) {
-    val scrollState = rememberScrollState()
+    val responseScrollState = rememberScrollState()
     val isBusy = state is VlmUiState.LoadingOverview || state is VlmUiState.Asking
     var question by remember { mutableStateOf("") }
     var backgroundBitmap by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
@@ -128,6 +137,7 @@ fun VlmScreen(
     var speechError by remember { mutableStateOf<String?>(null) }
     var autoSendOnVoiceResult by rememberSaveable { mutableStateOf(false) }
     var pendingAutoSendText by remember { mutableStateOf<String?>(null) }
+    var focusSendAfterVoice by remember { mutableStateOf(false) }
     var actionsMenuExpanded by remember { mutableStateOf(false) }
     var lastSpeakable by remember { mutableStateOf<Pair<String?, String?>?>(null) }
     var attachmentsDialogVisible by remember { mutableStateOf(false) }
@@ -138,6 +148,7 @@ fun VlmScreen(
     var composerHeightPx by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
     val context = LocalContext.current
+    val hostView = LocalView.current
     val dimFilter = remember {
         ColorFilter.colorMatrix(
             ColorMatrix().apply { setToScale(0.85f, 0.85f, 0.85f, 1f) }
@@ -224,6 +235,7 @@ fun VlmScreen(
             .build()
     }
     val cameraExecutor = remember { ContextCompat.getMainExecutor(context) }
+    val sendFocusRequester = remember { FocusRequester() }
     val latestState by rememberUpdatedState(state)
     val latestCaptureMode by rememberUpdatedState(captureMode)
     val latestAutoScanRunning by rememberUpdatedState(isAutoScanRunning)
@@ -270,6 +282,7 @@ fun VlmScreen(
                 val current = question.trim()
                 question = if (current.isBlank()) trimmed else "$current $trimmed"
                 speechError = null
+                focusSendAfterVoice = true
             } else {
                 speechError = noSpeechText
             }
@@ -316,6 +329,17 @@ fun VlmScreen(
                 }
             }
         )
+    }
+    val sendEnabled = !isBusy && question.isNotBlank()
+    LaunchedEffect(isProcessingSpeech, focusSendAfterVoice, sendEnabled) {
+        if (!focusSendAfterVoice || isProcessingSpeech) return@LaunchedEffect
+        if (sendEnabled) {
+            delay(200)
+            withFrameNanos { }
+            sendFocusRequester.requestFocus()
+            requestAccessibilityFocusForLabel(hostView, sendMessageLabel)
+        }
+        focusSendAfterVoice = false
     }
     val captureAttachment = attachment@{
         if (captureInFlight) return@attachment
@@ -398,7 +422,226 @@ fun VlmScreen(
             speechError = speechNotAvailableText
         }
     }
-    Box(modifier = Modifier.fillMaxSize()) {
+        Scaffold(
+        bottomBar = {
+            Column(
+                        modifier = Modifier
+                            .navigationBarsPadding()
+                            .imePadding()
+                            .fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                        horizontalAlignment = Alignment.End
+                    ) {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(horizontal = 16.dp, vertical = 12.dp),
+                            horizontalArrangement = Arrangement.Start,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            if (autoScanAvailable) {
+                                val autoLabel = if (isAutoScanRunning) {
+                                    stringResource(R.string.vlm_auto_on)
+                                } else {
+                                    stringResource(R.string.vlm_auto_off)
+                                }
+                                FilterChip(
+                                    selected = isAutoScanRunning,
+                                    onClick = { if (isAutoScanRunning) onStopAutoScan() else onStartAutoScan() },
+                                    enabled = autoScanAvailable,
+                                    label = { Text(stringResource(R.string.vlm_auto_label)) },
+                                    leadingIcon = {
+                                        Icon(
+                                            imageVector = Icons.Filled.Autorenew,
+                                            contentDescription = null
+                                        )
+                                    },
+                                    modifier = Modifier.semantics { contentDescription = autoLabel }
+                                )
+                            }
+                            Spacer(modifier = Modifier.weight(1f))
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Box {
+                                    IconButton(
+                                        onClick = { actionsMenuExpanded = true },
+                                        modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.MoreVert,
+                                            contentDescription = moreActionsLabel
+                                        )
+                                    }
+                                    DropdownMenu(
+                                        expanded = actionsMenuExpanded,
+                                        onDismissRequest = { actionsMenuExpanded = false }
+                                    ) {
+                                        DropdownMenuItem(
+                                            text = { Text(repeatLastAnswerLabel) },
+                                            onClick = {
+                                                actionsMenuExpanded = false
+                                                lastSpeakable?.let { (primary, secondary) ->
+                                                    onRepeatLastResponse(primary, secondary)
+                                                }
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Filled.Replay,
+                                                    contentDescription = null
+                                                )
+                                            },
+                                            enabled = canRepeatLastAnswer
+                                        )
+                                        DropdownMenuItem(
+                                            text = { Text(addImageLabel) },
+                                            onClick = {
+                                                actionsMenuExpanded = false
+                                                captureAttachment()
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                    imageVector = Icons.Filled.AddPhotoAlternate,
+                                                    contentDescription = null
+                                                )
+                                            }
+                                        )
+                                    }
+                                }
+                                Button(
+                                    onClick = {
+                                        if (!isBusy) {
+                                            if (captureMode == CaptureUiMode.Preview) {
+                                                if (isAutoScanRunning) {
+                                                    onStopAutoScan()
+                                                }
+                                                captureNewScene(true)
+                                            } else {
+                                                onReset()
+                                                captureMode = CaptureUiMode.Preview
+                                            }
+                                        }
+                                    },
+                                    enabled = !isBusy,
+                                    modifier = Modifier
+                                        .sizeIn(minHeight = 48.dp)
+                                        .semantics {
+                                            contentDescription = if (captureMode == CaptureUiMode.Preview) {
+                                                newSceneLabel
+                                            } else {
+                                                resetLabel
+                                            }
+                                        }
+                                ) {
+                                    Text(if (captureMode == CaptureUiMode.Preview) newSceneLabel else resetLabel)
+                                }
+                            }
+                        }
+                        Surface(
+                            color = Color.Black.copy(alpha = 0.45f),
+                            shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .onSizeChanged { composerHeightPx = it.height }
+                        ) {
+                            Column(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                if (attachments.isNotEmpty()) {
+                                    OutlinedButton(
+                                        onClick = { attachmentsDialogVisible = true },
+                                        modifier = Modifier
+                                            .sizeIn(minHeight = 48.dp)
+                                            .semantics { contentDescription = attachmentsManageLabel }
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.AttachFile,
+                                            contentDescription = null
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(text = attachments.size.toString())
+                                    }
+                                }
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalAlignment = Alignment.Bottom,
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                ) {
+                                    val micEnabled = !isBusy && !isListening
+                                    OutlinedTextField(
+                                        value = question,
+                                        onValueChange = { question = it },
+                                        label = { Text(stringResource(R.string.vlm_question_label)) },
+                                        modifier = Modifier.weight(1f),
+                                        enabled = !isBusy,
+                                        maxLines = 34,
+                                        minLines = 1,
+                                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                                        keyboardActions = KeyboardActions(
+                                            onSend = { sendQuestion() },
+                                            onDone = { sendQuestion() }
+                                        )
+                                    )
+                                    IconButton(
+                                        onClick = { sendQuestion() },
+                                        modifier = Modifier
+                                            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                            .focusRequester(sendFocusRequester)
+                                            .semantics { contentDescription = sendMessageLabel },
+                                        enabled = sendEnabled
+                                    ) {
+                                        Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = null)
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                            .combinedClickable(
+                                                enabled = micEnabled,
+                                                onClick = { startVoiceIntent(false) },
+                                                onLongClick = { startVoiceIntent(true) },
+                                                onLongClickLabel = longPressSendLabel
+                                            )
+                                            .semantics {
+                                                contentDescription = voiceInputLabel
+                                                when {
+                                                    isListening -> stateDescription = voiceListeningLabel
+                                                    autoSendOnVoiceResult -> stateDescription = voiceAutoSendLabel
+                                                }
+                                            },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(imageVector = Icons.Filled.Mic, contentDescription = null)
+                                    }
+                                }
+                                if (!isListening) {
+                                    Text(
+                                        text = stringResource(R.string.vlm_voice_hint),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.padding(bottom = 4.dp)
+                                    )
+                                }
+                                val statusText = when {
+                                    isListening -> stringResource(R.string.vlm_voice_status_listening)
+                                    isProcessingSpeech -> stringResource(R.string.vlm_voice_status_processing)
+                                    else -> speechError
+                                }
+                                if (statusText != null) {
+                                    Text(
+                                        text = statusText,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        modifier = Modifier.padding(bottom = 8.dp)
+                                    )
+                                }
+                            }
+                        }
+                    }
+        }
+    ) { innerPadding ->
+        Box(modifier = Modifier.fillMaxSize()) {
         val previewSemantics = if (captureMode == CaptureUiMode.Preview) {
             Modifier.semantics { contentDescription = cameraPreviewLabel }
         } else {
@@ -424,83 +667,90 @@ fun VlmScreen(
         Column(
             modifier = Modifier
                 .padding(12.dp)
+                .padding(innerPadding)
                 .padding(bottom = with(density) { composerHeightPx.toDp() })
                 .fillMaxSize()
-                .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             CameraOverlayScope {
-                when (state) {
-                    is VlmUiState.Inactive -> {
-                        CameraOverlayLabel(
-                            stringResource(R.string.vlm_state_ready_format, newSceneLabel)
-                        )
-                    }
-                    is VlmUiState.LoadingOverview -> {
-                        CameraOverlayRow {
-                            CircularProgressIndicator(color = CameraOverlayDefaults.textColor)
-                            Text(state.message ?: stringResource(R.string.vlm_state_loading))
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(responseScrollState),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    when (state) {
+                        is VlmUiState.Inactive -> {
+                            CameraOverlayLabel(
+                                stringResource(R.string.vlm_state_ready_format, newSceneLabel)
+                            )
                         }
-                    }
-                    is VlmUiState.Asking -> {
-                        CameraOverlayRow {
-                            CircularProgressIndicator(color = CameraOverlayDefaults.textColor)
-                            Text(stringResource(R.string.vlm_state_sending_question))
+                        is VlmUiState.LoadingOverview -> {
+                            CameraOverlayRow {
+                                CircularProgressIndicator(color = CameraOverlayDefaults.textColor)
+                                Text(state.message ?: stringResource(R.string.vlm_state_loading))
+                            }
                         }
-                    }
+                        is VlmUiState.Asking -> {
+                            CameraOverlayRow {
+                                CircularProgressIndicator(color = CameraOverlayDefaults.textColor)
+                                Text(stringResource(R.string.vlm_state_sending_question))
+                            }
+                        }
                     is VlmUiState.Streaming -> {
                         CameraOverlayLabel(text = stringResource(R.string.vlm_state_streaming))
-                        CameraOverlayLabel(text = state.partialText, maxLines = 6)
+                        splitIntoBlocks(state.partialText).forEach { block ->
+                            CameraOverlayLabel(text = block)
+                        }
                     }
-                    is VlmUiState.Error -> {
-                        CameraOverlayLabel(
-                            text = stringResource(R.string.vlm_state_error_format, state.message)
-                        )
-                    }
+                        is VlmUiState.Error -> {
+                            CameraOverlayLabel(
+                                text = stringResource(R.string.vlm_state_error_format, state.message)
+                            )
+                        }
                     is VlmUiState.OverviewReadyRaw -> {
                         CameraOverlayLabel(text = stringResource(R.string.vlm_state_answer))
-                        CameraOverlayLabel(text = state.rawText, maxLines = 8)
+                        splitIntoBlocks(state.rawText).forEach { block ->
+                            CameraOverlayLabel(text = block)
+                        }
                     }
-                    is VlmUiState.OverviewReady -> {
-                        val desc = state.description
-                        val noneText = stringResource(R.string.vlm_state_none)
-                        val obstaclesText = if (desc.obstacles.isEmpty()) {
-                            noneText
-                        } else {
-                            desc.obstacles.joinToString()
-                        }
-                        val landmarksText = if (desc.landmarks.isEmpty()) {
-                            noneText
-                        } else {
-                            desc.landmarks.joinToString()
-                        }
-                        CameraOverlayLabel(
-                            text = stringResource(R.string.vlm_state_brief_format, desc.ttsOneLiner),
-                            maxLines = 3
-                        )
-                        CameraOverlayLabel(
-                            text = stringResource(
-                                R.string.vlm_state_recommendation_format,
-                                desc.actionSuggestion
-                            ),
-                            maxLines = 3
-                        )
-                        CameraOverlayLabel(
-                            text = stringResource(R.string.vlm_state_obstacles_format, obstaclesText),
-                            maxLines = 3
-                        )
-                        CameraOverlayLabel(
-                            text = stringResource(R.string.vlm_state_landmarks_format, landmarksText),
-                            maxLines = 3
-                        )
-                        CameraOverlayLabel(
-                            text = stringResource(R.string.vlm_state_details_format, desc.readableText),
-                            maxLines = 8
-                        )
-                        desc.overallConfidence?.let {
+                        is VlmUiState.OverviewReady -> {
+                            val desc = state.description
+                            val noneText = stringResource(R.string.vlm_state_none)
+                            val obstaclesText = if (desc.obstacles.isEmpty()) {
+                                noneText
+                            } else {
+                                desc.obstacles.joinToString()
+                            }
+                            val landmarksText = if (desc.landmarks.isEmpty()) {
+                                noneText
+                            } else {
+                                desc.landmarks.joinToString()
+                            }
                             CameraOverlayLabel(
-                                text = stringResource(R.string.vlm_state_confidence_format, it)
+                                text = stringResource(R.string.vlm_state_brief_format, desc.ttsOneLiner)
                             )
+                            CameraOverlayLabel(
+                                text = stringResource(
+                                    R.string.vlm_state_recommendation_format,
+                                    desc.actionSuggestion
+                                )
+                            )
+                            CameraOverlayLabel(
+                                text = stringResource(R.string.vlm_state_obstacles_format, obstaclesText)
+                            )
+                            CameraOverlayLabel(
+                                text = stringResource(R.string.vlm_state_landmarks_format, landmarksText)
+                            )
+                        splitIntoBlocks(desc.readableText).forEach { block ->
+                            CameraOverlayLabel(
+                                text = stringResource(R.string.vlm_state_details_format, block)
+                            )
+                        }
+                            desc.overallConfidence?.let {
+                                CameraOverlayLabel(
+                                    text = stringResource(R.string.vlm_state_confidence_format, it)
+                                )
+                            }
                         }
                     }
                 }
@@ -511,222 +761,7 @@ fun VlmScreen(
             hostState = snackbarHostState,
             modifier = Modifier.align(Alignment.TopCenter)
         )
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .navigationBarsPadding()
-                .imePadding()
-                .fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-            horizontalAlignment = Alignment.End
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                horizontalArrangement = Arrangement.Start,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (autoScanAvailable) {
-                    val autoLabel = if (isAutoScanRunning) {
-                        stringResource(R.string.vlm_auto_on)
-                    } else {
-                        stringResource(R.string.vlm_auto_off)
-                    }
-                    FilterChip(
-                        selected = isAutoScanRunning,
-                        onClick = { if (isAutoScanRunning) onStopAutoScan() else onStartAutoScan() },
-                        enabled = autoScanAvailable,
-                        label = { Text(stringResource(R.string.vlm_auto_label)) },
-                        leadingIcon = {
-                            Icon(
-                                imageVector = Icons.Filled.Autorenew,
-                                contentDescription = null
-                            )
-                        },
-                        modifier = Modifier.semantics { contentDescription = autoLabel }
-                    )
-                }
-                Spacer(modifier = Modifier.weight(1f))
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Box {
-                        IconButton(
-                            onClick = { actionsMenuExpanded = true },
-                            modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.MoreVert,
-                                contentDescription = moreActionsLabel
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = actionsMenuExpanded,
-                            onDismissRequest = { actionsMenuExpanded = false }
-                        ) {
-                            DropdownMenuItem(
-                                text = { Text(repeatLastAnswerLabel) },
-                                onClick = {
-                                    actionsMenuExpanded = false
-                                    lastSpeakable?.let { (primary, secondary) ->
-                                        onRepeatLastResponse(primary, secondary)
-                                    }
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Filled.Replay,
-                                        contentDescription = null
-                                    )
-                                },
-                                enabled = canRepeatLastAnswer
-                            )
-                            DropdownMenuItem(
-                                text = { Text(addImageLabel) },
-                                onClick = {
-                                    actionsMenuExpanded = false
-                                    captureAttachment()
-                                },
-                                leadingIcon = {
-                                    Icon(
-                                        imageVector = Icons.Filled.AddPhotoAlternate,
-                                        contentDescription = null
-                                    )
-                                }
-                            )
-                        }
-                    }
-                    Button(
-                        onClick = {
-                            if (!isBusy) {
-                                if (captureMode == CaptureUiMode.Preview) {
-                                    if (isAutoScanRunning) {
-                                        onStopAutoScan()
-                                    }
-                                    captureNewScene(true)
-                                } else {
-                                    onReset()
-                                    captureMode = CaptureUiMode.Preview
-                                }
-                            }
-                        },
-                        enabled = !isBusy,
-                        modifier = Modifier
-                            .sizeIn(minHeight = 48.dp)
-                            .semantics {
-                                contentDescription = if (captureMode == CaptureUiMode.Preview) {
-                                    newSceneLabel
-                                } else {
-                                    resetLabel
-                                }
-                            }
-                    ) {
-                        Text(if (captureMode == CaptureUiMode.Preview) newSceneLabel else resetLabel)
-                    }
-                }
-            }
-            Surface(
-                color = Color.Black.copy(alpha = 0.45f),
-                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .onSizeChanged { composerHeightPx = it.height }
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 12.dp, vertical = 10.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    if (attachments.isNotEmpty()) {
-                        OutlinedButton(
-                            onClick = { attachmentsDialogVisible = true },
-                            modifier = Modifier
-                                .sizeIn(minHeight = 48.dp)
-                                .semantics { contentDescription = attachmentsManageLabel }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.AttachFile,
-                                contentDescription = null
-                            )
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Text(text = attachments.size.toString())
-                        }
-                    }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.Bottom,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        val micEnabled = !isBusy && !isListening
-                        OutlinedTextField(
-                            value = question,
-                            onValueChange = { question = it },
-                            label = { Text(stringResource(R.string.vlm_question_label)) },
-                            modifier = Modifier.weight(1f),
-                            enabled = !isBusy,
-                            maxLines = 34,
-                            minLines = 1,
-                            keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                            keyboardActions = KeyboardActions(
-                                onSend = { sendQuestion() },
-                                onDone = { sendQuestion() }
-                            )
-                        )
-                        IconButton(
-                            onClick = { sendQuestion() },
-                            modifier = Modifier
-                                .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                                .semantics { contentDescription = sendMessageLabel },
-                            enabled = !isBusy && question.isNotBlank()
-                        ) {
-                            Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = null)
-                        }
-                        Box(
-                            modifier = Modifier
-                                .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                                .combinedClickable(
-                                    enabled = micEnabled,
-                                    onClick = { startVoiceIntent(false) },
-                                    onLongClick = { startVoiceIntent(true) },
-                                    onLongClickLabel = longPressSendLabel
-                                )
-                                .semantics {
-                                    contentDescription = voiceInputLabel
-                                    when {
-                                        isListening -> stateDescription = voiceListeningLabel
-                                        autoSendOnVoiceResult -> stateDescription = voiceAutoSendLabel
-                                    }
-                                },
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Icon(imageVector = Icons.Filled.Mic, contentDescription = null)
-                        }
-                    }
-                    if (!isListening) {
-                        Text(
-                            text = stringResource(R.string.vlm_voice_hint),
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(bottom = 4.dp)
-                        )
-                    }
-                    val statusText = when {
-                        isListening -> stringResource(R.string.vlm_voice_status_listening)
-                        isProcessingSpeech -> stringResource(R.string.vlm_voice_status_processing)
-                        else -> speechError
-                    }
-                    if (statusText != null) {
-                        Text(
-                            text = statusText,
-                            style = MaterialTheme.typography.bodySmall,
-                            modifier = Modifier.padding(bottom = 8.dp)
-                        )
-                    }
-                }
-            }
-        }
-        if (attachmentsDialogVisible) {
+                if (attachmentsDialogVisible) {
             AlertDialog(
                 onDismissRequest = { attachmentsDialogVisible = false },
                 title = { Text(attachmentsTitle) },
@@ -763,6 +798,37 @@ fun VlmScreen(
                 }
             )
         }
+    }
+    }
+}
+
+private fun splitIntoBlocks(text: String): List<String> {
+    return text.split(Regex("\\n\\s*\\n"))
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
+}
+
+private fun requestAccessibilityFocusForLabel(view: View, label: String) {
+    val provider = ViewCompat.getAccessibilityNodeProvider(view) ?: return
+    val root = provider.createAccessibilityNodeInfo(AccessibilityNodeProviderCompat.HOST_VIEW_ID) ?: return
+    val stack = ArrayDeque<AccessibilityNodeInfoCompat>()
+    stack.add(root)
+    while (stack.isNotEmpty()) {
+        val node = stack.removeLast()
+        val content = node.contentDescription?.toString()
+        val text = node.text?.toString()
+        if (content == label || text == label) {
+            node.performAction(AccessibilityNodeInfoCompat.ACTION_ACCESSIBILITY_FOCUS, null)
+            node.recycle()
+            return
+        }
+        val childCount = node.childCount
+        for (index in 0 until childCount) {
+            node.getChild(index)?.let { child ->
+                stack.add(child)
+            }
+        }
+        node.recycle()
     }
 }
 

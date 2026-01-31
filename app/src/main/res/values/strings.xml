@@ -198,7 +198,36 @@
     <string name="diagnostics_last_preview_format">lastPreview=%1$s</string>
     <string name="diagnostics_last_preview_missing">-</string>
 
-    <string name="about_title">Owli-AI / Owli-AI Assist</string>
+    <string name="about_title">About Owli-AI Assist</string>
+    <string name="about_app_name">Owli-AI Assist</string>
+    <string name="about_subtitle">Accessible AI assistance for image description and questions</string>
+    <string name="about_section_version">Version</string>
+    <string name="about_section_short_description">Short description</string>
+    <string name="about_section_development">Development &amp; project</string>
+    <string name="about_section_supporters">Supporters</string>
+    <string name="about_section_privacy">Privacy (short info)</string>
+    <string name="about_section_feedback">Feedback</string>
     <string name="about_version_format">Version: %1$s (%2$d)</string>
     <string name="about_build_format">Build: %1$s</string>
+    <string name="about_short_description_p1">Owli-AI Assist helps you describe photos and answer questions about a scene.</string>
+    <string name="about_short_description_p2">The app is optimized for simple operation, especially with TalkBack and one-handed use.</string>
+    <string name="about_development_intro">The apps are developed by the Owli-AI team:</string>
+    <string name="about_development_team_item_1">- Justine Buß (BSc) and ****Dr.-Ing. Michael Kreutzer from ** Institut für Technik &amp; Informatik (ITI), Technische Hochschule Mittelhessen</string>
+    <string name="about_feedback_contact">Feedback to: Michael.Kreutzer@mni.thm.de</string>
+    <string name="about_supporters_intro">We thank for support and collaboration:</string>
+    <string name="about_privacy_p1">When you send a request, your photo (and any additional attached images) as well as your text are transmitted to an AI service to generate a response.</string>
+    <string name="about_privacy_p2">The transmission happens only after your action (e.g., Send). An internet connection is required for the AI response.</string>
+    <string name="about_feedback_intro">If you send feedback, the following is especially helpful:</string>
+    <string name="about_copy_version_label">Copy version info</string>
+    <string name="about_copy_version_copied">Version info copied</string>
+    <string-array name="about_supporters_list">
+        <item>- BliZ  Center for blind and visually impaired students of Technische Hochschule Mittelhessen (www.bliz.de)</item>
+        <item>- Draeger Lienert GmbH &amp; Co. KG (www.dl-info.de)</item>
+    </string-array>
+    <string-array name="about_feedback_list">
+        <item>- short description of the problem</item>
+        <item>- what you did right before (steps)</item>
+        <item>- device/Android version</item>
+        <item>- app version (see above)</item>
+    </string-array>
 </resources>
