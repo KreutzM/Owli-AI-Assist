@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Matrix
 import android.speech.RecognizerIntent
+import android.view.View
 import androidx.camera.core.ImageCapture
 import androidx.camera.core.ImageCaptureException
 import androidx.compose.foundation.Image
@@ -82,9 +83,13 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.accessibility.AccessibilityNodeInfoCompat
+import androidx.core.view.accessibility.AccessibilityNodeProviderCompat
 import android.media.ExifInterface
 import com.owlitech.owli.assist.R
 import com.owlitech.owli.assist.vlm.VlmAttachment
@@ -143,6 +148,7 @@ fun VlmScreen(
     var composerHeightPx by remember { mutableIntStateOf(0) }
     val density = LocalDensity.current
     val context = LocalContext.current
+    val hostView = LocalView.current
     val dimFilter = remember {
         ColorFilter.colorMatrix(
             ColorMatrix().apply { setToScale(0.85f, 0.85f, 0.85f, 1f) }
@@ -331,6 +337,7 @@ fun VlmScreen(
             delay(200)
             withFrameNanos { }
             sendFocusRequester.requestFocus()
+            requestAccessibilityFocusForLabel(hostView, sendMessageLabel)
         }
         focusSendAfterVoice = false
     }
@@ -799,6 +806,30 @@ private fun splitIntoBlocks(text: String): List<String> {
     return text.split(Regex("\\n\\s*\\n"))
         .map { it.trim() }
         .filter { it.isNotEmpty() }
+}
+
+private fun requestAccessibilityFocusForLabel(view: View, label: String) {
+    val provider = ViewCompat.getAccessibilityNodeProvider(view) ?: return
+    val root = provider.createAccessibilityNodeInfo(AccessibilityNodeProviderCompat.HOST_VIEW_ID) ?: return
+    val stack = ArrayDeque<AccessibilityNodeInfoCompat>()
+    stack.add(root)
+    while (stack.isNotEmpty()) {
+        val node = stack.removeLast()
+        val content = node.contentDescription?.toString()
+        val text = node.text?.toString()
+        if (content == label || text == label) {
+            node.performAction(AccessibilityNodeInfoCompat.ACTION_ACCESSIBILITY_FOCUS, null)
+            node.recycle()
+            return
+        }
+        val childCount = node.childCount
+        for (index in 0 until childCount) {
+            node.getChild(index)?.let { child ->
+                stack.add(child)
+            }
+        }
+        node.recycle()
+    }
 }
 
 private fun decodeJpegWithExif(bytes: ByteArray): androidx.compose.ui.graphics.ImageBitmap? {
