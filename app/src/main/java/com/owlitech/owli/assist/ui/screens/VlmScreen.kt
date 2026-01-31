@@ -643,6 +643,7 @@ fun VlmScreen(
         Column(
             modifier = Modifier
                 .padding(12.dp)
+                .padding(innerPadding)
                 .padding(bottom = with(density) { composerHeightPx.toDp() })
                 .fillMaxSize()
         ) {
@@ -671,19 +672,23 @@ fun VlmScreen(
                                 Text(stringResource(R.string.vlm_state_sending_question))
                             }
                         }
-                        is VlmUiState.Streaming -> {
-                            CameraOverlayLabel(text = stringResource(R.string.vlm_state_streaming))
-                            CameraOverlayLabel(text = state.partialText)
+                    is VlmUiState.Streaming -> {
+                        CameraOverlayLabel(text = stringResource(R.string.vlm_state_streaming))
+                        splitIntoBlocks(state.partialText).forEach { block ->
+                            CameraOverlayLabel(text = block)
                         }
+                    }
                         is VlmUiState.Error -> {
                             CameraOverlayLabel(
                                 text = stringResource(R.string.vlm_state_error_format, state.message)
                             )
                         }
-                        is VlmUiState.OverviewReadyRaw -> {
-                            CameraOverlayLabel(text = stringResource(R.string.vlm_state_answer))
-                            CameraOverlayLabel(text = state.rawText)
+                    is VlmUiState.OverviewReadyRaw -> {
+                        CameraOverlayLabel(text = stringResource(R.string.vlm_state_answer))
+                        splitIntoBlocks(state.rawText).forEach { block ->
+                            CameraOverlayLabel(text = block)
                         }
+                    }
                         is VlmUiState.OverviewReady -> {
                             val desc = state.description
                             val noneText = stringResource(R.string.vlm_state_none)
@@ -712,9 +717,11 @@ fun VlmScreen(
                             CameraOverlayLabel(
                                 text = stringResource(R.string.vlm_state_landmarks_format, landmarksText)
                             )
+                        splitIntoBlocks(desc.readableText).forEach { block ->
                             CameraOverlayLabel(
-                                text = stringResource(R.string.vlm_state_details_format, desc.readableText)
+                                text = stringResource(R.string.vlm_state_details_format, block)
                             )
+                        }
                             desc.overallConfidence?.let {
                                 CameraOverlayLabel(
                                     text = stringResource(R.string.vlm_state_confidence_format, it)
@@ -769,6 +776,12 @@ fun VlmScreen(
         }
     }
     }
+}
+
+private fun splitIntoBlocks(text: String): List<String> {
+    return text.split(Regex("\\n\\s*\\n"))
+        .map { it.trim() }
+        .filter { it.isNotEmpty() }
 }
 
 private fun decodeJpegWithExif(bytes: ByteArray): androidx.compose.ui.graphics.ImageBitmap? {
