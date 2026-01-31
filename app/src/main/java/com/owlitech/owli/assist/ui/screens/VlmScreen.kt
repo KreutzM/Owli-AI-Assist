@@ -325,9 +325,10 @@ fun VlmScreen(
         )
     }
     val sendEnabled = !isBusy && question.isNotBlank()
-    LaunchedEffect(focusSendAfterVoice, sendEnabled) {
-        if (!focusSendAfterVoice) return@LaunchedEffect
+    LaunchedEffect(isProcessingSpeech, focusSendAfterVoice, sendEnabled) {
+        if (!focusSendAfterVoice || isProcessingSpeech) return@LaunchedEffect
         if (sendEnabled) {
+            delay(200)
             withFrameNanos { }
             sendFocusRequester.requestFocus()
         }
