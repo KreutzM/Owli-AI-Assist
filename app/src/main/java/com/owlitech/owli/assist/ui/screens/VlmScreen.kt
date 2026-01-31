@@ -119,7 +119,7 @@ fun VlmScreen(
     onStartAutoScan: () -> Unit,
     onStopAutoScan: () -> Unit
 ) {
-    val scrollState = rememberScrollState()
+    val responseScrollState = rememberScrollState()
     val isBusy = state is VlmUiState.LoadingOverview || state is VlmUiState.Asking
     var question by remember { mutableStateOf("") }
     var backgroundBitmap by remember { mutableStateOf<androidx.compose.ui.graphics.ImageBitmap?>(null) }
@@ -426,76 +426,81 @@ fun VlmScreen(
                 .padding(12.dp)
                 .padding(bottom = with(density) { composerHeightPx.toDp() })
                 .fillMaxSize()
-                .verticalScroll(scrollState),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             CameraOverlayScope {
-                when (state) {
-                    is VlmUiState.Inactive -> {
-                        CameraOverlayLabel(
-                            stringResource(R.string.vlm_state_ready_format, newSceneLabel)
-                        )
-                    }
-                    is VlmUiState.LoadingOverview -> {
-                        CameraOverlayRow {
-                            CircularProgressIndicator(color = CameraOverlayDefaults.textColor)
-                            Text(state.message ?: stringResource(R.string.vlm_state_loading))
-                        }
-                    }
-                    is VlmUiState.Asking -> {
-                        CameraOverlayRow {
-                            CircularProgressIndicator(color = CameraOverlayDefaults.textColor)
-                            Text(stringResource(R.string.vlm_state_sending_question))
-                        }
-                    }
-                    is VlmUiState.Streaming -> {
-                        CameraOverlayLabel(text = stringResource(R.string.vlm_state_streaming))
-                        CameraOverlayLabel(text = state.partialText)
-                    }
-                    is VlmUiState.Error -> {
-                        CameraOverlayLabel(
-                            text = stringResource(R.string.vlm_state_error_format, state.message)
-                        )
-                    }
-                    is VlmUiState.OverviewReadyRaw -> {
-                        CameraOverlayLabel(text = stringResource(R.string.vlm_state_answer))
-                        CameraOverlayLabel(text = state.rawText)
-                    }
-                    is VlmUiState.OverviewReady -> {
-                        val desc = state.description
-                        val noneText = stringResource(R.string.vlm_state_none)
-                        val obstaclesText = if (desc.obstacles.isEmpty()) {
-                            noneText
-                        } else {
-                            desc.obstacles.joinToString()
-                        }
-                        val landmarksText = if (desc.landmarks.isEmpty()) {
-                            noneText
-                        } else {
-                            desc.landmarks.joinToString()
-                        }
-                        CameraOverlayLabel(
-                            text = stringResource(R.string.vlm_state_brief_format, desc.ttsOneLiner)
-                        )
-                        CameraOverlayLabel(
-                            text = stringResource(
-                                R.string.vlm_state_recommendation_format,
-                                desc.actionSuggestion
-                            )
-                        )
-                        CameraOverlayLabel(
-                            text = stringResource(R.string.vlm_state_obstacles_format, obstaclesText)
-                        )
-                        CameraOverlayLabel(
-                            text = stringResource(R.string.vlm_state_landmarks_format, landmarksText)
-                        )
-                        CameraOverlayLabel(
-                            text = stringResource(R.string.vlm_state_details_format, desc.readableText)
-                        )
-                        desc.overallConfidence?.let {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(responseScrollState),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    when (state) {
+                        is VlmUiState.Inactive -> {
                             CameraOverlayLabel(
-                                text = stringResource(R.string.vlm_state_confidence_format, it)
+                                stringResource(R.string.vlm_state_ready_format, newSceneLabel)
                             )
+                        }
+                        is VlmUiState.LoadingOverview -> {
+                            CameraOverlayRow {
+                                CircularProgressIndicator(color = CameraOverlayDefaults.textColor)
+                                Text(state.message ?: stringResource(R.string.vlm_state_loading))
+                            }
+                        }
+                        is VlmUiState.Asking -> {
+                            CameraOverlayRow {
+                                CircularProgressIndicator(color = CameraOverlayDefaults.textColor)
+                                Text(stringResource(R.string.vlm_state_sending_question))
+                            }
+                        }
+                        is VlmUiState.Streaming -> {
+                            CameraOverlayLabel(text = stringResource(R.string.vlm_state_streaming))
+                            CameraOverlayLabel(text = state.partialText)
+                        }
+                        is VlmUiState.Error -> {
+                            CameraOverlayLabel(
+                                text = stringResource(R.string.vlm_state_error_format, state.message)
+                            )
+                        }
+                        is VlmUiState.OverviewReadyRaw -> {
+                            CameraOverlayLabel(text = stringResource(R.string.vlm_state_answer))
+                            CameraOverlayLabel(text = state.rawText)
+                        }
+                        is VlmUiState.OverviewReady -> {
+                            val desc = state.description
+                            val noneText = stringResource(R.string.vlm_state_none)
+                            val obstaclesText = if (desc.obstacles.isEmpty()) {
+                                noneText
+                            } else {
+                                desc.obstacles.joinToString()
+                            }
+                            val landmarksText = if (desc.landmarks.isEmpty()) {
+                                noneText
+                            } else {
+                                desc.landmarks.joinToString()
+                            }
+                            CameraOverlayLabel(
+                                text = stringResource(R.string.vlm_state_brief_format, desc.ttsOneLiner)
+                            )
+                            CameraOverlayLabel(
+                                text = stringResource(
+                                    R.string.vlm_state_recommendation_format,
+                                    desc.actionSuggestion
+                                )
+                            )
+                            CameraOverlayLabel(
+                                text = stringResource(R.string.vlm_state_obstacles_format, obstaclesText)
+                            )
+                            CameraOverlayLabel(
+                                text = stringResource(R.string.vlm_state_landmarks_format, landmarksText)
+                            )
+                            CameraOverlayLabel(
+                                text = stringResource(R.string.vlm_state_details_format, desc.readableText)
+                            )
+                            desc.overallConfidence?.let {
+                                CameraOverlayLabel(
+                                    text = stringResource(R.string.vlm_state_confidence_format, it)
+                                )
+                            }
                         }
                     }
                 }
