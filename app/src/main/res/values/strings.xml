@@ -197,7 +197,32 @@
     <string name="diagnostics_last_preview_format">lastPreview=%1$s</string>
     <string name="diagnostics_last_preview_missing">-</string>
 
-    <string name="about_title">Owli-AI / Owli-AI Assist</string>
+    <string name="about_title">About</string>
+    <string name="about_app_name">Owli-AI Assist</string>
+    <string name="about_subtitle">Accessible AI assistance</string>
+    <string name="about_section_version">Version</string>
+    <string name="about_section_short_description">Short description</string>
+    <string name="about_section_development">Development &amp; project</string>
+    <string name="about_section_supporters">Supporters</string>
+    <string name="about_section_privacy">Privacy (short)</string>
+    <string name="about_section_feedback">Feedback</string>
     <string name="about_version_format">Version: %1$s (%2$d)</string>
     <string name="about_build_format">Build: %1$s</string>
+    <string name="about_short_description_p1">Placeholder.</string>
+    <string name="about_short_description_p2">Placeholder.</string>
+    <string name="about_development_intro">Placeholder.</string>
+    <string name="about_development_team_item_1">Placeholder.</string>
+    <string name="about_feedback_contact">Placeholder.</string>
+    <string name="about_supporters_intro">Placeholder.</string>
+    <string name="about_privacy_p1">Placeholder.</string>
+    <string name="about_privacy_p2">Placeholder.</string>
+    <string name="about_feedback_intro">Placeholder.</string>
+    <string name="about_copy_version_label">Copy version info</string>
+    <string name="about_copy_version_copied">Version info copied</string>
+    <string-array name="about_supporters_list">
+        <item>Placeholder.</item>
+    </string-array>
+    <string-array name="about_feedback_list">
+        <item>Placeholder.</item>
+    </string-array>
 </resources>
