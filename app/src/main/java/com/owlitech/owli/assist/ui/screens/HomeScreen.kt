@@ -161,10 +161,10 @@ fun SceneOverlay(
             )
         }
         message?.let {
-            CameraOverlayLabel(text = it, maxLines = 3)
+            CameraOverlayLabel(text = it)
         }
         blindViewPreview?.let {
-            CameraOverlayLabel(text = stringResource(R.string.home_blindview_format, it), maxLines = 2)
+            CameraOverlayLabel(text = stringResource(R.string.home_blindview_format, it))
         }
     }
 }

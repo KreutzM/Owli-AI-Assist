@@ -13,7 +13,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.material3.LocalContentColor
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 
 object CameraOverlayDefaults {
@@ -42,8 +41,7 @@ fun CameraOverlayScope(
 @Composable
 fun CameraOverlayLabel(
     text: String,
-    modifier: Modifier = Modifier,
-    maxLines: Int = 2
+    modifier: Modifier = Modifier
 ) {
     Surface(
         color = CameraOverlayDefaults.scrimColor,
@@ -54,8 +52,6 @@ fun CameraOverlayLabel(
         Text(
             text = text,
             color = CameraOverlayDefaults.textColor,
-            maxLines = maxLines,
-            overflow = TextOverflow.Ellipsis,
             modifier = Modifier.padding(CameraOverlayDefaults.padding)
         )
     }

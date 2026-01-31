@@ -450,7 +450,7 @@ fun VlmScreen(
                     }
                     is VlmUiState.Streaming -> {
                         CameraOverlayLabel(text = stringResource(R.string.vlm_state_streaming))
-                        CameraOverlayLabel(text = state.partialText, maxLines = 6)
+                        CameraOverlayLabel(text = state.partialText)
                     }
                     is VlmUiState.Error -> {
                         CameraOverlayLabel(
@@ -459,7 +459,7 @@ fun VlmScreen(
                     }
                     is VlmUiState.OverviewReadyRaw -> {
                         CameraOverlayLabel(text = stringResource(R.string.vlm_state_answer))
-                        CameraOverlayLabel(text = state.rawText, maxLines = 8)
+                        CameraOverlayLabel(text = state.rawText)
                     }
                     is VlmUiState.OverviewReady -> {
                         val desc = state.description
@@ -475,27 +475,22 @@ fun VlmScreen(
                             desc.landmarks.joinToString()
                         }
                         CameraOverlayLabel(
-                            text = stringResource(R.string.vlm_state_brief_format, desc.ttsOneLiner),
-                            maxLines = 3
+                            text = stringResource(R.string.vlm_state_brief_format, desc.ttsOneLiner)
                         )
                         CameraOverlayLabel(
                             text = stringResource(
                                 R.string.vlm_state_recommendation_format,
                                 desc.actionSuggestion
-                            ),
-                            maxLines = 3
+                            )
                         )
                         CameraOverlayLabel(
-                            text = stringResource(R.string.vlm_state_obstacles_format, obstaclesText),
-                            maxLines = 3
+                            text = stringResource(R.string.vlm_state_obstacles_format, obstaclesText)
                         )
                         CameraOverlayLabel(
-                            text = stringResource(R.string.vlm_state_landmarks_format, landmarksText),
-                            maxLines = 3
+                            text = stringResource(R.string.vlm_state_landmarks_format, landmarksText)
                         )
                         CameraOverlayLabel(
-                            text = stringResource(R.string.vlm_state_details_format, desc.readableText),
-                            maxLines = 8
+                            text = stringResource(R.string.vlm_state_details_format, desc.readableText)
                         )
                         desc.overallConfidence?.let {
                             CameraOverlayLabel(
