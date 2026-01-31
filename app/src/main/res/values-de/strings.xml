@@ -197,7 +197,36 @@
     <string name="diagnostics_last_preview_format">lastPreview=%1$s</string>
     <string name="diagnostics_last_preview_missing">-</string>
 
-    <string name="about_title">Owli-AI / Owli-AI Assist</string>
+    <string name="about_title">Owli-AI Assist  Über</string>
+    <string name="about_app_name">Owli-AI Assist</string>
+    <string name="about_subtitle">Barrierearme KI-Assistenz für Bildbeschreibung und Fragen</string>
+    <string name="about_section_version">Version</string>
+    <string name="about_section_short_description">Kurzbeschreibung</string>
+    <string name="about_section_development">Entwicklung &amp; Projekt</string>
+    <string name="about_section_supporters">Unterstützer</string>
+    <string name="about_section_privacy">Datenschutz (Kurzinfo)</string>
+    <string name="about_section_feedback">Feedback</string>
     <string name="about_version_format">Version: %1$s (%2$d)</string>
     <string name="about_build_format">Build: %1$s</string>
+    <string name="about_short_description_p1">Owli-AI Assist hilft dir dabei, Fotos zu beschreiben und Fragen zu einer Szene zu beantworten.</string>
+    <string name="about_short_description_p2">Die App ist für eine einfache Bedienung optimiert, insbesondere mit TalkBack und Einhandbedienung.</string>
+    <string name="about_development_intro">Die Apps werden Entwickelt vom Owli-AI Team:</string>
+    <string name="about_development_team_item_1">- Justine Buß (BSc) und ****Dr.-Ing. Michael Kreutzer vom ** Institut für Technik &amp; Informatik (ITI), Technische Hochschule Mittelhessen</string>
+    <string name="about_feedback_contact">Feedback an: Michael.Kreutzer@mni.thm.de</string>
+    <string name="about_supporters_intro">Wir danken für Unterstützung und Zusammenarbeit:</string>
+    <string name="about_privacy_p1">Wenn du eine Anfrage sendest, werden dein Foto (und ggf. weitere angehängte Bilder) sowie dein Text an einen KI-Dienst übertragen, um eine Antwort zu erzeugen.</string>
+    <string name="about_privacy_p2">Die Übertragung erfolgt nur nach deiner Aktion (z. B. Senden). Für die KI-Antwort ist eine Internetverbindung erforderlich.</string>
+    <string name="about_feedback_intro">Wenn du Feedback sendest, hilft uns Folgendes besonders:</string>
+    <string name="about_copy_version_label">Version-Infos kopieren</string>
+    <string name="about_copy_version_copied">Version-Infos kopiert</string>
+    <string-array name="about_supporters_list">
+        <item>- BliZ  Zentrum für blinde und sehbehinderte Studierende der Technischen Hochschule Mittelhessen (www.bliz.de)</item>
+        <item>- Draeger Lienert GmbH &amp; Co. KG (www.dl-info.de)</item>
+    </string-array>
+    <string-array name="about_feedback_list">
+        <item>- kurze Beschreibung des Problems</item>
+        <item>- was du direkt davor gemacht hast (Schritte)</item>
+        <item>- Gerät/Android-Version</item>
+        <item>- App-Version (siehe oben)</item>
+    </string-array>
 </resources>
