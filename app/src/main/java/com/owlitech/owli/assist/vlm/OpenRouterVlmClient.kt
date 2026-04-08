@@ -8,7 +8,12 @@ import kotlinx.coroutines.withContext
 private const val VLM_LOG_TAG = "VLM"
 private const val FINAL_ONLY_INSTRUCTION =
     "Gib NUR die finale Antwort im content aus. Keine Zwischenschritte."
+private const val MISSING_OPENROUTER_CLIENT_KEY_MESSAGE = "OpenRouter client key fehlt."
 
+/**
+ * Uses the current interim OpenRouter setup where the provider client key comes from BuildConfig.
+ * That keeps shipped builds functional today, but it is app-shipped material, not secure storage.
+ */
 class OpenRouterVlmClient(
     private var profile: VlmProfile,
     apiKey: String = BuildConfig.OPENROUTER_API_KEY,
@@ -43,7 +48,7 @@ class OpenRouterVlmClient(
         callback: VlmStreamingCallback?
     ): VlmClientResult = withContext(Dispatchers.IO) {
         if (!isConfigured) {
-            throw IllegalStateException("OPENROUTER_API_KEY fehlt.")
+            throw IllegalStateException(MISSING_OPENROUTER_CLIENT_KEY_MESSAGE)
         }
         val family = VlmModelFamilyPolicy.resolveFamily(profile)
         val effectiveTokenPolicy = resolveTokenPolicy(profile, maxTokens, family)

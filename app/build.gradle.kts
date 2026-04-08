@@ -11,8 +11,8 @@ val localPropertiesFile = rootProject.file("local.properties")
 if (localPropertiesFile.exists()) {
     localPropertiesFile.inputStream().use { localProperties.load(it) }
 }
-val openRouterKey = (localProperties.getProperty("OPENROUTER_API_KEY") ?: "").trim()
-val openRouterKeyEscaped = openRouterKey.replace("\\", "\\\\").replace("\"", "\\\"")
+val openRouterClientKey = (localProperties.getProperty("OPENROUTER_API_KEY") ?: "").trim()
+val openRouterClientKeyEscaped = openRouterClientKey.replace("\\", "\\\\").replace("\"", "\\\"")
 
 android {
     namespace = "com.owlitech.owli.assist"
@@ -27,7 +27,9 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        buildConfigField("String", "OPENROUTER_API_KEY", "\"$openRouterKeyEscaped\"")
+        // Current interim release model: the OpenRouter client key is packaged into the app.
+        // This keeps the app working today, but it is not secure secret storage.
+        buildConfigField("String", "OPENROUTER_API_KEY", "\"$openRouterClientKeyEscaped\"")
     }
 
     buildTypes {

@@ -25,6 +25,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicBoolean
 
+private const val MISSING_OPENROUTER_CLIENT_KEY_LOG = "OpenRouter client key fehlt"
+private const val MISSING_OPENROUTER_CLIENT_KEY_UI =
+    "OpenRouter client key fehlt. Lokale Builds lesen OPENROUTER_API_KEY aus local.properties; " +
+        "Release-Builds liefern diesen Wert aktuell mit der App aus. Das ist eine Zwischenloesung, keine sichere Secret-Speicherung."
+
 class MainViewModel(
     private val vlmClient: VlmClient = OpenRouterVlmClient(
         VlmProfileLoader.fallbackProfiles().first()
@@ -121,8 +126,8 @@ class MainViewModel(
 
     private suspend fun performNewSceneWithSnapshot(jpeg: ByteArray) {
         if (!vlmClient.isConfigured || BuildConfig.OPENROUTER_API_KEY.isBlank()) {
-            AppLogger.e("VLM", "OpenRouter API-Key fehlt")
-            _vlmUiState.value = VlmUiState.Error("OpenRouter API-Key fehlt. Bitte OPENROUTER_API_KEY in local.properties setzen.")
+            AppLogger.e("VLM", MISSING_OPENROUTER_CLIENT_KEY_LOG)
+            _vlmUiState.value = VlmUiState.Error(MISSING_OPENROUTER_CLIENT_KEY_UI)
             return
         }
         clearVlmAttachments()
@@ -227,8 +232,8 @@ class MainViewModel(
 
     fun askVlm(questionText: String) {
         if (!vlmClient.isConfigured || BuildConfig.OPENROUTER_API_KEY.isBlank()) {
-            AppLogger.e("VLM", "OpenRouter API-Key fehlt")
-            _vlmUiState.value = VlmUiState.Error("OpenRouter API-Key fehlt. Bitte OPENROUTER_API_KEY in local.properties setzen.")
+            AppLogger.e("VLM", MISSING_OPENROUTER_CLIENT_KEY_LOG)
+            _vlmUiState.value = VlmUiState.Error(MISSING_OPENROUTER_CLIENT_KEY_UI)
             return
         }
         val session = vlmSession ?: run {

@@ -4,6 +4,13 @@ Dieses Dokument beschreibt die VLM-Integration ueber OpenRouter mit profilbasier
 Ziel: Modelle ohne Codeaenderung per JSON austauschen, stabile Antworten (message.content) erzwingen
 und Reasoning nur fuer Debug/Telemetry nutzen.
 
+## 0) OpenRouter client key (aktueller Zwischenstand)
+
+- Die App liest `OPENROUTER_API_KEY` lokal aus `local.properties`.
+- Fuer den aktuellen Release-Pfad wird dieser Wert in `BuildConfig` uebernommen und damit mit der App ausgeliefert.
+- Das haelt die OpenRouter-Funktion fuer den Zwischenstand lauffaehig, ist aber keine sichere Secret-Speicherung.
+- Eine spaetere Backend-/Proxy-/Token-Loesung bleibt notwendig, wenn der Provider-Key nicht mehr im Client stecken soll.
+
 ## 1) Zentrale Konfiguration
 
 Quelle der Wahrheit ist `app/src/main/assets/vlm-profiles.json`.

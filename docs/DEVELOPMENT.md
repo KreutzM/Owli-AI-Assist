@@ -9,8 +9,10 @@ Dieses Dokument ist die Einstiegstelle fuer den taeglichen Workflow (2 Menschen 
 - JDK (passend zur Android-Toolchain; Android Studio bringt in der Regel eine kompatible JDK mit)
 - Windows 10/11 + PowerShell (oder WSL2)
 
-### Secrets
-- `OPENROUTER_API_KEY=...` in `local.properties` (nicht committen).
+### OpenRouter client key (interim)
+- `OPENROUTER_API_KEY=...` in `local.properties` setzen (nicht committen).
+- Der aktuelle Release-Pfad uebernimmt diesen Wert in `BuildConfig`, damit die App OpenRouter direkt ansprechen kann.
+- Das ist ein app-shipped Client-Key fuer die Zwischenphase, keine sichere Secret-Speicherung. Ein spaeterer Backend-/Token-Service bleibt die saubere Zielarchitektur.
 
 ### Build (PowerShell)
 - `gradlew.bat :app:assembleDebug`
