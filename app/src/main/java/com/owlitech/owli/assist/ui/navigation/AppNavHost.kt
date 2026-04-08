@@ -5,30 +5,22 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLayoutDirection
-import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.compose.ui.unit.dp
-import com.owlitech.owli.assist.R
-import com.owlitech.owli.assist.camera.CameraFrameSource
-import com.owlitech.owli.assist.domain.HazardLevel
 import com.owlitech.owli.assist.settings.SettingsViewModel
 import com.owlitech.owli.assist.ui.MainViewModel
-import com.owlitech.owli.assist.vlm.VlmProfilesConfig
 import com.owlitech.owli.assist.ui.screens.AboutScreen
-import com.owlitech.owli.assist.ui.screens.DiagnosticsScreen
-import com.owlitech.owli.assist.ui.screens.HomeScreen
-import com.owlitech.owli.assist.ui.screens.DetectorSettingsScreen
 import com.owlitech.owli.assist.ui.screens.HelpScreen
-import com.owlitech.owli.assist.ui.screens.VlmSettingsScreen
 import com.owlitech.owli.assist.ui.screens.VlmProfilesScreen
 import com.owlitech.owli.assist.ui.screens.VlmScreen
+import com.owlitech.owli.assist.ui.screens.VlmSettingsScreen
+import com.owlitech.owli.assist.vlm.VlmProfilesConfig
 
 @Composable
 fun AppNavHost(
@@ -36,18 +28,11 @@ fun AppNavHost(
     contentPadding: PaddingValues,
     mainViewModel: MainViewModel,
     settingsViewModel: SettingsViewModel,
-    cameraFrameSource: CameraFrameSource,
     vlmProfilesConfig: VlmProfilesConfig,
-    onStart: () -> Unit,
-    onStop: () -> Unit,
     onVoiceInputActiveChanged: (Boolean) -> Unit,
     onRepeatLastVlmResponse: (String?, String?) -> Unit,
     onAddVlmImage: (ByteArray) -> Int?
 ) {
-    val sceneState by mainViewModel.sceneState.collectAsState()
-    val isRunning by mainViewModel.isRunning.collectAsState()
-    val lastError by mainViewModel.lastError.collectAsState()
-    val status by mainViewModel.status.collectAsState()
     val settings by settingsViewModel.settings.collectAsState()
     val vlmState by mainViewModel.vlmUiState.collectAsState()
     val isAutoScanRunning by mainViewModel.isAutoScanRunning.collectAsState()
@@ -55,11 +40,6 @@ fun AppNavHost(
     val lastVlmImageBytes by mainViewModel.lastVlmImageBytes.collectAsState()
     val activeVlmProfile = vlmProfilesConfig.resolve(settings.vlmProfileId)
     val autoScanIntervalMs = activeVlmProfile.autoScan?.intervalMs?.takeIf { it > 0 } ?: 2000L
-    val hazardLabel = when (sceneState?.overallHazardLevel) {
-        HazardLevel.WARNING -> stringResource(R.string.hazard_level_warning)
-        HazardLevel.DANGER -> stringResource(R.string.hazard_level_danger)
-        HazardLevel.NONE, null -> stringResource(R.string.hazard_level_none)
-    }
     val layoutDirection = LocalLayoutDirection.current
     val defaultPadding = PaddingValues(
         start = contentPadding.calculateLeftPadding(layoutDirection),
@@ -79,68 +59,17 @@ fun AppNavHost(
         startDestination = AppRoute.Vlm.route,
         modifier = Modifier.fillMaxSize()
     ) {
-        composable(AppRoute.Home.route) {
-            Box(modifier = Modifier.padding(defaultPadding)) {
-                HomeScreen(
-                    isRunning = isRunning,
-                    sceneMessage = sceneState?.primaryMessage,
-                    detections = sceneState?.detections.orEmpty(),
-                    lastError = lastError,
-                    statusMessage = status,
-                    detectionsCount = sceneState?.detections?.size ?: 0,
-                    hazardLevel = hazardLabel,
-                    trafficLights = sceneState?.trafficLights.orEmpty(),
-                    blindViewPreview = if (settings.showBlindViewPreview) {
-                        sceneState?.blindViewUtterancePreview
-                    } else {
-                        null
-                    },
-                    showOverlay = settings.showOverlay,
-                    showLabels = settings.showOverlayLabels,
-                    frameMapping = sceneState?.frameMapping,
-                    detectorDebugBitmap = sceneState?.detectorDebugBitmap,
-                    showDetectorDebugView = settings.enableDetectorDebugView,
-                    onStart = onStart,
-                    onStop = onStop,
-                    cameraFrameSource = cameraFrameSource,
-                    rotationDegrees = cameraFrameSource.lastRotationDegrees,
-                    modifier = Modifier.fillMaxSize()
-                )
-            }
-        }
-        composable(AppRoute.Settings.route) {
-            Box(modifier = Modifier.padding(defaultPadding)) {
-                DetectorSettingsScreen(
-                    settings = settings,
-                    onUpdate = { update -> settingsViewModel.update { update(it) } },
-                    onReset = { settingsViewModel.reset() }
-                )
-            }
-        }
-        composable(AppRoute.Diagnostics.route) {
-            Box(modifier = Modifier.padding(defaultPadding)) {
-                DiagnosticsScreen(settings = settings)
-            }
-        }
         composable(AppRoute.VlmSettings.route) {
             Box(modifier = Modifier.padding(defaultPadding)) {
                 VlmSettingsScreen(
                     settings = settings,
                     activeVlmProfileLabel = activeVlmProfile.label,
                     onOpenVlmProfiles = { navController.navigate(AppRoute.VlmProfiles.route) },
-                    onOpenDetectorSettings = { navController.navigate(AppRoute.Settings.route) },
                     onUpdate = { update -> settingsViewModel.update { update(it) } }
                 )
             }
         }
         composable(AppRoute.Vlm.route) {
-            DisposableEffect(Unit) {
-                mainViewModel.pauseDetectorForVlm()
-                onDispose {
-                    mainViewModel.closeVlm()
-                    mainViewModel.resumeDetectorAfterVlm()
-                }
-            }
             Box(modifier = Modifier.padding(topOnlyPadding)) {
                 VlmScreen(
                     state = vlmState,

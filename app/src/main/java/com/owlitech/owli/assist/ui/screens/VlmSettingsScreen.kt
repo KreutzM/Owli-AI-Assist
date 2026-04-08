@@ -28,7 +28,6 @@ fun VlmSettingsScreen(
     settings: AppSettings,
     activeVlmProfileLabel: String,
     onOpenVlmProfiles: () -> Unit,
-    onOpenDetectorSettings: () -> Unit,
     onUpdate: (((AppSettings) -> AppSettings)) -> Unit
 ) {
     Column(
@@ -83,25 +82,6 @@ fun VlmSettingsScreen(
             onValueChange = { v -> onUpdate { it.copy(ttsPitch = v) } },
             helper = stringResource(R.string.settings_tts_pitch_helper)
         )
-        Text(
-            stringResource(R.string.settings_section_developer),
-            style = MaterialTheme.typography.titleSmall
-        )
-        SettingSwitch(
-            label = stringResource(R.string.settings_detector_enable_experimental),
-            checked = settings.detectorModeEnabled,
-            onCheckedChange = { v -> onUpdate { it.copy(detectorModeEnabled = v) } }
-        )
-        if (settings.detectorModeEnabled) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End
-            ) {
-                Button(onClick = onOpenDetectorSettings) {
-                    Text(stringResource(R.string.settings_open_detector_settings))
-                }
-            }
-        }
     }
 }
 
