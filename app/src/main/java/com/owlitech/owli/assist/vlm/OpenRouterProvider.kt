@@ -10,6 +10,7 @@ import java.net.HttpURLConnection
 import java.net.URL
 
 private const val VLM_LOG_TAG = "VLM"
+private const val MISSING_OPENROUTER_CLIENT_KEY_MESSAGE = "OpenRouter client key fehlt."
 
 class OpenRouterProvider(
     private val apiKey: String,
@@ -18,7 +19,7 @@ class OpenRouterProvider(
 
     override suspend fun sendChat(request: VlmProviderRequest): VlmProviderResult = withContext(Dispatchers.IO) {
         if (apiKey.isBlank()) {
-            throw IllegalStateException("OPENROUTER_API_KEY fehlt.")
+            throw IllegalStateException(MISSING_OPENROUTER_CLIENT_KEY_MESSAGE)
         }
         val nonStreamRequest = request.copy(options = request.options.copy(stream = false))
         val payloadResult = buildPayload(nonStreamRequest)
@@ -89,7 +90,7 @@ class OpenRouterProvider(
         callback: VlmStreamingCallback
     ): VlmProviderResult = withContext(Dispatchers.IO) {
         if (apiKey.isBlank()) {
-            throw IllegalStateException("OPENROUTER_API_KEY fehlt.")
+            throw IllegalStateException(MISSING_OPENROUTER_CLIENT_KEY_MESSAGE)
         }
         val streamRequest = request.copy(options = request.options.copy(stream = true))
         val payloadResult = buildPayload(streamRequest)
