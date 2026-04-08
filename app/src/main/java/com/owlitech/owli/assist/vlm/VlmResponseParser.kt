@@ -31,8 +31,7 @@ object VlmResponseParser {
         if (root == null) {
             AppLogger.e(
                 LOG_TAG,
-                "VLM: response JSON parse failed model=$modelId requestId=${requestId ?: "-"} " +
-                    "body=${body.truncateForLog(200)}"
+                "VLM: response JSON parse failed model=$modelId requestId=${requestId ?: "-"}"
             )
             return VlmParsedResponse(
                 finalAnswer = "<NO_TEXT_EXTRACTED>\n${body.truncateForLog(800)}",

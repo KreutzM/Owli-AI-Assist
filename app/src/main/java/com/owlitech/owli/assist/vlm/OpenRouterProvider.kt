@@ -1,8 +1,6 @@
 package com.owlitech.owli.assist.vlm
 
 import com.owlitech.owli.assist.util.AppLogger
-import com.owlitech.owli.assist.util.logLong
-import com.owlitech.owli.assist.util.truncateForLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONArray
@@ -25,11 +23,9 @@ class OpenRouterProvider(
         val nonStreamRequest = request.copy(options = request.options.copy(stream = false))
         val payloadResult = buildPayload(nonStreamRequest)
         val payload = payloadResult.payload
-        val payloadForLog = redactPayloadForLog(payload)
         AppLogger.d(
             VLM_LOG_TAG,
-            "OpenRouter payload: model=${request.modelId} omitted=${payloadResult.omittedFields.joinToString()} " +
-                "payload=${payloadForLog.truncateForLog(1200)}"
+            "OpenRouter request prepared: model=${request.modelId} omitted=${payloadResult.omittedFields.joinToString()}"
         )
 
         val connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
@@ -61,12 +57,7 @@ class OpenRouterProvider(
             val msg = "OpenRouter HTTP $code (model=${request.modelId} requestId=${requestId ?: "-"})"
             AppLogger.e(VLM_LOG_TAG, "OpenRouter error: $msg bodyLength=$bodyLength")
             AppLogger.e(VLM_LOG_TAG, "OpenRouter error shape: ${VlmResponseParser.summarizeJsonShape(root)}")
-            AppLogger.e(VLM_LOG_TAG, "OpenRouter error body head=${body.take(1200).truncateForLog(1200)}")
-            if (body.length > 1200) {
-                AppLogger.e(VLM_LOG_TAG, "OpenRouter error body tail=${body.takeLast(1200).truncateForLog(1200)}")
-            }
-            logLong(VLM_LOG_TAG, "OpenRouter error body: ", body)
-            val ex = IOException("$msg: ${body.truncateForLog(500)}")
+            val ex = IOException(msg)
             AppLogger.e(VLM_LOG_TAG, "VLM: OpenRouter HTTP error", ex)
             throw ex
         }
@@ -75,7 +66,6 @@ class OpenRouterProvider(
             "OpenRouter response: HTTP $code requestId=${requestId ?: "-"} model=${request.modelId} bodyLength=$bodyLength"
         )
         AppLogger.d(VLM_LOG_TAG, "OpenRouter response shape: ${VlmResponseParser.summarizeJsonShape(root)}")
-        logLong(VLM_LOG_TAG, "OpenRouter body: ", body)
 
         val parsed = VlmResponseParser.parse(body, request.modelId, requestId)
         val usage = parsed.usage?.let {
@@ -104,11 +94,9 @@ class OpenRouterProvider(
         val streamRequest = request.copy(options = request.options.copy(stream = true))
         val payloadResult = buildPayload(streamRequest)
         val payload = payloadResult.payload
-        val payloadForLog = redactPayloadForLog(payload)
         AppLogger.d(
             VLM_LOG_TAG,
-            "OpenRouter payload(stream): model=${request.modelId} omitted=${payloadResult.omittedFields.joinToString()} " +
-                "payload=${payloadForLog.truncateForLog(1200)}"
+            "OpenRouter request prepared(stream): model=${request.modelId} omitted=${payloadResult.omittedFields.joinToString()}"
         )
 
         val connection = (URL(endpoint).openConnection() as HttpURLConnection).apply {
@@ -135,8 +123,7 @@ class OpenRouterProvider(
             val msg = "OpenRouter HTTP $code (model=${request.modelId} requestId=${requestId ?: "-"})"
             AppLogger.e(VLM_LOG_TAG, "OpenRouter error: $msg bodyLength=${body.length}")
             AppLogger.e(VLM_LOG_TAG, "OpenRouter error shape: ${VlmResponseParser.summarizeJsonShape(root)}")
-            logLong(VLM_LOG_TAG, "OpenRouter error body: ", body)
-            val ex = IOException("$msg: ${body.truncateForLog(500)}")
+            val ex = IOException(msg)
             AppLogger.e(VLM_LOG_TAG, "VLM: OpenRouter HTTP error", ex)
             callback.onError(ex)
             throw ex
@@ -277,43 +264,9 @@ class OpenRouterProvider(
         return array
     }
 
-    private fun redactPayloadForLog(payload: JSONObject): String {
-        val clone = JSONObject(payload.toString())
-        val messages = clone.optJSONArray("messages") ?: return clone.toString()
-        for (i in 0 until messages.length()) {
-            val msg = messages.optJSONObject(i) ?: continue
-            val content = msg.optJSONArray("content") ?: continue
-            for (j in 0 until content.length()) {
-                val item = content.optJSONObject(j) ?: continue
-                when (item.optString("type")) {
-                    "image_url" -> {
-                        val image = item.optJSONObject("image_url") ?: continue
-                        val url = image.optString("url")
-                        val redacted = if (url.startsWith("data:image")) {
-                            val length = url.length
-                            "data:image/<redacted len=$length>"
-                        } else if (url.isNotBlank()) {
-                            "<redacted>"
-                        } else {
-                            url
-                        }
-                        image.put("url", redacted)
-                    }
-                    "text" -> {
-                        val text = item.optString("text")
-                        if (text.length > 200) {
-                            item.put("text", text.truncateForLog(200))
-                        }
-                    }
-                }
-            }
-        }
-        return clone.toString()
-    }
-
     private fun parseRoot(body: String, model: String): JSONObject? {
         return runCatching { JSONObject(body) }.getOrElse { ex ->
-            AppLogger.e(VLM_LOG_TAG, "VLM: response JSON parse failed model=$model body=${body.truncateForLog(200)}", ex)
+            AppLogger.e(VLM_LOG_TAG, "VLM: response JSON parse failed model=$model", ex)
             null
         }
     }

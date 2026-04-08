@@ -6,12 +6,12 @@ import android.media.AudioFocusRequest
 import android.media.AudioManager
 import android.speech.tts.TextToSpeech
 import android.speech.tts.UtteranceProgressListener
-import android.util.Log
 import com.owlitech.owli.assist.domain.HazardLevel
 import com.owlitech.owli.assist.domain.SceneState
 import com.owlitech.owli.assist.blindview.BlindViewConfig
 import com.owlitech.owli.assist.blindview.BlindViewSpeechPlanner
 import com.owlitech.owli.assist.pipeline.AppMode
+import com.owlitech.owli.assist.util.AppLogger
 import java.io.Closeable
 import java.util.Locale
 import java.util.Collections
@@ -70,15 +70,15 @@ class AudioFeedbackEngine(
                 tts?.playSilentUtterance(PREWARM_SILENCE_MS, TextToSpeech.QUEUE_ADD, "tts-prewarm")
                 ttsReady = result != TextToSpeech.LANG_MISSING_DATA && result != TextToSpeech.LANG_NOT_SUPPORTED
                 ttsState = if (ttsReady) TtsState.READY else TtsState.ERROR
-                Log.d(
+                AppLogger.d(
                     TAG,
-                    "TTS init success, languageResult=$result, ready=$ttsReady, speechRate=$desiredSpeechRate pitch=$desiredPitch setResult=$rateResult, pendingMessage=$pendingMessage"
+                    "TTS init success, languageResult=$result, ready=$ttsReady, speechRate=$desiredSpeechRate pitch=$desiredPitch setResult=$rateResult, pending=${pendingMessage != null}"
                 )
                 speakPendingIfPossible()
             } else {
                 ttsReady = false
                 ttsState = TtsState.ERROR
-                Log.d(TAG, "TTS init failed, status=$status")
+                AppLogger.d(TAG, "TTS init failed, status=$status")
             }
         }
     }
@@ -104,7 +104,7 @@ class AudioFeedbackEngine(
                 pendingMessage = utterance
                 pendingLevel = state.overallHazardLevel
                 if (now - lastNotReadyLog >= notReadyLogInterval) {
-                    Log.d(TAG, "TTS not ready (state=$ttsState), pendingMessage=$pendingMessage")
+                    AppLogger.d(TAG, "TTS not ready (state=$ttsState), pending=true")
                     lastNotReadyLog = now
                 }
                 return
@@ -130,7 +130,7 @@ class AudioFeedbackEngine(
             pendingMessage = message
             pendingLevel = state.overallHazardLevel
             if (now - lastNotReadyLog >= notReadyLogInterval) {
-                Log.d(TAG, "TTS not ready (state=$ttsState), pendingMessage=$pendingMessage")
+                AppLogger.d(TAG, "TTS not ready (state=$ttsState), pending=true")
                 lastNotReadyLog = now
             }
             return
@@ -151,7 +151,7 @@ class AudioFeedbackEngine(
             return
         }
         if (!ttsReady) {
-            Log.d(TAG, "speak skipped, ttsReady=false, text=$text")
+            AppLogger.d(TAG, "speak skipped, ttsReady=false")
             return
         }
         speakWithVolume(text, standardVolume, "scene-state", QueueMode.FLUSH)
@@ -172,7 +172,7 @@ class AudioFeedbackEngine(
             pendingMessage = combined
             pendingLevel = HazardLevel.NONE
             if (now - lastNotReadyLog >= notReadyLogInterval) {
-                Log.d(TAG, "TTS not ready (state=$ttsState), pendingMessage=$pendingMessage")
+                AppLogger.d(TAG, "TTS not ready (state=$ttsState), pending=true")
                 lastNotReadyLog = now
             }
             return
@@ -186,14 +186,14 @@ class AudioFeedbackEngine(
         val clamped = rate.coerceIn(MIN_SPEECH_RATE, MAX_SPEECH_RATE)
         desiredSpeechRate = clamped
         tts?.setSpeechRate(clamped)
-        Log.d(TAG, "updateSpeechRate to $clamped")
+        AppLogger.d(TAG, "updateSpeechRate to $clamped")
     }
 
     fun updatePitch(pitch: Float) {
         val clamped = pitch.coerceIn(MIN_PITCH, MAX_PITCH)
         desiredPitch = clamped
         tts?.setPitch(clamped)
-        Log.d(TAG, "updatePitch to $clamped")
+        AppLogger.d(TAG, "updatePitch to $clamped")
     }
 
     fun setTtsEnabled(enabled: Boolean) {
@@ -204,7 +204,7 @@ class AudioFeedbackEngine(
             pendingLevel = HazardLevel.NONE
             stopAllTts()
         }
-        Log.d(TAG, "ttsEnabled=$ttsEnabled")
+        AppLogger.d(TAG, "ttsEnabled=$ttsEnabled")
     }
 
     private fun maxHazard(a: HazardLevel, b: HazardLevel): HazardLevel {
@@ -227,7 +227,7 @@ class AudioFeedbackEngine(
             lastSpokenAt = now
             pendingMessage = null
         } else {
-            Log.d(TAG, "Pending message cooldown not passed, keeping message=$message")
+            AppLogger.d(TAG, "Pending message cooldown not passed, keeping pending utterance")
         }
     }
 
@@ -266,7 +266,7 @@ class AudioFeedbackEngine(
             pendingMessage = null
             pendingLevel = HazardLevel.NONE
         }
-        Log.d(TAG, "sceneSpeechSuppressed=$sceneSpeechSuppressed")
+        AppLogger.d(TAG, "sceneSpeechSuppressed=$sceneSpeechSuppressed")
     }
 
     fun setOnVlmStreamIdleListener(listener: (() -> Unit)?) {
@@ -298,11 +298,11 @@ class AudioFeedbackEngine(
         queueMode: QueueMode
     ) {
         if (!ttsEnabled) {
-            Log.d(TAG, "speak skipped, ttsEnabled=false, text=$text")
+            AppLogger.d(TAG, "speak skipped, ttsEnabled=false")
             return
         }
         if (!ttsReady) {
-            Log.d(TAG, "speak skipped, ttsReady=false, text=$text")
+            AppLogger.d(TAG, "speak skipped, ttsReady=false")
             return
         }
         val params = android.os.Bundle().apply {
@@ -324,7 +324,7 @@ class AudioFeedbackEngine(
                 }
             }
         }
-        Log.d(TAG, "speak result=$result, text=$text volume=$volume queue=$queueMode")
+        AppLogger.d(TAG, "speak result=$result volume=$volume queue=$queueMode")
     }
 
     private fun requestAudioFocus() {

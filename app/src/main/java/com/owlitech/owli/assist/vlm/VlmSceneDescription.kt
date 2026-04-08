@@ -1,7 +1,6 @@
 package com.owlitech.owli.assist.vlm
 
 import com.owlitech.owli.assist.util.AppLogger
-import com.owlitech.owli.assist.util.truncateForLog
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -20,7 +19,7 @@ data class VlmSceneDescription(
                 if (jsonText == null) {
                     AppLogger.e(
                         "VLM",
-                        "VLM: Kein JSON-Objekt in der VLM-Antwort gefunden. raw=${raw.truncateForLog(300)}"
+                        "VLM: Kein JSON-Objekt in der VLM-Antwort gefunden."
                     )
                     throw IllegalArgumentException("Kein JSON-Objekt gefunden.")
                 }
@@ -34,7 +33,7 @@ data class VlmSceneDescription(
                 if (tts.isBlank() && readable.isBlank() && action.isBlank()) {
                     AppLogger.w(
                         "VLM",
-                        "VLM: Antwort JSON enthaelt keine verwertbaren Felder. raw=${raw.truncateForLog(300)}"
+                        "VLM: Antwort JSON enthaelt keine verwertbaren Felder."
                     )
                     throw IllegalArgumentException("JSON enthaelt keine verwertbaren Felder.")
                 }
