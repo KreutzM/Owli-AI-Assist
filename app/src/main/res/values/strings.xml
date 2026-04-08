@@ -99,9 +99,10 @@
     <string name="about_build_format">Build: %1$s</string>
     <string name="about_short_description_p1">Owli-AI Assist helps you describe photos and answer questions about a scene.</string>
     <string name="about_short_description_p2">The app is optimized for simple operation, especially with TalkBack and one-handed use.</string>
+    <string name="about_short_description_p3">Owli products support blind and visually impaired people with accessible AI tools for orientation, scene understanding, and everyday assistance. Learn more at: https://owli-ai.com</string>
     <string name="about_development_intro">The apps are developed by the Owli-AI team:</string>
-    <string name="about_development_team_item_1">- Justine BuÃŸ (BSc) and ****Dr.-Ing. Michael Kreutzer from ** Institut fÃ¼r Technik &amp; Informatik (ITI), Technische Hochschule Mittelhessen</string>
-    <string name="about_feedback_contact">Feedback to: Michael.Kreutzer@mni.thm.de</string>
+    <string name="about_development_team_item_1">- Justine Buss (BSc) and Dr.-Ing. Michael Kreutzer from the Institute of Technology &amp; Informatics (ITI), Technische Hochschule Mittelhessen</string>
+    <string name="about_feedback_contact">Feedback to: feedback@owli-ai.com</string>
     <string name="about_supporters_intro">We thank for support and collaboration:</string>
     <string name="about_privacy_p1">When you send a request, your photo (and any additional attached images) as well as your text are transmitted to an AI service to generate a response.</string>
     <string name="about_privacy_p2">The transmission happens only after your action (e.g. Send). An internet connection is required for the AI response.</string>

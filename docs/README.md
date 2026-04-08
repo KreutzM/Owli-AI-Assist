@@ -11,3 +11,4 @@ Kurzer Ueberblick ueber die wichtigsten Dokumente:
 - `docs/Coding-Guidelines.md` - technische Konventionen (ergaenzt AGENTS)
 - `docs/ChangeLog.md` - Entwicklungs-Historie (kurz halten, relevante Aenderungen)
 - `docs/ToDo.md` - Roadmap (lebend, regelmaessig pflegen)
+- `docs/user-manual/` - kanonische Nutzerhilfe; per `python tools/render_user_manual.py` in `app/src/main/assets/help/` rendern

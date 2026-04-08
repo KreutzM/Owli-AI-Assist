@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="../help.css">
 </head>
 <body>
+<!-- Generated from docs/user-manual/*.md via tools/render_user_manual.py -->
 <header>
   <h1>Owli-AI Assist - User Manual</h1>
   <p class="small">Offline help content. No internet required.</p>
@@ -30,16 +31,18 @@
 <li>Open the app.</li>
 <li>Allow camera permission.</li>
 <li>Aim the camera in the live preview.</li>
-<li>Tap <strong>New scene</strong> to capture a still image.</li>
-<li>Ask your question by text or voice and tap <strong>Send</strong>.</li>
-<li>Tap <strong>Reset</strong> to return to the live preview.</li>
+<li>Tap <code>New scene</code> to capture a still image.</li>
+<li>Ask your question by text and tap <code>Send</code>.</li>
+<li>Or tap the microphone to insert speech, or long-press it to send speech immediately.</li>
+<li>Tap <code>Reset</code> to close the current chat and return to the live preview.</li>
 </ol>
 <h2>4. Main Screen</h2>
 <ul>
 <li>Live preview: helps you aim before capture.</li>
-<li>Still image: shown after <strong>New scene</strong>.</li>
-<li>More actions: repeat the last answer or add another image.</li>
+<li>Still image: shown after <code>New scene</code>.</li>
+<li>More actions: use the overflow menu to repeat the last answer or add another image.</li>
 <li>Attachments: manage additional images for the current chat.</li>
+<li>Auto: if the active VLM profile supports auto scan, you can toggle periodic <code>New scene</code> requests on or off.</li>
 </ul>
 <h2>5. Settings</h2>
 <ul>
@@ -59,6 +62,7 @@
 <li>Voice input not working: ensure speech recognition is available on your device.</li>
 <li>Camera not working: check camera permission in Android settings.</li>
 <li>Choppy speech: disable streaming TTS or reduce speech rate.</li>
+<li><code>Auto</code> is missing: the currently selected VLM profile does not support auto scan.</li>
 </ul>
 <h2>8. Feedback</h2>
 <p>Feedback is valuable: which actions do you use most, and where is navigation unclear?</p>
