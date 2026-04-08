@@ -1,109 +1,54 @@
-# Owli‑AI Assist – Benutzerhandbuch (Deutsch)
+# Owli-AI Assist - Benutzerhandbuch (Deutsch)
 
-Stand: 2026-01-24
+Stand: 2026-04-08
 
-## 1. Kurzüberblick
+## 1. Ueberblick
 
-Owli‑AI Assist ist eine barrierearme Assistenz‑App. Im **VLM‑Modus** beschreibst du eine Szene „on demand“: Du richtest die Kamera aus, nimmst ein Bild auf und erhältst eine Antwort (Text + optional Sprachausgabe).
-
-Der **Offline‑Detector** ist experimentell und standardmäßig **ausgeblendet**. Er kann in den Einstellungen aktiviert werden.
+Owli-AI Assist ist eine barrierearme Assistenz-App. Im VLM-Modus richtest du die Kamera aus, nimmst bei Bedarf ein Bild auf und bekommst danach eine Antwort als Text und optional als Sprachausgabe.
 
 ## 2. Voraussetzungen
 
-- Android‑Smartphone mit Kamera
-- Internetverbindung (für VLM/LLM)
+- Android-Smartphone mit Kamera
+- Internetverbindung (fuer VLM/LLM)
 - Optional: Sprachausgabe (TTS) aktiviert
 
-> **Datenschutz:** Bilder und Texte werden für den VLM‑Modus an einen KI‑Dienst übertragen (z. B. über OpenRouter), damit die Antwort erzeugt werden kann.
+> Datenschutz: Bilder und Texte werden nur nach deiner ausdruecklichen Aktion an einen KI-Dienst uebertragen, zum Beispiel nach `Neue Szene` oder beim Senden einer Folgefrage.
 
 ## 3. Schnellstart
 
-1. App öffnen → du befindest dich im **VLM‑Modus**.
-2. **Kamera‑Vorschau** erscheint (Live‑Bild).
-3. Richte die Kamera aus.
-4. Tippe **„Neue Szene“** → die App nimmt ein **Standbild** auf.
-5. Stelle deine Frage (Text oder Spracheingabe) und tippe **Senden**.
-6. Zum erneuten Zielen: tippe **„Reset“** → zurück zur Live‑Vorschau.
+1. App oeffnen.
+2. Kamera-Berechtigung erlauben.
+3. Kamera in der Live-Vorschau ausrichten.
+4. `Neue Szene` tippen, um ein Standbild aufzunehmen.
+5. Frage per Text oder Spracheingabe stellen und `Senden` tippen.
+6. Mit `Reset` zur Live-Vorschau zurueckkehren.
 
-## 4. Hauptbildschirm (VLM)
+## 4. Hauptansicht
 
-### 4.1 Kamera‑Vorschau und Standbild
+- Live-Vorschau: hilft beim Ausrichten vor der Aufnahme.
+- Standbild: wird nach `Neue Szene` angezeigt.
+- Weitere Aktionen: letzte Antwort erneut sprechen oder ein weiteres Bild anhaengen.
+- Anhaenge: zusaetzliche Bilder fuer den aktuellen Chat verwalten.
 
-- **Vorschau (Live):** zum Anvisieren vor der Aufnahme.
-- **Standbild:** nach „Neue Szene“ wird das aufgenommene Bild angezeigt.
+## 5. Einstellungen
 
-### 4.2 „Neue Szene“ und „Reset“
+- VLM-Profil auswaehlen.
+- Sprache auf System / Deutsch / Englisch setzen.
+- TTS, Sprechtempo, Tonhoehe und optional Streaming-TTS konfigurieren.
 
-- **Neue Szene:** setzt den Chat‑Kontext zurück, nimmt ein neues Bild auf und zeigt das Standbild an.
-- **Reset:** setzt den Kontext zurück und zeigt wieder die Live‑Vorschau.
+## 6. Barrierefreiheit
 
-### 4.3 Eingabezeile (unten)
+- Die Steuerelemente folgen einer stabilen Reihenfolge fuer TalkBack.
+- Mit Wischgesten kannst du zwischen den Bedienelementen wechseln.
+- Die Beschriftungen sind fuer Screenreader ausgelegt.
 
-Die Eingabezeile besteht aus:
+## 7. Fehlerbehebung
 
-- **Textfeld** (links): Tippe deine Frage/Anweisung.
-- **Senden** (mittig/rechts): Sendet deine Nachricht zusammen mit dem aktuellen Bild (und ggf. Anhängen).
-- **Mikrofon** (rechts): Spracheingabe.
+- Keine Antwort: Internetverbindung pruefen.
+- Keine Spracheingabe: Verfuegbarkeit der Spracherkennung auf dem Geraet pruefen.
+- Kamera funktioniert nicht: Kamera-Berechtigung in Android pruefen.
+- Abgehackte Sprachausgabe: Streaming-TTS deaktivieren oder Sprechtempo reduzieren.
 
-**Spracheingabe:**
-- **Tippen:** Diktieren und Text ins Eingabefeld übernehmen.
-- **Gedrückt halten:** Diktieren und danach **sofort senden** (wenn diese Funktion in der UI angeboten wird).
+## 8. Feedback
 
-### 4.4 Weitere Aktionen (Drei‑Punkt‑Menü)
-
-Unter **„Weitere Aktionen“** findest du:
-
-- **Wiederhole letzte Antwort:** spricht die letzte LLM‑Antwort erneut.
-- **Bild hinzufügen:** nimmt ein weiteres Bild auf und hängt es an den aktuellen Chat an.
-
-### 4.5 Anhänge (mehrere Bilder)
-
-Wenn du mehrere Bilder anhängst (z. B. Detailaufnahme), wird neben der Eingabe ein **Anhang‑Zähler** angezeigt (z. B. „2“).
-
-- Tippe den Zähler, um Anhänge zu verwalten.
-- Du kannst einzelne Bilder entfernen.
-
-**Wann ist „Bild hinzufügen“ nützlich?**
-- Wenn die KI nach einem Detail fragt (z. B. „Bitte näher ran“).
-- Wenn du mehrere Blickwinkel brauchst.
-
-## 5. Einstellungen (VLM)
-
-### 5.1 Profil auswählen
-
-Die App kann unterschiedliche VLM‑Profile anbieten (z. B. „kurz“, „detailliert“). Wähle ein Profil, das zu deinem Use‑Case passt.
-
-### 5.2 Sprache und Sprachausgabe
-
-- **Sprache:** System / Deutsch / Englisch
-- **Sprachausgabe (TTS):** Ein/Aus, Sprechtempo, Tonhöhe
-- Optional: **Streaming‑TTS**, falls verfügbar (Antwort wird während des Empfangs gesprochen).
-
-### 5.3 Developer / Experimental
-
-- **Offline Detector aktivieren (Experimentell):** blendet den Offline‑Detector‑Modus und dessen Einstellungen ein.
-- Hinweis: Dieser Modus ist für Entwickler gedacht und kann die Bedienung komplexer machen.
-
-## 6. Offline Detector (experimentell)
-
-Wenn aktiviert, steht ein separater Modus zur Verfügung, der kontinuierlich Objekte erkennt und Audio‑Hinweise geben kann. Dieser Modus ist **nicht** Teil des Beta‑Flows und kann mehr Optionen enthalten.
-
-## 7. Barrierefreiheit‑Tipps (TalkBack)
-
-- Die App ist auf eine klare Reihenfolge der Steuerelemente ausgelegt.
-- Nutze „Wischen“ um Buttons und Eingabefelder anzuspringen.
-- Wenn dir ein Button unklar ist, prüfe die Ansage (die App verwendet sprechende Labels).
-
-## 8. Fehlerbehebung
-
-- **Keine Antwort:** Prüfe Internetverbindung.
-- **Keine Spracheingabe:** Prüfe, ob Spracheingabe auf deinem Gerät verfügbar ist.
-- **Kamera funktioniert nicht:** Prüfe Kamera‑Berechtigung in Android‑Einstellungen.
-- **Antwort klingt abgehackt:** Streaming‑TTS deaktivieren oder Sprechtempo reduzieren.
-
-## 9. Feedback
-
-Feedback ist besonders wertvoll: Welche Aktionen nutzt du am häufigsten? Wo ist die Bedienung unklar?
-
----
-*Dieses Handbuch beschreibt den aktuellen Beta‑Stand. Je nach Build können Menüs/Funktionen leicht abweichen.*
+Feedback hilft besonders bei der Frage, welche Aktionen haeufig genutzt werden und wo die Bedienung noch unklar ist.
