@@ -20,15 +20,17 @@ Owli-AI Assist is an accessibility-oriented assistant app. In VLM mode, you aim 
 2. Allow camera permission.
 3. Aim the camera in the live preview.
 4. Tap `New scene` to capture a still image.
-5. Ask your question by text or voice and tap `Send`.
-6. Tap `Reset` to return to the live preview.
+5. Ask your question by text and tap `Send`.
+6. Or tap the microphone to insert speech, or long-press it to send speech immediately.
+7. Tap `Reset` to close the current chat and return to the live preview.
 
 ## 4. Main Screen
 
 - Live preview: helps you aim before capture.
 - Still image: shown after `New scene`.
-- More actions: repeat the last answer or add another image.
+- More actions: use the overflow menu to repeat the last answer or add another image.
 - Attachments: manage additional images for the current chat.
+- Auto: if the active VLM profile supports auto scan, you can toggle periodic `New scene` requests on or off.
 
 ## 5. Settings
 
@@ -48,6 +50,7 @@ Owli-AI Assist is an accessibility-oriented assistant app. In VLM mode, you aim 
 - Voice input not working: ensure speech recognition is available on your device.
 - Camera not working: check camera permission in Android settings.
 - Choppy speech: disable streaming TTS or reduce speech rate.
+- `Auto` is missing: the currently selected VLM profile does not support auto scan.
 
 ## 8. Feedback
 
