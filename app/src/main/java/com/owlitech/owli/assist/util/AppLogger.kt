@@ -1,20 +1,27 @@
 package com.owlitech.owli.assist.util
 
 import android.util.Log
+import com.owlitech.owli.assist.BuildConfig
 
 object AppLogger {
     private const val TAG = "OwliAI"
 
     fun d(message: String) {
-        Log.d(TAG, message)
+        if (BuildConfig.DEBUG) {
+            Log.d(TAG, message)
+        }
     }
 
     fun i(message: String) {
-        Log.i(TAG, message)
+        if (BuildConfig.DEBUG) {
+            Log.i(TAG, message)
+        }
     }
 
     fun w(message: String) {
-        Log.w(TAG, message)
+        if (BuildConfig.DEBUG) {
+            Log.w(TAG, message)
+        }
     }
 
     fun e(throwable: Throwable? = null, message: String) {
@@ -22,15 +29,21 @@ object AppLogger {
     }
 
     fun d(tag: String, message: String) {
-        Log.d(tag, message)
+        if (BuildConfig.DEBUG) {
+            Log.d(tag, message)
+        }
     }
 
     fun i(tag: String, message: String) {
-        Log.i(tag, message)
+        if (BuildConfig.DEBUG) {
+            Log.i(tag, message)
+        }
     }
 
     fun w(tag: String, message: String, throwable: Throwable? = null) {
-        Log.w(tag, message, throwable)
+        if (BuildConfig.DEBUG) {
+            Log.w(tag, message, throwable)
+        }
     }
 
     fun e(tag: String, message: String, throwable: Throwable? = null) {
