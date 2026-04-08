@@ -60,7 +60,6 @@ class DefaultVisionPipeline(
         override fun onFrame(image: ImageProxy) {
             val now = System.currentTimeMillis()
             if (processing || now - lastProcessedAt < minProcessIntervalMs) {
-                image.close()
                 return
             }
             processing = true
@@ -96,7 +95,6 @@ class DefaultVisionPipeline(
                 _sceneStates.tryEmit(sceneState)
                 lastProcessedAt = now
             } finally {
-                image.close()
                 processing = false
             }
         }

@@ -54,6 +54,8 @@ class CameraFrameSource(
                                 try {
                                     frameListener?.onFrame(image)
                                 } finally {
+                                    // CameraFrameSource owns analyzer frames end-to-end and closes
+                                    // them exactly once after the listener has finished reading them.
                                     image.close()
                                 }
                             }
