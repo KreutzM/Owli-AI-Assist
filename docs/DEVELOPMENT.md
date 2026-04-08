@@ -20,6 +20,8 @@ Dieses Dokument ist die Einstiegstelle fuer den taeglichen Workflow (2 Menschen 
 ### Release defaults
 - Release-Builds aktivieren R8/Minify und Resource-Shrinking.
 - App-Backup und Android data extraction sind fuer die shipped App deaktiviert.
+- Fuer den aktuellen Release-Pfad nutzt die App OpenRouter direkt; Bilder, optionale Zusatzbilder und Fragetext verlassen das Geraet nur nach expliziter Nutzeraktion.
+- Der aktuelle OpenRouter-Client-Key bleibt eine Zwischenloesung im Client. Siehe `docs/PLAYSTORE-PRIVACY-READINESS.md`.
 
 ---
 
