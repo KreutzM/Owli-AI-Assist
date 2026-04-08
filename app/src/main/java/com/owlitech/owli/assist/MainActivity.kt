@@ -7,8 +7,8 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
-import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.collectAsState
@@ -22,25 +22,22 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.owlitech.owli.assist.audio.AudioFeedbackEngine
 import com.owlitech.owli.assist.audio.StreamingTtsController
-import com.owlitech.owli.assist.camera.CameraFrameSource
-import com.owlitech.owli.assist.motion.MotionEstimator
-import com.owlitech.owli.assist.pipeline.VisionPipelineModule
 import com.owlitech.owli.assist.settings.AppSettings
 import com.owlitech.owli.assist.settings.AppSettingsDefaults
 import com.owlitech.owli.assist.settings.LanguagePreference
 import com.owlitech.owli.assist.settings.SettingsRepository
 import com.owlitech.owli.assist.settings.SettingsViewModel
+import com.owlitech.owli.assist.ui.AppTopBar
 import com.owlitech.owli.assist.ui.MainViewModel
+import com.owlitech.owli.assist.ui.navigation.AppNavHost
+import com.owlitech.owli.assist.ui.navigation.AppRoute
+import com.owlitech.owli.assist.ui.theme.OwliTheme
 import com.owlitech.owli.assist.util.AppLogger
 import com.owlitech.owli.assist.vlm.OpenRouterVlmClient
 import com.owlitech.owli.assist.vlm.VlmProfile
 import com.owlitech.owli.assist.vlm.VlmProfileLoader
 import com.owlitech.owli.assist.vlm.VlmProfilesConfig
 import com.owlitech.owli.assist.vlm.VlmUiState
-import com.owlitech.owli.assist.ui.AppTopBar
-import com.owlitech.owli.assist.ui.navigation.AppNavHost
-import com.owlitech.owli.assist.ui.navigation.AppRoute
-import com.owlitech.owli.assist.ui.theme.OwliTheme
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -50,9 +47,7 @@ import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
 
-    private val cameraFrameSource by lazy { CameraFrameSource(this, this) }
     private val audioFeedbackEngine by lazy { AudioFeedbackEngine(this) }
-    private val motionEstimator by lazy { MotionEstimator(this) }
     private val streamingTtsController by lazy {
         StreamingTtsController(
             speaker = object : StreamingTtsController.Speaker {
@@ -89,14 +84,9 @@ class MainActivity : AppCompatActivity() {
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
             if (isGranted) {
-                if (settingsViewModel.settings.value.detectorModeEnabled) {
-                    AppLogger.d("Permission granted -> autoStartIfNeeded")
-                    mainViewModel.autoStartIfNeeded()
-                } else {
-                    AppLogger.d("Permission granted but detector disabled -> skip autoStart")
-                }
+                AppLogger.d("Camera permission granted")
             } else {
-                AppLogger.d("Permission denied -> no start")
+                AppLogger.d("Camera permission denied")
             }
         }
 
@@ -107,10 +97,9 @@ class MainActivity : AppCompatActivity() {
         activeVlmProfile = vlmProfilesConfig.resolve(vlmProfilesConfig.defaultProfileId)
         mainViewModel.applyVlmProfile(activeVlmProfile)
         audioFeedbackEngine.setOnVlmStreamIdleListener {
-            updateSceneSpeechSuppression()
+            updateVlmAudioState()
         }
         enableEdgeToEdge()
-        observeSceneState()
         observeVlmState()
         observeSettings()
         setContent {
@@ -119,7 +108,6 @@ class MainActivity : AppCompatActivity() {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = AppRoute.fromRoute(navBackStackEntry?.destination?.route)
                 val canNavigateBack = navController.previousBackStackEntry != null
-                val settings by settingsViewModel.settings.collectAsState()
 
                 Scaffold(
                     modifier = Modifier.fillMaxSize(),
@@ -127,23 +115,9 @@ class MainActivity : AppCompatActivity() {
                         AppTopBar(
                             titleRes = currentRoute.titleRes,
                             canNavigateBack = canNavigateBack,
-                            showVlmAction = settings.detectorModeEnabled && currentRoute == AppRoute.Home,
-                            detectorModeEnabled = settings.detectorModeEnabled,
                             onNavigateBack = { navController.popBackStack() },
-                            onOpenVlm = {
-                                navController.navigate(AppRoute.Vlm.route) { launchSingleTop = true }
-                            },
-                            onOpenDetector = {
-                                navController.navigate(AppRoute.Home.route) { launchSingleTop = true }
-                            },
-                            onOpenSettings = {
-                                navController.navigate(AppRoute.Settings.route) { launchSingleTop = true }
-                            },
                             onOpenVlmSettings = {
                                 navController.navigate(AppRoute.VlmSettings.route) { launchSingleTop = true }
-                            },
-                            onOpenDiagnostics = {
-                                navController.navigate(AppRoute.Diagnostics.route) { launchSingleTop = true }
                             },
                             onOpenHelp = {
                                 navController.navigate(AppRoute.Help.route) { launchSingleTop = true }
@@ -159,10 +133,7 @@ class MainActivity : AppCompatActivity() {
                         contentPadding = innerPadding,
                         mainViewModel = mainViewModel,
                         settingsViewModel = settingsViewModel,
-                        cameraFrameSource = cameraFrameSource,
                         vlmProfilesConfig = vlmProfilesConfig,
-                        onStart = { onUserStart() },
-                        onStop = { onUserStop() },
                         onVoiceInputActiveChanged = { active -> setVoiceInputActive(active) },
                         onRepeatLastVlmResponse = { primary, secondary ->
                             repeatLastVlmResponse(primary, secondary)
@@ -176,21 +147,11 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        val detectorEnabled = settingsViewModel.settings.value.detectorModeEnabled
-        AppLogger.d(
-            "Activity onStart, detectorEnabled=$detectorEnabled shouldAutoStart=${mainViewModel.shouldAutoStart.value}"
-        )
-        if (detectorEnabled) {
-            motionEstimator.start()
-            ensurePermissionAndAutoStart()
-        }
+        ensureCameraPermission()
     }
 
     override fun onStop() {
         super.onStop()
-        AppLogger.d("Activity onStop -> stop pipeline (lifecycle)")
-        mainViewModel.stopForLifecycle()
-        motionEstimator.stop()
         streamingTimeoutJob?.cancel()
         streamingActive = false
         lastStreamingText = ""
@@ -204,38 +165,10 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
     }
 
-    private fun onUserStart() {
-        AppLogger.d("User requested start")
-        mainViewModel.requestStart()
-        ensurePermissionAndAutoStart()
-    }
-
-    private fun onUserStop() {
-        AppLogger.d("User requested stop")
-        mainViewModel.stopUser()
-    }
-
-    private fun ensurePermissionAndAutoStart() {
-        if (!settingsViewModel.settings.value.detectorModeEnabled) {
-            AppLogger.d("Detector disabled -> skip auto-start")
-            return
-        }
+    private fun ensureCameraPermission() {
         when (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)) {
-            PackageManager.PERMISSION_GRANTED -> mainViewModel.autoStartIfNeeded()
-            else -> {
-                AppLogger.d("Requesting camera permission for autoStart=${mainViewModel.shouldAutoStart.value}")
-                requestPermissionLauncher.launch(Manifest.permission.CAMERA)
-            }
-        }
-    }
-
-    private fun observeSceneState() {
-        lifecycleScope.launch {
-            repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
-                mainViewModel.sceneState.collect { state ->
-                    state?.let { audioFeedbackEngine.onSceneUpdated(it) }
-                }
-            }
+            PackageManager.PERMISSION_GRANTED -> Unit
+            else -> requestPermissionLauncher.launch(Manifest.permission.CAMERA)
         }
     }
 
@@ -243,9 +176,6 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(androidx.lifecycle.Lifecycle.State.STARTED) {
                 mainViewModel.vlmUiState.collect { state ->
-                    val backgroundVolume = 0.25f
-                    val standardVolume = if (state is VlmUiState.Inactive) 1.0f else backgroundVolume
-                    audioFeedbackEngine.setStandardVolume(standardVolume)
                     when (state) {
                         is VlmUiState.Streaming -> handleStreamingState(state)
                         else -> handleStreamingEnd(state)
@@ -270,21 +200,6 @@ class MainActivity : AppCompatActivity() {
 
     private fun applySettings(settings: AppSettings) {
         applyLocale(settings.languagePreference)
-        if (settings.detectorModeEnabled) {
-            motionEstimator.start()
-        } else {
-            mainViewModel.stopUser()
-            motionEstimator.stop()
-        }
-        val migratedProfileId = when (settings.vlmProfileId) {
-            "nano_safe" -> "nano-low"
-            "nano_fast" -> "nano-high"
-            else -> settings.vlmProfileId
-        }
-        if (migratedProfileId != settings.vlmProfileId) {
-            settingsViewModel.update { it.copy(vlmProfileId = migratedProfileId) }
-            return
-        }
         val defaultProfileId = vlmProfilesConfig.defaultProfileId
         val profileExists = vlmProfilesConfig.profiles.any { it.id == settings.vlmProfileId }
         if ((!settings.vlmProfileIdUserSet && settings.vlmProfileId != defaultProfileId) || !profileExists) {
@@ -301,42 +216,9 @@ class MainActivity : AppCompatActivity() {
         if (!ttsEnabled) {
             streamingTtsController.cancel()
         }
-        updateSceneSpeechSuppression()
-        motionEstimator.updateThresholds(
-            medThresholdRadS = settings.motionMedThresholdRadS,
-            highThresholdRadS = settings.motionHighThresholdRadS
-        )
-        com.owlitech.owli.assist.diagnostics.DiagnosticsCollector.updateSettings(settings)
-        com.owlitech.owli.assist.diagnostics.DiagnosticsCollector.updatePipelineStatus(
-            isRunning = mainViewModel.isRunning.value,
-            detectorInfo = mainViewModel.status.value,
-            analysisIntervalMs = settings.analysisIntervalMs
-        )
-        val handle = VisionPipelineModule.create(
-            context = this,
-            lifecycleOwner = this,
-            scope = lifecycleScope,
-            cameraFrameSource = cameraFrameSource,
-            useFake = false,
-            detectorOptions = settings.toDetectorOptions(),
-            mode = settings.appMode,
-            blindViewConfig = settings.toBlindViewConfig(),
-            analysisIntervalMs = settings.analysisIntervalMs,
-            motionEstimator = motionEstimator,
-            motionGatingEnabled = settings.enableMotionGating,
-            motionSpeakIntervalMultiplierHigh = settings.motionSpeakIntervalMultiplierHigh,
-            enableImuDerotation = settings.enableImuDerotation,
-            stabilizationQualityMin = settings.stabilizationQualityMin,
-            enableTranslationStabilization = settings.enableTranslationStabilization,
-            translationQualityMin = settings.translationQualityMin,
-            translationSearchRadiusLowRes = settings.translationSearchRadiusLowRes,
-            translationPatchOffsetLowRes = settings.translationPatchOffsetLowRes,
-            debugDetectorViewEnabled = settings.enableDetectorDebugView
-        )
-        mainViewModel.setPipeline(handle)
         activeVlmProfile = vlmProfilesConfig.resolve(settings.vlmProfileId)
         mainViewModel.applyVlmProfile(activeVlmProfile)
-        ensurePermissionAndAutoStart()
+        updateVlmAudioState()
     }
 
     private fun applyLocale(preference: LanguagePreference) {
@@ -367,7 +249,7 @@ class MainActivity : AppCompatActivity() {
             streamingTtsController.onDelta(delta)
             scheduleStreamingTimeout()
         }
-        updateSceneSpeechSuppression()
+        updateVlmAudioState()
     }
 
     private fun handleStreamingEnd(state: VlmUiState) {
@@ -388,7 +270,7 @@ class MainActivity : AppCompatActivity() {
             }
             lastStreamingText = ""
         }
-        updateSceneSpeechSuppression()
+        updateVlmAudioState()
         if (!voiceInputActive && (!shouldUseStreamingTts() || !hadStreamingOutput)) {
             when (state) {
                 is VlmUiState.OverviewReady -> {
@@ -425,11 +307,10 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateSceneSpeechSuppression() {
-        val shouldSuppress = voiceInputActive || (shouldUseStreamingTts() &&
-            (streamingActive || streamingTtsController.hasPending() || audioFeedbackEngine.isVlmStreamBusy())
+    private fun updateVlmAudioState() {
+        audioFeedbackEngine.setVlmVolume(
+            if (voiceInputActive) 0.0f else 1.0f
         )
-        audioFeedbackEngine.setSceneSpeechSuppressed(shouldSuppress)
     }
 
     private fun shouldUseStreamingTts(): Boolean {
@@ -442,9 +323,8 @@ class MainActivity : AppCompatActivity() {
         if (active) {
             streamingTtsController.cancel()
             audioFeedbackEngine.stopAllTts()
-            audioFeedbackEngine.setSceneSpeechSuppressed(true)
         } else {
-            updateSceneSpeechSuppression()
+            updateVlmAudioState()
         }
     }
 
@@ -452,5 +332,4 @@ class MainActivity : AppCompatActivity() {
         if (primary.isNullOrBlank() && secondary.isNullOrBlank()) return
         audioFeedbackEngine.speakVlmResponse(primary, secondary)
     }
-
 }

@@ -3,115 +3,69 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Owli‑AI Assist – User Manual</title>
+  <title>Owli-AI Assist - User Manual</title>
   <link rel="stylesheet" href="../help.css">
 </head>
 <body>
 <header>
-  <h1>Owli‑AI Assist – User Manual</h1>
+  <h1>Owli-AI Assist - User Manual</h1>
   <p class="small">Offline help content. No internet required.</p>
 </header>
 <main>
-<h1 id='owli-ai-assist-user-manual-english'>Owli‑AI Assist – User Manual (English)</h1>
-<p>Version: 2026-01-24</p>
-<h2 id='1-overview'>1. Overview</h2>
-<p>Owli‑AI Assist is an accessibility‑oriented assistant app. In **VLM mode**, you describe a scene on demand: you aim the camera, capture an image, and receive an answer (text + optional speech).</p>
-<p>The **Offline Detector** is experimental and **hidden by default**. It can be enabled in Settings.</p>
-<h2 id='2-requirements'>2. Requirements</h2>
+<h1>Owli-AI Assist - User Manual (English)</h1>
+<p>Version: 2026-04-08</p>
+<h2>1. Overview</h2>
+<p>Owli-AI Assist is an accessibility-oriented assistant app. In VLM mode, you aim the camera, capture an image on demand, and receive an answer as text plus optional speech output.</p>
+<h2>2. Requirements</h2>
 <ul>
 <li>Android phone with a camera</li>
 <li>Internet connection (for VLM/LLM)</li>
-<li>Optional: Text‑to‑Speech (TTS) enabled</li>
+<li>Optional: Text-to-Speech (TTS) enabled</li>
 </ul>
-<blockquote class='note'>
-<p>**Privacy:** For VLM mode, images and text are sent to an AI service (e.g., via OpenRouter) to generate the response.</p>
+<blockquote class="note">
+<p>Privacy: Images and text are sent to an AI service only after you explicitly start a scene request or send a follow-up question.</p>
 </blockquote>
-<h2 id='3-quick-start'>3. Quick Start</h2>
+<h2>3. Quick Start</h2>
 <ol>
-<li>Open the app → it starts in **VLM mode**.</li>
-<li>A **live camera preview** is shown.</li>
-<li>Aim the camera.</li>
-<li>Tap **“New scene”** → the app captures a **still image**.</li>
-<li>Ask your question (text or voice) and tap **Send**.</li>
-<li>To aim again: tap **“Reset”** → back to the live preview.</li>
+<li>Open the app.</li>
+<li>Allow camera permission.</li>
+<li>Aim the camera in the live preview.</li>
+<li>Tap <strong>New scene</strong> to capture a still image.</li>
+<li>Ask your question by text or voice and tap <strong>Send</strong>.</li>
+<li>Tap <strong>Reset</strong> to return to the live preview.</li>
 </ol>
-<h2 id='4-main-screen-vlm'>4. Main Screen (VLM)</h2>
-<h3 id='4-1-camera-preview-and-still-image'>4.1 Camera preview and still image</h3>
+<h2>4. Main Screen</h2>
 <ul>
-<li>**Preview (live):** helps you aim before capturing.</li>
-<li>**Still image:** after “New scene”, the captured image is displayed.</li>
+<li>Live preview: helps you aim before capture.</li>
+<li>Still image: shown after <strong>New scene</strong>.</li>
+<li>More actions: repeat the last answer or add another image.</li>
+<li>Attachments: manage additional images for the current chat.</li>
 </ul>
-<h3 id='4-2-new-scene-and-reset'>4.2 “New scene” and “Reset”</h3>
+<h2>5. Settings</h2>
 <ul>
-<li>**New scene:** clears the chat context, captures a new image, and shows it as still.</li>
-<li>**Reset:** clears the context and returns to the live preview.</li>
+<li>Choose a VLM profile.</li>
+<li>Set language to System / German / English.</li>
+<li>Configure TTS on/off, speech rate, pitch, and optional streaming TTS.</li>
 </ul>
-<h3 id='4-3-input-bar-bottom'>4.3 Input bar (bottom)</h3>
-<p>The input bar contains:</p>
+<h2>6. Accessibility Tips</h2>
 <ul>
-<li>**Text field** (left): type your question/instruction.</li>
-<li>**Send** (middle/right): sends your message with the current image (and attachments).</li>
-<li>**Microphone** (right): voice input.</li>
-</ul>
-<p>**Voice input:**</p>
-<ul>
-<li>**Tap:** dictate and insert text into the field.</li>
-<li>**Press &amp; hold:** dictate and **send immediately** (if enabled in the UI).</li>
-</ul>
-<h3 id='4-4-more-actions-three-dot-menu'>4.4 More actions (three‑dot menu)</h3>
-<p>In **More actions**, you can find:</p>
-<ul>
-<li>**Repeat last answer:** speaks the last LLM answer again.</li>
-<li>**Add image:** captures an additional image and attaches it to the current chat.</li>
-</ul>
-<h3 id='4-5-attachments-multiple-images'>4.5 Attachments (multiple images)</h3>
-<p>When you attach multiple images (e.g., close‑ups), an **attachment counter** is shown near the input bar.</p>
-<ul>
-<li>Tap the counter to manage attachments.</li>
-<li>Remove individual images if needed.</li>
-</ul>
-<p>**When is “Add image” useful?**</p>
-<ul>
-<li>When the AI asks for a detail (“please zoom in”).</li>
-<li>When you need multiple angles.</li>
-</ul>
-<h2 id='5-settings-vlm'>5. Settings (VLM)</h2>
-<h3 id='5-1-choose-a-profile'>5.1 Choose a profile</h3>
-<p>The app can offer multiple VLM profiles (e.g., “short”, “detailed”). Choose the one that fits your use case.</p>
-<h3 id='5-2-language-and-speech-output'>5.2 Language and speech output</h3>
-<ul>
-<li>**Language:** System / German / English</li>
-<li>**TTS:** On/Off, speech rate, pitch</li>
-<li>Optional: **Streaming TTS** (speaks while the answer is arriving).</li>
-</ul>
-<h3 id='5-3-developer-experimental'>5.3 Developer / Experimental</h3>
-<ul>
-<li>**Enable Offline Detector (Experimental):** reveals the offline detector mode and its settings.</li>
-<li>Note: This mode is intended for developers and can be more complex.</li>
-</ul>
-<h2 id='6-offline-detector-experimental'>6. Offline Detector (experimental)</h2>
-<p>When enabled, a separate mode is available that continuously detects objects and can provide audio cues. It is **not** part of the beta flow.</p>
-<h2 id='7-accessibility-tips-talkback'>7. Accessibility tips (TalkBack)</h2>
-<ul>
-<li>Controls are arranged in a predictable order.</li>
+<li>Controls follow a stable order for TalkBack navigation.</li>
 <li>Use swipe navigation to move between controls.</li>
-<li>Button labels are descriptive; rely on the announced text.</li>
+<li>Button labels are descriptive and should be read correctly by screen readers.</li>
 </ul>
-<h2 id='8-troubleshooting'>8. Troubleshooting</h2>
+<h2>7. Troubleshooting</h2>
 <ul>
-<li>**No answer:** check your internet connection.</li>
-<li>**Voice input not working:** ensure voice recognition is available on your device.</li>
-<li>**Camera not working:** check camera permission in Android settings.</li>
-<li>**Speech sounds choppy:** disable streaming TTS or reduce speech rate.</li>
+<li>No answer: check your internet connection.</li>
+<li>Voice input not working: ensure speech recognition is available on your device.</li>
+<li>Camera not working: check camera permission in Android settings.</li>
+<li>Choppy speech: disable streaming TTS or reduce speech rate.</li>
 </ul>
-<h2 id='9-feedback'>9. Feedback</h2>
-<p>Feedback is very valuable: which actions do you use most? Where is navigation unclear?</p>
-<p>---</p>
-<p>*This manual describes the current beta behavior. Menus/features may differ slightly between builds.*</p>
+<h2>8. Feedback</h2>
+<p>Feedback is valuable: which actions do you use most, and where is navigation unclear?</p>
 </main>
 <footer>
   <hr>
-  <p class="small">Last updated: 2026-01-24</p>
+  <p class="small">Last updated: 2026-04-08</p>
 </footer>
 </body>
 </html>

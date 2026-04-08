@@ -3,70 +3,46 @@ package com.owlitech.owli.assist.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.owlitech.owli.assist.domain.SceneState
-import com.owlitech.owli.assist.pipeline.SnapshotProvider
-import com.owlitech.owli.assist.pipeline.VisionPipeline
-import com.owlitech.owli.assist.pipeline.VisionPipelineHandle
-import com.owlitech.owli.assist.vlm.OpenRouterVlmClient
-import com.owlitech.owli.assist.vlm.VlmChatMessage
-import com.owlitech.owli.assist.vlm.VlmContentPart
-import com.owlitech.owli.assist.vlm.VlmConfig
-import com.owlitech.owli.assist.vlm.VlmSceneDescription
-import com.owlitech.owli.assist.vlm.VlmSession
-import com.owlitech.owli.assist.vlm.VlmUiState
-import com.owlitech.owli.assist.vlm.VlmClient
-import com.owlitech.owli.assist.vlm.VlmAttachment
-import com.owlitech.owli.assist.vlm.VlmAttachmentStore
-import com.owlitech.owli.assist.vlm.VlmProfile
-import com.owlitech.owli.assist.vlm.VlmProfileLoader
-import com.owlitech.owli.assist.vlm.VlmStreamingCallback
 import com.owlitech.owli.assist.BuildConfig
 import com.owlitech.owli.assist.util.AppLogger
-import kotlinx.coroutines.Job
+import com.owlitech.owli.assist.vlm.OpenRouterVlmClient
+import com.owlitech.owli.assist.vlm.VlmAttachment
+import com.owlitech.owli.assist.vlm.VlmAttachmentStore
+import com.owlitech.owli.assist.vlm.VlmChatMessage
+import com.owlitech.owli.assist.vlm.VlmClient
+import com.owlitech.owli.assist.vlm.VlmConfig
+import com.owlitech.owli.assist.vlm.VlmContentPart
+import com.owlitech.owli.assist.vlm.VlmProfile
+import com.owlitech.owli.assist.vlm.VlmProfileLoader
+import com.owlitech.owli.assist.vlm.VlmSceneDescription
+import com.owlitech.owli.assist.vlm.VlmSession
+import com.owlitech.owli.assist.vlm.VlmStreamingCallback
+import com.owlitech.owli.assist.vlm.VlmUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicBoolean
 
 class MainViewModel(
-    detectorInfo: String = "",
     private val vlmClient: VlmClient = OpenRouterVlmClient(
         VlmProfileLoader.fallbackProfiles().first()
     )
 ) : ViewModel() {
-
-    private val _isRunning = MutableStateFlow(false)
-    val isRunning: StateFlow<Boolean> = _isRunning
-
-    private val _shouldAutoStart = MutableStateFlow(false)
-    val shouldAutoStart: StateFlow<Boolean> = _shouldAutoStart
-
-    private val _sceneState = MutableStateFlow<SceneState?>(null)
-    val sceneState: StateFlow<SceneState?> = _sceneState
-
-    private val _lastError = MutableStateFlow<String?>(null)
-    val lastError: StateFlow<String?> = _lastError
-
-    private val _status = MutableStateFlow(detectorInfo)
-    val status: StateFlow<String> = _status
 
     private val _vlmUiState = MutableStateFlow<VlmUiState>(VlmUiState.Inactive)
     val vlmUiState: StateFlow<VlmUiState> = _vlmUiState
 
     private val _isAutoScanRunning = MutableStateFlow(false)
     val isAutoScanRunning: StateFlow<Boolean> = _isAutoScanRunning
+
     private val attachmentStore = VlmAttachmentStore()
     val vlmAttachments: StateFlow<List<VlmAttachment>> = attachmentStore.attachments
+
     private val _lastVlmImageBytes = MutableStateFlow<ByteArray?>(null)
     val lastVlmImageBytes: StateFlow<ByteArray?> = _lastVlmImageBytes
 
-    private var collectJob: Job? = null
-    private var pipeline: VisionPipeline? = null
-    private var snapshotProvider: SnapshotProvider? = null
-    private var detectorInfo: String = detectorInfo
     private var vlmSession: VlmSession? = null
     private var lastVlmDescription: VlmSceneDescription? = null
     private var vlmSystemPrompt: String = VlmConfig.DEFAULT_SYSTEM_PROMPT
@@ -74,158 +50,6 @@ class MainViewModel(
     private var vlmProfile: VlmProfile = VlmProfileLoader.fallbackProfiles().first()
     private val useStructuredVlmParsing = false
     private val vlmRequestInFlight = AtomicBoolean(false)
-    private var detectorPausedForVlm = false
-    private var detectorResumePending = false
-
-    fun setPipeline(handle: VisionPipelineHandle) {
-        // stop old pipeline if running
-        val wasRunning = _isRunning.value
-        stopInternal(resetAutoStart = false)
-        pipeline?.close()
-        pipeline = handle.pipeline
-        snapshotProvider = handle.snapshotProvider
-        detectorInfo = handle.detectorInfo
-        _status.value = handle.detectorInfo
-        com.owlitech.owli.assist.diagnostics.DiagnosticsCollector.updatePipelineStatus(
-            isRunning = _isRunning.value,
-            detectorInfo = handle.detectorInfo,
-            analysisIntervalMs = 0L
-        )
-        if (wasRunning) {
-            start()
-        }
-    }
-
-    fun requestStart() {
-        _shouldAutoStart.value = true
-    }
-
-    fun autoStartIfNeeded() {
-        if (_shouldAutoStart.value) {
-            start()
-        }
-    }
-
-    fun start() {
-        if (_isRunning.value) return
-        if (detectorPausedForVlm) {
-            detectorResumePending = true
-            return
-        }
-        val current = pipeline ?: return
-        runCatching { current.start() }
-            .onSuccess {
-                collectJob = viewModelScope.launch {
-                    current.sceneStates.collect { state ->
-                        _sceneState.value = state
-                        com.owlitech.owli.assist.diagnostics.DiagnosticsCollector.updateSceneSnapshot(
-                            detections = state.detections.size,
-                            topLabels = state.detections.groupBy { it.label }.entries.sortedByDescending { it.value.size }.map { it.key },
-                            preview = state.blindViewUtterancePreview
-                        )
-                    }
-                }
-                _isRunning.value = true
-                com.owlitech.owli.assist.diagnostics.DiagnosticsCollector.updatePipelineStatus(
-                    isRunning = true,
-                    detectorInfo = detectorInfo,
-                    analysisIntervalMs = 0L
-                )
-            }
-            .onFailure { _lastError.value = it.message }
-    }
-
-    fun stopUser() {
-        _shouldAutoStart.value = false
-        detectorResumePending = false
-        stopInternal(resetAutoStart = false)
-    }
-
-    fun stopForLifecycle() {
-        detectorResumePending = false
-        stopInternal(resetAutoStart = false)
-    }
-
-    fun pauseDetectorForVlm() {
-        if (detectorPausedForVlm) return
-        detectorPausedForVlm = true
-        if (_isRunning.value) {
-            detectorResumePending = true
-            stopInternal(resetAutoStart = false)
-        }
-    }
-
-    fun resumeDetectorAfterVlm() {
-        if (!detectorPausedForVlm) return
-        detectorPausedForVlm = false
-        if (detectorResumePending) {
-            detectorResumePending = false
-            start()
-        }
-    }
-
-    private fun stopInternal(resetAutoStart: Boolean = true) {
-        if (resetAutoStart) {
-            _shouldAutoStart.value = false
-        }
-        if (!_isRunning.value) return
-        collectJob?.cancel()
-        collectJob = null
-        pipeline?.let { runCatching { it.stop() } }
-        _sceneState.value = null
-        _isRunning.value = false
-        com.owlitech.owli.assist.diagnostics.DiagnosticsCollector.updatePipelineStatus(
-            isRunning = false,
-            detectorInfo = detectorInfo,
-            analysisIntervalMs = 0L
-        )
-    }
-
-    override fun onCleared() {
-        stopInternal(resetAutoStart = false)
-        pipeline?.let { runCatching { it.close() } }
-        super.onCleared()
-    }
-
-    fun enterVlmMode() {
-        requestNewScene()
-    }
-
-    fun requestNewScene() {
-        if (isVlmBusy()) {
-            AppLogger.d("VLM", "Neue Szene uebersprungen: VLM ist beschaeftigt")
-            return
-        }
-        if (!vlmRequestInFlight.compareAndSet(false, true)) {
-            AppLogger.d("VLM", "Neue Szene uebersprungen: Request bereits aktiv")
-            return
-        }
-        viewModelScope.launch {
-            try {
-                performNewSceneRequest()
-            } finally {
-                vlmRequestInFlight.set(false)
-            }
-        }
-    }
-
-    fun requestNewSceneWithSnapshot(jpegBytes: ByteArray) {
-        if (isVlmBusy()) {
-            AppLogger.d("VLM", "Neue Szene uebersprungen: VLM ist beschaeftigt")
-            return
-        }
-        if (!vlmRequestInFlight.compareAndSet(false, true)) {
-            AppLogger.d("VLM", "Neue Szene uebersprungen: Request bereits aktiv")
-            return
-        }
-        viewModelScope.launch {
-            try {
-                performNewSceneWithSnapshot(jpegBytes)
-            } finally {
-                vlmRequestInFlight.set(false)
-            }
-        }
-    }
 
     fun startAutoScan() {
         val autoScan = vlmProfile.autoScan ?: run {
@@ -259,11 +83,7 @@ class MainViewModel(
         val removed = attachmentStore.remove(id)
         if (removed) {
             val remaining = attachmentStore.attachments.value
-            if (remaining.isNotEmpty()) {
-                _lastVlmImageBytes.value = remaining.last().jpegBytes
-            } else {
-                _lastVlmImageBytes.value = vlmSession?.snapshotBytes
-            }
+            _lastVlmImageBytes.value = remaining.lastOrNull()?.jpegBytes ?: vlmSession?.snapshotBytes
         }
         return removed
     }
@@ -281,43 +101,22 @@ class MainViewModel(
         }
     }
 
-    private suspend fun performNewSceneRequest() {
-        AppLogger.i(
-            "VLM",
-            "enterVlmMode started profile=${vlmProfile.id} model=${vlmProfile.modelId} " +
-                "streaming=${vlmProfile.streamingEnabled}"
-        )
-        if (!vlmClient.isConfigured || BuildConfig.OPENROUTER_API_KEY.isBlank()) {
-            AppLogger.e("VLM", "OpenRouter API-Key fehlt")
-            _vlmUiState.value = VlmUiState.Error("OpenRouter API-Key fehlt. Bitte OPENROUTER_API_KEY in local.properties setzen.")
+    fun requestNewSceneWithSnapshot(jpegBytes: ByteArray) {
+        if (isVlmBusy()) {
+            AppLogger.d("VLM", "Neue Szene uebersprungen: VLM ist beschaeftigt")
             return
         }
-        val provider = snapshotProvider ?: run {
-            AppLogger.w("VLM", "SnapshotProvider not ready - skipping new scene request")
+        if (!vlmRequestInFlight.compareAndSet(false, true)) {
+            AppLogger.d("VLM", "Neue Szene uebersprungen: Request bereits aktiv")
             return
         }
-        _vlmUiState.value = VlmUiState.LoadingOverview("Snapshot vorbereiten...")
-        val imageSettings = vlmProfile.imageSettings
-        val pipelineRunning = _isRunning.value
-        val jpeg = withContext(Dispatchers.Default) {
-            if (pipelineRunning) {
-                provider.getLatestJpegSnapshot(
-                    maxSidePx = imageSettings.maxSidePx,
-                    quality = imageSettings.jpegQuality
-                )
-            } else {
-                provider.requestFreshJpegSnapshot(
-                    maxSidePx = imageSettings.maxSidePx,
-                    quality = imageSettings.jpegQuality
-                )
+        viewModelScope.launch {
+            try {
+                performNewSceneWithSnapshot(jpegBytes)
+            } finally {
+                vlmRequestInFlight.set(false)
             }
         }
-        if (jpeg == null) {
-            AppLogger.e("VLM", "Kein JPEG-Snapshot verfuegbar")
-            _vlmUiState.value = VlmUiState.Error("Kein Kamerabild verfuegbar.")
-            return
-        }
-        performNewSceneWithSnapshot(jpeg)
     }
 
     private suspend fun performNewSceneWithSnapshot(jpeg: ByteArray) {
@@ -629,33 +428,6 @@ class MainViewModel(
         return "data:image/jpeg;base64,$base64"
     }
 
-    private fun enforceSafety(desc: VlmSceneDescription): VlmSceneDescription {
-        val obstaclesNotEmpty = desc.obstacles.isNotEmpty()
-        val confidenceHigh = desc.overallConfidence?.equals("high", ignoreCase = true) == true
-        if (!obstaclesNotEmpty && confidenceHigh) {
-            return desc
-        }
-        val safeOneLiner = sanitizeAllClear(desc.ttsOneLiner)
-        val safeAction = sanitizeAllClear(desc.actionSuggestion)
-        val safeReadable = sanitizeAllClear(desc.readableText)
-        return desc.copy(
-            ttsOneLiner = safeOneLiner,
-            actionSuggestion = safeAction,
-            readableText = safeReadable
-        )
-    }
-
-    private fun sanitizeAllClear(text: String): String {
-        if (text.isBlank()) return text
-        val lowered = text.lowercase()
-        val hasAllClear = lowered.contains("weg frei") || lowered.contains("freie fahrt") || lowered.contains("alles frei")
-        return if (hasAllClear) {
-            "Keine Freigabe. Bitte vorsichtig fahren."
-        } else {
-            text
-        }
-    }
-
     class Factory(
         private val vlmClient: VlmClient
     ) : ViewModelProvider.Factory {
@@ -667,5 +439,4 @@ class MainViewModel(
             throw IllegalArgumentException("Unknown ViewModel class")
         }
     }
-
 }

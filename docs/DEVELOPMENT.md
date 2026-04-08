@@ -12,19 +12,15 @@ Dieses Dokument ist die Einstiegstelle fuer den taeglichen Workflow (2 Menschen 
 ### Secrets
 - `OPENROUTER_API_KEY=...` in `local.properties` (nicht committen).
 
-### Modell
-- Lege das TFLite Modell unter `app/src/main/assets/models/efficientdet_lite2_int8.tflite` ab.
-  Siehe `docs/MODEL-ASSETS.md`.
-
 ### Build (PowerShell)
 - `gradlew.bat :app:assembleDebug`
 
 ---
 
-## 1a) VLM-First (Beta UX)
+## 1a) VLM-First UX
 - App startet standardmaessig im VLM-Modus.
-- Offline Detector ist nur sichtbar, wenn aktiviert: Settings -> VLM Settings -> Developer / Experimental -> "Enable Offline Detector (Experimental)".
-- Detector Settings sind im VLM-Settings-Screen verlinkt ("Open Detector Settings") und zusaetzlich im Top-Menue sichtbar, sobald aktiviert.
+- Die Live-Kamera dient zum Ausrichten; eine Szene wird erst bei `Neue Szene` aufgenommen.
+- Einstellungen betreffen Sprache, TTS und VLM-Profilwahl.
 
 ---
 
@@ -71,13 +67,11 @@ Dieses Dokument ist die Einstiegstelle fuer den taeglichen Workflow (2 Menschen 
 
 ---
 
-## 4) Debugging / Diagnostics
+## 4) Debugging
 
-- Diagnostics Screen: Live-Metriken + Copy-to-Clipboard Report
-- Wichtige Debug-Hinweise:
-  - CameraX Preview zeigt **Originalbild**
-  - Stabilisierung passiert im **448x448 Model-Input** (Debug-Preview vorhanden)
-  - FakeDetector ist aktiv, wenn das Modell fehlt -> Statusanzeige beachten
+- VLM-Antworten werden nur nach expliziter Nutzeraktion angefordert.
+- Kamera-Permission muss fuer Live-Vorschau und Bildaufnahme vorliegen.
+- VLM-Profile und Prompts liegen unter `app/src/main/assets/vlm-profiles.json`.
 
 ---
 

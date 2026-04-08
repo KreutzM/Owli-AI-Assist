@@ -1,104 +1,53 @@
 # Owli-AI Assist
 
-Owli-AI Assist ist eine Android-App fuer blinde Nutzer als AI Assistenz-App mit On-Device-Computer-Vision. Die App nutzt CameraX fuer die Live-Preview, eine Vision-Pipeline (Preprocessing -> Detector -> SceneAnalyzer/OwliAI) und gibt Warnungen bzw. OwliAI-Ansagen per TTS aus. Als Beispielmodell ist EfficientDet-Lite2 (COCO) eingebunden; bei fehlendem Modell faellt die App auf einen FakeDetector zurueck.
+Owli-AI Assist ist eine Android-App fuer blinde Nutzer mit einem VLM-first-Workflow: Die App zeigt eine Live-Kameravorschau, nimmt auf Anforderung ein Bild auf und beantwortet danach Fragen zur Szene per Text und optionaler Sprachausgabe.
 
 ## Funktionsumfang
-- Live-Kamera-Preview (CameraX) mit Bounding-Box-Overlay
-- Optionales Labeling der BBoxen (Klasse + Confidence) per Toggle
-- Objekt-Erkennung (EfficientDet-Lite2, COCO 80 Klassen)
-- OwliAI-Modus: sagt alle erkannten Objekte auf Deutsch mit Uhrzeit-Position an; IoU-Tracker glaettet BBox/Position, filtert Kurzzeit-Noise (Consecutive Hits, Confidence-EMA)
-- Hazard-Auswertung (Basis): Personen/Fahrzeuge -> Warnung; Ampeln -> Info/Phase
-- Ampelphasen-Erkennung (rot/gruen) per HSV-Heuristik (stabilisierte Phase im Overlay)
-- TTS-Ausgabe mit Cooldown/Spam-Schutz, konfigurierbarer Sprechgeschwindigkeit; Status-Anzeige (RealDetector/Fallback)
-- IMU Motion-Gating (Gyro/Rotation Vector) fuer stabileres Tracking und Ansagen ohne Bild-Warp
-- IMU Roll-Lock (experimentell) + 448x448 Input mit Overlay-Mapping fuer stabilere Detektionen
-- Translation-Stabilisierung des Crop-Windows (Low-Res Patch-Matching) inkl. Diagnostics fuer dx/dy/quality/crop
-- Debug-Detector-View (Bild-in-Bild) fuer das 448x448 Input-Frame
-- DataStore-basiertes Settings-Menue (Detector/Tracking/OwliAI/TTS/Debug/Pipeline) inkl. Reset-to-Defaults
-- Diagnostics-Screen mit Live-Metriken und Copy-to-Clipboard Debug-Report
-- Start/Stop der Pipeline; Decay-Logik fuer Hazards; Auto-Restart nach Rotation/Settings-Aenderung
-- VLM-On-Demand (OpenRouter) mit Profil-Auswahl; Antworten im Raw-Debug-Mode
-- VLM-Autoscan (Auto-Toggle) fuer Profile mit `auto_scan`
+- Live-Kameravorschau mit CameraX
+- VLM-On-Demand ueber OpenRouter inklusive Profil-Auswahl
+- Follow-up-Fragen zu einer aktiven Szene
+- Mehrfach-Anhaenge pro VLM-Session
+- Optionale Streaming-TTS fuer fruehe Sprachausgabe
+- DataStore-basierte App-Einstellungen fuer Sprache, TTS und Profilwahl
 
 ## Architektur (kurz)
-- `camera`: CameraFrameSource (CameraX Preview + ImageAnalysis)
-- `processing`: Preprocessor (ImageProxy -> Bitmap), TrafficLightPhaseClassifier (HSV)
-- `ml`: Detector-Interface; TfliteTaskDetector (EfficientDet-Lite2) + FakeDetector
-- Ansage: Label/Clock/Distanz-Mapper, Announce-/Speech-Planner, IoU-Tracker (EMA, Confidence-Filter)
-- `domain`: DefaultSceneAnalyzer (OwliAI-Planung, Hazard-Mapping, Decay)
-- `motion`: MotionEstimator (IMU Samples, MotionSnapshot)
-- `pipeline`: DefaultVisionPipeline (Frame->Bitmap->Detect->Analyze), VisionPipelineModule (DI + Real/Fake Auswahl, AppMode)
-- `audio`: AudioFeedbackEngine (TTS, Cooldown, SpeechRate, pendingMessage)
-- `ui`: MainActivity (Compose: PreviewView + Overlay + ControlPanel + OwliAI-Preview + Settings), MainViewModel (Flows, Start/Stop/Status)
-- `settings`: DataStore-basierte Settings (Detector/Tracking/OwliAI/TTS/Debug/Pipeline) mit SettingsViewModel
+- `ui`: Compose Screens, Navigation und ViewModels fuer den VLM-Flow
+- `vlm`: Profile, Request-Aufbau, Parsing und Session-State
+- `audio`: TTS und Streaming-TTS-Steuerung
+- `settings`: persistente App-Einstellungen via DataStore
 
 ## Voraussetzungen
 - Android Studio (AGP 8.x), Kotlin 2.0.x, Compose aktiviert
-- Geraet/Emulator mit Kamera (Emulator: Virtual Camera oder Webcam)
-- Android 12 oder hoeher empfohlen
+- Android-Geraet mit Kamera
+- Internetverbindung fuer VLM-Anfragen
 
 ## Installation & Build
-
-1. Repository öffnen.
-2. Modell ablegen: `app/src/main/assets/models/efficientdet_lite2_int8.tflite`  
-   Details (inkl. Windows/PowerShell) siehe `docs/MODEL-ASSETS.md`.
-
-   **Schnell-Download (PowerShell):**
-   ```powershell
-   New-Item -ItemType Directory -Force -Path "app\src\main\assets\models" | Out-Null
-   Invoke-WebRequest -Uri "https://tfhub.dev/tensorflow/lite-model/efficientdet/lite2/detection/metadata/1?lite-format=tflite" `
-     -OutFile "app\src\main\assets\models\efficientdet_lite2_int8.tflite"
-   ```
-
-   **Alternative (WSL/Git Bash):**
-   ```bash
-   ./getModel.sh
-   ```
-
-3. OpenRouter API-Key in `local.properties` setzen: `OPENROUTER_API_KEY=...` (nicht committen).
-4. Labels liegen unter `app/src/main/assets/models/labels.txt` (COCO-80).
-5. Build (PowerShell/Windows): `gradlew.bat :app:assembleDebug`
-6. Starten via Android Studio (oder ADB).
-
-**Team-Workflow (empfohlen):** `docs/DEVELOPMENT.md` und `AGENTS.md` lesen (Fast Checks, Lint, keine Device-Tests im Standard-Flow).
+1. Repository oeffnen.
+2. `OPENROUTER_API_KEY=...` in `local.properties` setzen (nicht committen).
+3. Build unter PowerShell: `gradlew.bat :app:assembleDebug`
+4. App aus Android Studio starten und Kamera-Permission erlauben.
 
 ## Bedienung
-1. App starten, Kamera-Permission erlauben.
-2. Start/Stop-Toggle unten rechts nutzen -> Pipeline startet/stoppt, Preview erscheint (nach Rotation auto-restart).
-3. Status-Anzeige zeigt, ob RealDetector aktiv ist oder Fallback (FakeDetector).
-4. Bounding-Box-Overlay zeigt erkannte Objekte; optional Labels/Confidence via Toggle (Settings).
-5. OwliAI-Preview zeigt die aktuelle Ansage (Debug).
-6. Overflow-Menue (TopAppBar) -> Settings/VLM Settings/Diagnostics/About oeffnen.
-7. VLM ueber TopAppBar -> Szene beschreiben lassen, Follow-up fragen; Profil-Auswahl in VLM Settings.
-   Auto-Toggle erscheint im VLM-Screen, wenn das Profil `auto_scan` definiert. Manuelle "Neue Szene" schaltet Auto aus.
-   Diktat per Mikrofon: Tippen fuegt Text ins Eingabefeld ein; lang druecken sendet sofort. Sprachausgabe pausiert waehrend der Spracheingabe.
-8. Rueck-Button schliesst Unterfenster (Settings/Diag/VLM); App-Ende erst im Hauptfenster.
-9. Stop via Toggle -> Pipeline stoppt, Overlay/State wird zurueckgesetzt.
+1. App starten -> VLM-Ansicht oeffnet sich direkt.
+2. Kamera ausrichten und `Neue Szene` tippen.
+3. Frage per Text oder Spracheingabe stellen.
+4. Optional weitere Bilder anhaengen oder die letzte Antwort erneut sprechen lassen.
+5. `Reset` bringt die Ansicht zurueck in die Live-Vorschau.
 
 ## Konfiguration
-- Settings via DataStore (persistiert): Detector/Tracking/OwliAI/TTS/Debug/Pipeline-Intervall; Reset im Settings-Screen
-- Sprache: System/Deutsch/English im Settings-Screen (Default: Systemsprache)
-- Detector: `TfliteDetectorOptions` (Threads, NNAPI), Pfad: `models/efficientdet_lite2_int8.tflite` (aus Settings steuerbar)
-- OwliAI: Konfiguration (minConfidence, minConfidenceTrack, IoU-Threshold, bboxSmoothingAlpha, minConsecutiveHits, maxDetectionsPerFrame, maxTracks, Speak-Intervalle, TTS-Speech-Rate, Decay) via Settings anpassbar
-- Stabilisierung: Motion-Gating (Enable, Gyro-Schwellen, Speak-Interval-Multiplikator) via Settings anpassbar
-- Stabilisierung: IMU Roll-Lock (Enable, Quality-Min) via Settings anpassbar
-- Stabilisierung: Translation-Stabilisierung (Quality-Min, Search-Radius, Patch-Offset) via Settings anpassbar
-- Hazard (Basis): DefaultSceneAnalyzer `confidenceThreshold = 0.4`, Decay 800 ms. Mapping: Person -> Personenwarnung, Fahrzeugklassen -> Fahrzeugwarnung, Ampel -> Info.
-- TTS: Cooldown 2500 ms, Speech-Rate konfigurierbar (Default 2.0, via Settings); OwliAI nutzt Hash/Cooldown fuer Anti-Spam.
-- Preprocessing: YUV_420_888 -> ARGB_8888 (ohne JPEG-Roundtrip), Rotation wird angewendet, IMU Roll-Lock optional, stabilisiertes Crop-Window mit Translation-Schaetzung, center-crop auf square, Resize auf 448x448; Overlay-Mapping via FrameMapping.
-- Ampel: TrafficLightPhaseClassifier (ROI-Inset, Zonenanalyse rot/oben, gruen/unten, Hysterese mit stabiler Phase).
-- VLM: Profile und Prompts in `app/src/main/assets/vlm-profiles.json` (On-Demand, Raw-Debug-Mode, optional `auto_scan`).
+- Sprache: System / Deutsch / English
+- TTS: Ein/Aus, Sprechtempo, Tonhoehe
+- Streaming-TTS: frueher Sprachstart waehrend die Antwort eintrifft
+- VLM-Profile und Prompts: `app/src/main/assets/vlm-profiles.json`
 
 ## Developer Tools
-- Lokaler Editor fuer `vlm-profiles.json`: `tools/vlm-profile-editor/` (statische HTML-Seite).
-- CLI-Validator fuer VLM-Profile: `tools/validate_vlm_profiles.py`.
+- Lokaler Editor fuer `vlm-profiles.json`: `tools/vlm-profile-editor/`
+- CLI-Validator fuer VLM-Profile: `tools/validate_vlm_profiles.py`
 
-## Hinweise / Fehlerquellen
-- Fehlt das Modell-Asset, wird automatisch der FakeDetector verwendet (Status-Anzeige).
-- TTS braucht ggf. Sekunden bis READY; pendingMessage wird erst bei Ready gesprochen.
-- Kurz aufblitzende Objekte (1 Frame) werden durch minConsecutiveHits + minConfidenceTrack nicht angesagt.
-- Rotation: Overlay zeigt `Rot: <deg>`, Pipeline setzt Rotation pro Frame; Lifecycle-robust fuer Drehen/Stop/Start.
-- Diagnostics: Report enthaelt keine persoenlichen Daten; Clipboard muss erlaubt sein.
+## Workflow
+- Team-Workflow: `docs/DEVELOPMENT.md`
+- Repo-Regeln: `AGENTS.md`
+- Codex-Prompts: `docs/Prompts-Codex-CLI.md`
 
 ## Lizenz / Nutzung
-Interner Demo-/Prototyp-Status; keine Produktionsfreigabe, keine Gewaehrleistung. Modelle/Assets nur verwenden, wenn lizenzrechtlich geklaert.
+Interner Demo-/Prototyp-Status; keine Produktionsfreigabe, keine Gewaehrleistung.

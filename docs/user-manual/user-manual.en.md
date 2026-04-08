@@ -1,109 +1,54 @@
-# Owli‑AI Assist – User Manual (English)
+# Owli-AI Assist - User Manual (English)
 
-Version: 2026-01-24
+Version: 2026-04-08
 
 ## 1. Overview
 
-Owli‑AI Assist is an accessibility‑oriented assistant app. In **VLM mode**, you describe a scene on demand: you aim the camera, capture an image, and receive an answer (text + optional speech).
-
-The **Offline Detector** is experimental and **hidden by default**. It can be enabled in Settings.
+Owli-AI Assist is an accessibility-oriented assistant app. In VLM mode, you aim the camera, capture an image on demand, and receive an answer as text plus optional speech output.
 
 ## 2. Requirements
 
 - Android phone with a camera
 - Internet connection (for VLM/LLM)
-- Optional: Text‑to‑Speech (TTS) enabled
+- Optional: Text-to-Speech (TTS) enabled
 
-> **Privacy:** For VLM mode, images and text are sent to an AI service (e.g., via OpenRouter) to generate the response.
+> Privacy: Images and text are sent to an AI service only after you explicitly start a scene request or send a follow-up question.
 
 ## 3. Quick Start
 
-1. Open the app → it starts in **VLM mode**.
-2. A **live camera preview** is shown.
-3. Aim the camera.
-4. Tap **“New scene”** → the app captures a **still image**.
-5. Ask your question (text or voice) and tap **Send**.
-6. To aim again: tap **“Reset”** → back to the live preview.
+1. Open the app.
+2. Allow camera permission.
+3. Aim the camera in the live preview.
+4. Tap `New scene` to capture a still image.
+5. Ask your question by text or voice and tap `Send`.
+6. Tap `Reset` to return to the live preview.
 
-## 4. Main Screen (VLM)
+## 4. Main Screen
 
-### 4.1 Camera preview and still image
+- Live preview: helps you aim before capture.
+- Still image: shown after `New scene`.
+- More actions: repeat the last answer or add another image.
+- Attachments: manage additional images for the current chat.
 
-- **Preview (live):** helps you aim before capturing.
-- **Still image:** after “New scene”, the captured image is displayed.
+## 5. Settings
 
-### 4.2 “New scene” and “Reset”
+- Choose a VLM profile.
+- Set language to System / German / English.
+- Configure TTS on/off, speech rate, pitch, and optional streaming TTS.
 
-- **New scene:** clears the chat context, captures a new image, and shows it as still.
-- **Reset:** clears the context and returns to the live preview.
+## 6. Accessibility Tips
 
-### 4.3 Input bar (bottom)
-
-The input bar contains:
-
-- **Text field** (left): type your question/instruction.
-- **Send** (middle/right): sends your message with the current image (and attachments).
-- **Microphone** (right): voice input.
-
-**Voice input:**
-- **Tap:** dictate and insert text into the field.
-- **Press & hold:** dictate and **send immediately** (if enabled in the UI).
-
-### 4.4 More actions (three‑dot menu)
-
-In **More actions**, you can find:
-
-- **Repeat last answer:** speaks the last LLM answer again.
-- **Add image:** captures an additional image and attaches it to the current chat.
-
-### 4.5 Attachments (multiple images)
-
-When you attach multiple images (e.g., close‑ups), an **attachment counter** is shown near the input bar.
-
-- Tap the counter to manage attachments.
-- Remove individual images if needed.
-
-**When is “Add image” useful?**
-- When the AI asks for a detail (“please zoom in”).
-- When you need multiple angles.
-
-## 5. Settings (VLM)
-
-### 5.1 Choose a profile
-
-The app can offer multiple VLM profiles (e.g., “short”, “detailed”). Choose the one that fits your use case.
-
-### 5.2 Language and speech output
-
-- **Language:** System / German / English
-- **TTS:** On/Off, speech rate, pitch
-- Optional: **Streaming TTS** (speaks while the answer is arriving).
-
-### 5.3 Developer / Experimental
-
-- **Enable Offline Detector (Experimental):** reveals the offline detector mode and its settings.
-- Note: This mode is intended for developers and can be more complex.
-
-## 6. Offline Detector (experimental)
-
-When enabled, a separate mode is available that continuously detects objects and can provide audio cues. It is **not** part of the beta flow.
-
-## 7. Accessibility tips (TalkBack)
-
-- Controls are arranged in a predictable order.
+- Controls follow a stable order for TalkBack navigation.
 - Use swipe navigation to move between controls.
-- Button labels are descriptive; rely on the announced text.
+- Button labels are descriptive and should be read correctly by screen readers.
 
-## 8. Troubleshooting
+## 7. Troubleshooting
 
-- **No answer:** check your internet connection.
-- **Voice input not working:** ensure voice recognition is available on your device.
-- **Camera not working:** check camera permission in Android settings.
-- **Speech sounds choppy:** disable streaming TTS or reduce speech rate.
+- No answer: check your internet connection.
+- Voice input not working: ensure speech recognition is available on your device.
+- Camera not working: check camera permission in Android settings.
+- Choppy speech: disable streaming TTS or reduce speech rate.
 
-## 9. Feedback
+## 8. Feedback
 
-Feedback is very valuable: which actions do you use most? Where is navigation unclear?
-
----
-*This manual describes the current beta behavior. Menus/features may differ slightly between builds.*
+Feedback is valuable: which actions do you use most, and where is navigation unclear?
