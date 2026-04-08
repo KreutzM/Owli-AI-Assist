@@ -26,7 +26,9 @@ Der JSON-Modus ist aktuell deaktiviert. Das Schema bleibt fuer eine spaetere Rea
 - Bei unklarer Sicht lieber warnen als freigeben.
 
 ## Hinweise
-- API-Key kommt aus `local.properties` via `OPENROUTER_API_KEY` (BuildConfig).
+- Der aktuelle OpenRouter-Client-Key kommt lokal aus `local.properties` via `OPENROUTER_API_KEY`.
+- Fuer den aktuellen Release-Pfad wird dieser Wert in `BuildConfig` uebernommen und damit mit der App ausgeliefert.
+- Das ist eine pragmatische Zwischenloesung, keine sichere Secret-Speicherung.
 - Profile und Prompts werden aus `app/src/main/assets/vlm-profiles.json` geladen.
 - Fehlerfaelle (Timeout, Parse-Fehler, kein Snapshot) muessen UI-seitig angezeigt werden.
 - Aktuell laeuft der VLM im Raw-Debug-Mode: Antwort wird als Freitext angezeigt, JSON-Parsing ist voruebergehend deaktiviert.

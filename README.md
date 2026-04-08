@@ -24,6 +24,8 @@ Owli-AI Assist ist eine Android-App fuer blinde Nutzer mit einem VLM-first-Workf
 ## Installation & Build
 1. Repository oeffnen.
 2. `OPENROUTER_API_KEY=...` in `local.properties` setzen (nicht committen).
+   Dieser Wert wird im aktuellen Zwischenstand in `BuildConfig` uebernommen, damit Release-Builds OpenRouter direkt nutzen koennen.
+   Das ist ein app-embedded Client-Key fuer den Interim-Release-Pfad, keine sichere Secret-Speicherung.
 3. Build unter PowerShell: `gradlew.bat :app:assembleDebug`
 4. App aus Android Studio starten und Kamera-Permission erlauben.
 
