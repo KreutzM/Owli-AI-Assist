@@ -1,8 +1,8 @@
-# Prompts – Codex CLI (gpt-5.2-codex)
+# Prompts - Codex CLI (GPT-5.4)
 
-Diese Datei liefert **Prompt-Vorlagen** für Codex-CLI, die zu `AGENTS.md` passen.
+Diese Datei liefert Prompt-Vorlagen fuer Codex, die zu `AGENTS.md` und `.codex/config.toml` passen.
 
-Ziel: Arbeiten in **kleinen, sinnvollen Inkrementen** (2 Menschen + 1 Codex-Agent) mit **schnellen Checks** und ohne unnötige Device-Läufe.
+Ziel: Arbeiten in kleinen, sinnvollen Inkrementen mit schnellen Checks, kleinen Commits und einem klaren Chat-Review nach jedem Run.
 
 ---
 
@@ -11,6 +11,9 @@ Ziel: Arbeiten in **kleinen, sinnvollen Inkrementen** (2 Menschen + 1 Codex-Agen
 - Wrapper: `gradlew.bat`
 - Keine Bash-only Syntax, keine langen `&&`-Ketten, keine Pipes.
 - Keine Device-/Emulator-Tasks automatisch (`connectedAndroidTest`, `connectedCheck`, `installDebug` etc.).
+- Default-Modell: `gpt-5.4`
+- Default-Reasoning: `medium`
+- Projekt-Defaults: `.codex/config.toml`
 
 **Fast checks (Default):**
 - `./gradlew.bat :app:testDebugUnitTest`
@@ -19,25 +22,28 @@ Ziel: Arbeiten in **kleinen, sinnvollen Inkrementen** (2 Menschen + 1 Codex-Agen
 
 ---
 
-## 1) Template: Small Change (1–2 Commits)
+## 1) Template: Small Thematic Run (1-3 Commits)
 
 ```text
 You are in an Android/Kotlin repo on Windows (PowerShell).
 Follow AGENTS.md strictly.
+Use the project defaults from .codex/config.toml.
 
 Task:
 <describe the change briefly>
 
 Rules:
+- Work on a thematically named branch.
 - Work in small, meaningful increments; commit frequently.
 - Each commit must pass: ./gradlew.bat :app:testDebugUnitTest
 - Run ./gradlew.bat :app:lintDebug when Android components or public APIs are touched.
 - Do NOT run any device/emulator tasks.
+- End the run with the exact RUN REVIEW packet from AGENTS.md.
 
 Start:
-1) Summarize where in the code you will change things (files/packages).
-2) Propose the first 1–2 small commits (titles + short content).
-3) Implement commit #1, run checks, then commit.
+1) Inspect the relevant files and summarize the intended edit surface.
+2) Implement the first small commit, run the smallest relevant checks, then commit.
+3) Continue only if the next commit stays focused and reviewable.
 ```
 
 ---
@@ -56,6 +62,7 @@ Requirements:
 - Keep the fix minimal and focused.
 - Run: ./gradlew.bat :app:testDebugUnitTest (and lintDebug if relevant).
 - No device/emulator tasks.
+- End with the RUN REVIEW packet from AGENTS.md.
 
 Process:
 1) Create failing test (commit).
@@ -75,10 +82,11 @@ Scope:
 - No new dependencies unless explicitly required.
 
 Work:
-1) Identify 3–5 high-value functions/classes to test.
+1) Identify 3-5 high-value functions/classes to test.
 2) Add deterministic tests (no network, no sleeps).
 3) Keep each test addition as a small commit with a clear message.
 4) Run: ./gradlew.bat :app:testDebugUnitTest after each commit.
+5) End with the RUN REVIEW packet from AGENTS.md.
 ```
 
 ---
@@ -94,18 +102,21 @@ Rules:
 - Keep diffs small; avoid formatting-only churn.
 - Run: ./gradlew.bat :app:lintDebug and ./gradlew.bat :app:testDebugUnitTest
 - No device tasks.
+- End with the RUN REVIEW packet from AGENTS.md.
 ```
 
 ---
 
-## 5) Template: Documentation Update (Ist-Zustand)
+## 5) Template: Documentation / Workflow Update
 
 ```text
-Goal: Update docs to match the current code (Ist-Zustand).
+Goal: Update docs to match the current code and workflow.
 
 Rules:
 - Do not invent features.
 - Keep docs concise and aligned to the actual packages and APIs.
 - Avoid mechanical reflows.
 - If code behavior is ambiguous, add a short NOTE and point to the relevant source file.
+- Keep the diff tight and prefer 1-2 documentation commits.
+- End with the RUN REVIEW packet from AGENTS.md.
 ```
