@@ -138,7 +138,7 @@ Open questions:
 ## Safety & secrets
 - Never commit API keys, tokens, or credentials.
 - `local.properties` may contain secrets; do not copy its contents into source.
-- `BuildConfig` constants are acceptable **only** if sourced from local, untracked config.
+- Treat `BuildConfig` values as app-shipped material, not secret storage. Only use them for local development when sourced from untracked config and when they are safe to ship or strip before release.
 
 ## Repo hygiene
 - Do not rename packages/namespaces unless explicitly requested.
@@ -147,4 +147,4 @@ Open questions:
 
 ## When uncertain
 - Make the smallest reasonable change, leave a TODO with context, and commit.
-- Prefer adding diagnostics/logging over guessing.
+- Prefer inspection, targeted tests, and narrow verification over guessing. Add minimal temporary instrumentation only when truly necessary to unblock a safe change, and remove it before finishing unless explicitly requested.
