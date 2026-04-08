@@ -26,14 +26,24 @@ local.properties
 /app/build/
 /app/release/
 
-# APKs / AABs (zusätzlich)
+# APKs / AABs
 *.apk
 *.aab
 
-# my
+# Local scratch / tooling output
 /images
 /.gradle-user/
 /.kotlin
 /tmp
+/Codex-Notes/
 
-
+# Codex project config: keep shared config, ignore local Codex runtime state
+/.codex/auth.json
+/.codex/cache/
+/.codex/history.jsonl
+/.codex/log/
+/.codex/logs*.sqlite*
+/.codex/memories/
+/.codex/sessions/
+/.codex/state*.sqlite*
+/.codex/tmp/

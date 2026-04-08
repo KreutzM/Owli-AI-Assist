@@ -1,19 +1,19 @@
 # Development Guide (Team)
 
-Dieses Dokument ist die **einzige** Einstiegstelle für den täglichen Workflow (2 Menschen + 1 Codex-Agent).
+Dieses Dokument ist die Einstiegstelle fuer den taeglichen Workflow (2 Menschen + 1 Codex-Agent).
 
 ## 1) Quickstart
 
 ### Voraussetzungen
 - Android Studio (AGP 8.x), Android SDK
-- JDK (passend zur Android-Toolchain; Android Studio bringt i. d. R. eine kompatible JDK mit)
+- JDK (passend zur Android-Toolchain; Android Studio bringt in der Regel eine kompatible JDK mit)
 - Windows 10/11 + PowerShell (oder WSL2)
 
 ### Secrets
 - `OPENROUTER_API_KEY=...` in `local.properties` (nicht committen).
 
 ### Modell
-- Lege das TFLite Modell unter `app/src/main/assets/models/efficientdet_lite2_int8.tflite` ab.  
+- Lege das TFLite Modell unter `app/src/main/assets/models/efficientdet_lite2_int8.tflite` ab.
   Siehe `docs/MODEL-ASSETS.md`.
 
 ### Build (PowerShell)
@@ -32,11 +32,19 @@ Dieses Dokument ist die **einzige** Einstiegstelle für den täglichen Workflow 
 
 ### Branching
 - Feature/Fix: `feat/...`, `fix/...`
+- Chore/Tooling/Docs: `chore/...`
 - Refactor/Quality: `ref/...` (z. B. `ref/Test-Optimization`)
 - Mergen: per PR / Review (auch im 2er-Team sinnvoll)
 
+### Chat -> Codex -> Chat Review
+1. Planung und Scope passieren im Chat.
+2. Codex fuehrt genau einen kleinen thematischen Run aus.
+3. Codex arbeitet auf einem thematisch benannten Branch.
+4. Codex erstellt kleine, buildbare Commits.
+5. Codex beendet den Run mit dem `RUN REVIEW`-Paket aus `AGENTS.md`, damit der Review direkt in Chat/Repo passieren kann.
+
 ### Definition of Done pro Commit
-- **klein & fokussiert** (eine logische Änderung)
+- **klein & fokussiert** (eine logische Aenderung)
 - **buildbar**
 - mindestens: `./gradlew.bat :app:testDebugUnitTest`
 - wenn relevant: `./gradlew.bat :app:lintDebug`
@@ -51,14 +59,14 @@ Dieses Dokument ist die **einzige** Einstiegstelle für den täglichen Workflow 
 ### Fast (Default)
 - `./gradlew.bat :app:testDebugUnitTest`
 
-### Zusätzlich bei Android-Komponenten / Public API Änderungen
+### Zusaetzlich bei Android-Komponenten / Public API Aenderungen
 - `./gradlew.bat :app:lintDebug`
 
-### Zusätzlich bei UI/Resources/Manifest/Gradle Änderungen
+### Zusaetzlich bei UI/Resources/Manifest/Gradle Aenderungen
 - `./gradlew.bat :app:assembleDebug`
 
-### Full (vor Merge oder großen Refactors)
-- `./gradlew.bat :app:check`  
+### Full (vor Merge oder grossen Refactors)
+- `./gradlew.bat :app:check`
   (oder: `:app:test` + `:app:lintDebug` + `:app:assembleDebug`)
 
 ---
@@ -68,16 +76,18 @@ Dieses Dokument ist die **einzige** Einstiegstelle für den täglichen Workflow 
 - Diagnostics Screen: Live-Metriken + Copy-to-Clipboard Report
 - Wichtige Debug-Hinweise:
   - CameraX Preview zeigt **Originalbild**
-  - Stabilisierung passiert im **448×448 Model-Input** (Debug-Preview vorhanden)
-  - FakeDetector ist aktiv, wenn das Modell fehlt → Statusanzeige beachten
+  - Stabilisierung passiert im **448x448 Model-Input** (Debug-Preview vorhanden)
+  - FakeDetector ist aktiv, wenn das Modell fehlt -> Statusanzeige beachten
 
 ---
 
 ## 5) Zusammenarbeit mit Codex
 
-- `AGENTS.md` ist die „ausführbare“ Arbeitsanweisung.
+- `AGENTS.md` ist die ausfuehrbare Arbeitsanweisung.
+- `.codex/config.toml` enthaelt die projektlokalen Codex-Defaults.
 - Prompts/Vorlagen: `docs/Prompts-Codex-CLI.md`
 - Empfehlung:
   - kleine Commits
+  - pro Run nur ein Thema
   - kurze Feedback-Loops
   - keine speculative rewrites

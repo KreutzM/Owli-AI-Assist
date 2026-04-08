@@ -1,6 +1,0 @@
-  1. Set ANDROID_HOME or add sdk.dir to local.properties, then re‑run gradlew.bat test and gradlew.bat assembleDebug.
-  2. If you want the branding strings in UI adjusted further (e.g., replace remaining “BlindView” labels), tell me the
-     preferred wording.
-Token usage: total=186.015 input=160.787 (+ 4.031.744 cached) output=25.228 (reasoning 16.448)
-To continue this session, run codex resume 019b9ea3-34fa-74c2-8554-9544a48f0acb
-
