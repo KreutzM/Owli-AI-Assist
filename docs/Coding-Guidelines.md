@@ -81,6 +81,6 @@ Siehe auch `docs/TESTING.md`.
 
 ## 7) Codex/CLI Hinweise
 
-- Default Modell: `gpt-5.2-codex` (Reasoning: medium; high/xhigh nur bei Bedarf).
+- Default Modell und Reasoning richten sich nach `AGENTS.md` und `.codex/config.toml`.
 - Windows: `gradlew.bat` nutzen; keine Bash-only Syntax.
 - Standardchecks: siehe `AGENTS.md`.
