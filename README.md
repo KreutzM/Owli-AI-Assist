@@ -58,6 +58,7 @@ Owli-AI Assist ist eine Android-App fuer blinde Nutzer mit einem VLM-first-Workf
 - Repo-Regeln: `AGENTS.md`
 - Codex-Prompts: `docs/Prompts-Codex-CLI.md`
 - Nutzerhilfe-Quelle: `docs/user-manual/` -> In-App-HTML mit `python tools/render_user_manual.py` aktualisieren
+- Play-Store-Prep: `docs/PLAYSTORE-PRIVACY-READINESS.md`
 
 ## Lizenz / Nutzung
 Interner Demo-/Prototyp-Status; keine Produktionsfreigabe, keine Gewaehrleistung.
