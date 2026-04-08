@@ -11,6 +11,13 @@ und Reasoning nur fuer Debug/Telemetry nutzen.
 - Das haelt die OpenRouter-Funktion fuer den Zwischenstand lauffaehig, ist aber keine sichere Secret-Speicherung.
 - Eine spaetere Backend-/Proxy-/Token-Loesung bleibt notwendig, wenn der Provider-Key nicht mehr im Client stecken soll.
 
+## 0a) Datenfluss (aktueller App-Stand)
+
+- Lokal auf dem Geraet bleiben Live-Kameravorschau, Snapshot-Erfassung bis zur Nutzeraktion, DataStore-Einstellungen, VLM-Profilwahl und TTS-Wiedergabe.
+- An OpenRouter gehen nur Daten aus expliziten VLM-Aktionen: das Snapshot-Bild, optionale weitere Bild-Anhaenge und der zugehoerige Nutzertext.
+- Die Antwort kommt als Text zurueck; die App zeigt aktuell `message.content` als Raw-Text an und kann ihn optional per TTS ausgeben.
+- Android-Backup und Device-Transfer-Restore sind fuer die shipped App deaktiviert; lokale App-Daten werden daher nicht ueber Android-Backup migriert.
+
 ## 1) Zentrale Konfiguration
 
 Quelle der Wahrheit ist `app/src/main/assets/vlm-profiles.json`.

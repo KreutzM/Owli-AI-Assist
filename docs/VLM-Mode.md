@@ -11,6 +11,13 @@
 3. Antwort als Freitext anzeigen (Raw-Debug-Mode).
 4. Follow-up "Frage stellen" nutzt dieselbe Session-History.
 
+## Datenfluss
+- Lokal: Die Live-Kameravorschau laeuft auf dem Geraet; Bilder bleiben lokal, bis der Nutzer `Neue Szene` oder eine Folgefrage mit Bild-Anhaengen ausloest.
+- Cloud: Bei `Neue Szene` sendet die App genau ein Snapshot-Bild an OpenRouter. Bei Folgefragen sendet sie den Fragetext sowie optional weitere Bild-Anhaenge derselben Session.
+- Rueckfluss: OpenRouter liefert Textantworten zurueck. Diese werden in der App angezeigt und optional per TTS vorgelesen.
+- Lokal persistent: Sprache, TTS-Optionen und Profilwahl werden per DataStore auf dem Geraet gespeichert.
+- Backup/Restore: Android-Backup und Device-Transfer-Restore sind fuer Release deaktiviert, daher werden diese lokalen Einstellungen nicht per Android-Backup uebertragen.
+
 ## Autoscan (optional)
 - Wenn das aktive Profil `auto_scan` definiert, zeigt der VLM-Screen einen Auto-Toggle.
 - Auto an triggert periodisch denselben "Neue Szene"-Pfad (kein Parallel-Request).
@@ -33,6 +40,7 @@ Der JSON-Modus ist aktuell deaktiviert. Das Schema bleibt fuer eine spaetere Rea
 - Fehlerfaelle (Timeout, Parse-Fehler, kein Snapshot) muessen UI-seitig angezeigt werden.
 - Aktuell laeuft der VLM im Raw-Debug-Mode: Antwort wird als Freitext angezeigt, JSON-Parsing ist voruebergehend deaktiviert.
 - Diktat per Mikrofon: Tippen fuegt Text ins Eingabefeld ein; lang druecken sendet sofort. Sprachausgabe pausiert waehrend der Spracheingabe.
+- Play-Store-Offenpunkt: Fuer Release braucht das Projekt weiterhin eine passende Privacy-Policy/Data-Safety-Angabe und eine bewusste Entscheidung, wie lange der app-embedded OpenRouter-Key noch toleriert wird.
 
 ## VLM-Profile
 - Profile werden aus `app/src/main/assets/vlm-profiles.json` geladen.

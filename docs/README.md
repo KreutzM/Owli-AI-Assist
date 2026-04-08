@@ -7,6 +7,7 @@ Kurzer Ueberblick ueber die wichtigsten Dokumente:
 - `docs/System-Spezifikation.md` - Anforderungen (Soll + Ist-Markierungen)
 - `docs/TESTING.md` - Test-Policy (JVM-first) + Patterns
 - `docs/VLM.md` / `docs/VLM-Mode.md` - VLM Integration & On-Demand Mode
+- `docs/PLAYSTORE-PRIVACY-READINESS.md` - interner Store-/Privacy-Readiness-Stand zum aktuellen App-Verhalten
 - `docs/Prompts-Codex-CLI.md` - Prompt-Vorlagen (passend zu AGENTS)
 - `docs/Coding-Guidelines.md` - technische Konventionen (ergaenzt AGENTS)
 - `docs/ChangeLog.md` - Entwicklungs-Historie (kurz halten, relevante Aenderungen)

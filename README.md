@@ -42,6 +42,13 @@ Owli-AI Assist ist eine Android-App fuer blinde Nutzer mit einem VLM-first-Workf
 - Streaming-TTS: frueher Sprachstart waehrend die Antwort eintrifft
 - VLM-Profile und Prompts: `app/src/main/assets/vlm-profiles.json`
 
+## Datenfluss & Release-Hinweise
+- Lokal auf dem Geraet: Live-Kameravorschau, Snapshot-Erfassung, Anhangsverwaltung, DataStore-Einstellungen und On-Device-TTS.
+- Cloud/VLM-Pfad: Erst nach `Neue Szene` oder einer Folgefrage sendet die App das aktuelle Bild, optional weitere Bild-Anhaenge und den Fragetext an OpenRouter.
+- VLM-Antworten kommen als Text zurueck und koennen in der App angezeigt oder ueber TTS vorgelesen werden; die App ist aktuell im Raw-Text-Modus, JSON-Parsing fuer Nutzerantworten ist deaktiviert.
+- Release-Caveat: Der aktuelle OpenRouter-Schluessel wird fuer den Zwischenstand mit der App ausgeliefert (`BuildConfig`) und ist keine sichere Secret-Speicherung.
+- Backup/Restore: Android-Backup und Device-Transfer-Restore sind fuer die shipped App deaktiviert (`android:allowBackup="false"`), daher werden lokale App-Daten nicht automatisch ueber Android-Backup migriert.
+
 ## Developer Tools
 - Lokaler Editor fuer `vlm-profiles.json`: `tools/vlm-profile-editor/`
 - CLI-Validator fuer VLM-Profile: `tools/validate_vlm_profiles.py`
@@ -51,6 +58,7 @@ Owli-AI Assist ist eine Android-App fuer blinde Nutzer mit einem VLM-first-Workf
 - Repo-Regeln: `AGENTS.md`
 - Codex-Prompts: `docs/Prompts-Codex-CLI.md`
 - Nutzerhilfe-Quelle: `docs/user-manual/` -> In-App-HTML mit `python tools/render_user_manual.py` aktualisieren
+- Play-Store-Prep: `docs/PLAYSTORE-PRIVACY-READINESS.md`
 
 ## Lizenz / Nutzung
 Interner Demo-/Prototyp-Status; keine Produktionsfreigabe, keine Gewaehrleistung.
