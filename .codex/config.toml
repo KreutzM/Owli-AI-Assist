@@ -1,0 +1,25 @@
+# Project-local Codex defaults for OwliAI.
+# Keep this file minimal and repo-safe; do not store tokens or machine-local state here.
+
+model = "gpt-5.4"
+model_reasoning_effort = "medium"
+approval_policy = "on-request"
+sandbox_mode = "workspace-write"
+windows_wsl_setup_acknowledged = true
+personality = "pragmatic"
+
+[history]
+persistence = "save-all"
+
+[sandbox_workspace_write]
+network_access = true
+
+[shell_environment_policy]
+inherit = "all"
+ignore_default_excludes = false
+exclude = ["*AZURE_*", "*AWS_*", "*GCP_*"]
+include_only = []
+set = {}
+
+[features]
+web_search_request = true

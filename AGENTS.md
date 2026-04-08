@@ -8,7 +8,7 @@
 - Prefer measurable progress over large refactors.
 
 ## Model & reasoning defaults
-- **Default model:** `gpt-5.2-codex`.
+- **Default model:** `gpt-5.4`.
 - **Default reasoning/effort:** **medium**.
 - Use **high / xhigh** only for:
   - multi-step refactors spanning multiple modules,
@@ -17,9 +17,12 @@
   - complex architecture changes.
 
 ## Work style
+- Planning happens in chat; Codex executes one **small thematic run** at a time.
+- Start each run on a **thematically named branch**. Do not work on `main` directly.
 - Work in **small, meaningful increments**.
 - Prefer **short feedback loops**: implement -> verify -> commit.
 - Avoid speculative rewrites.
+- Inspect the relevant code and docs first, then implement the smallest defensible change.
 
 ### Commit policy (required)
 - Make progress via **frequent, small commits**.
@@ -32,6 +35,53 @@
 **Commit message format**
 - `area: short summary`
   - Examples: `pipeline: gate IMU derotation by quality`, `ui: show stabilized input preview toggle`, `docs: update stabilization notes`.
+
+### End-of-run output (required)
+- End every Codex run with a compact review packet that can be reviewed in chat or pasted into a PR.
+- Use this exact structure:
+
+```text
+RUN REVIEW
+Branch: <branch-name>
+Remote push: <yes/no>
+Compare/PR URL: <url-or-n/a>
+
+Scope summary:
+
+* <1 sentence>
+
+Commits:
+
+1. <sha> <subject>
+2. <sha> <subject>
+
+Files changed:
+
+* <path>  <short purpose>
+* <path>  <short purpose>
+
+Checks run:
+
+* <command>  <pass/fail/not run>
+* <command>  <pass/fail/not run>
+
+Behavior impact:
+
+* <none / describe>
+
+Risks / review focus:
+
+* <item 1>
+* <item 2>
+
+Manual follow-up:
+
+* <item or "none">
+
+Open questions:
+
+* <item or "none">
+```
 
 ## Command execution (Windows / PowerShell)
 - Prefer **single commands** over long chains; avoid `|`, `&&`, bash-only syntax.
