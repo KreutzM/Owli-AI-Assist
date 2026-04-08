@@ -17,6 +17,10 @@ Dieses Dokument ist die Einstiegstelle fuer den taeglichen Workflow (2 Menschen 
 ### Build (PowerShell)
 - `gradlew.bat :app:assembleDebug`
 
+### Release defaults
+- Release-Builds aktivieren R8/Minify und Resource-Shrinking.
+- App-Backup und Android data extraction sind fuer die shipped App deaktiviert.
+
 ---
 
 ## 1a) VLM-First UX
