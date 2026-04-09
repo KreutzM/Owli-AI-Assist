@@ -42,6 +42,7 @@ fun VlmSettingsScreen(
     activeVlmProfileLabel: String,
     hasOpenRouterUserKey: Boolean,
     onOpenVlmProfiles: () -> Unit,
+    onOpenQrImport: () -> Unit,
     onUpdate: (((AppSettings) -> AppSettings)) -> Unit,
     onSaveOpenRouterUserKey: (String) -> Unit,
     onClearOpenRouterUserKey: () -> Unit
@@ -76,6 +77,7 @@ fun VlmSettingsScreen(
             keyMode = settings.openRouterKeyMode,
             hasStoredKey = hasOpenRouterUserKey,
             onSelectMode = { mode -> onUpdate { it.copy(openRouterKeyMode = mode) } },
+            onOpenQrImport = onOpenQrImport,
             onSaveKey = onSaveOpenRouterUserKey,
             onClearKey = onClearOpenRouterUserKey
         )
@@ -113,6 +115,7 @@ private fun OpenRouterKeySetting(
     keyMode: OpenRouterKeyMode,
     hasStoredKey: Boolean,
     onSelectMode: (OpenRouterKeyMode) -> Unit,
+    onOpenQrImport: () -> Unit,
     onSaveKey: (String) -> Unit,
     onClearKey: () -> Unit
 ) {
@@ -191,7 +194,7 @@ private fun OpenRouterKeySetting(
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            OutlinedButton(onClick = {}, enabled = false) {
+            OutlinedButton(onClick = onOpenQrImport) {
                 Text(stringResource(R.string.vlm_settings_openrouter_key_scan_qr))
             }
             OutlinedButton(
