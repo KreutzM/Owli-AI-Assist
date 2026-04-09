@@ -13,6 +13,8 @@ Dieses Dokument ist die Einstiegstelle fuer den taeglichen Workflow (2 Menschen 
 - `OPENROUTER_API_KEY=...` in `local.properties` setzen (nicht committen).
 - Der aktuelle Release-Pfad uebernimmt diesen Wert in `BuildConfig`, damit die App OpenRouter direkt ansprechen kann.
 - Das ist ein app-shipped Client-Key fuer die Zwischenphase, keine sichere Secret-Speicherung. Ein spaeterer Backend-/Token-Service bleibt die saubere Zielarchitektur.
+- Die Settings enthalten bereits einen nicht-geheimen Modus fuer `embedded app key` vs. `user-provided key`.
+- Aktuell wird noch kein Nutzer-Key gespeichert; QR-Import und manuelle Eingabe sind nur als zukuenftiger Settings-Einstiegspunkt sichtbar.
 
 ### Build (PowerShell)
 - `gradlew.bat :app:assembleDebug`
@@ -28,7 +30,7 @@ Dieses Dokument ist die Einstiegstelle fuer den taeglichen Workflow (2 Menschen 
 ## 1a) VLM-First UX
 - App startet standardmaessig im VLM-Modus.
 - Die Live-Kamera dient zum Ausrichten; eine Szene wird erst bei `Neue Szene` aufgenommen.
-- Einstellungen betreffen Sprache, TTS und VLM-Profilwahl.
+- Einstellungen betreffen Sprache, TTS, VLM-Profilwahl und den zukuenftigen OpenRouter-Key-Einstieg.
 
 ---
 

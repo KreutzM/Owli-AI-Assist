@@ -2,6 +2,8 @@ package com.owlitech.owli.assist.vlm
 
 import com.owlitech.owli.assist.util.AppLogger
 import com.owlitech.owli.assist.BuildConfig
+import com.owlitech.owli.assist.settings.OpenRouterApiKeySelection
+import com.owlitech.owli.assist.settings.OpenRouterKeyMode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
@@ -18,10 +20,20 @@ class OpenRouterVlmClient(
     private var profile: VlmProfile,
     apiKey: String = BuildConfig.OPENROUTER_API_KEY,
     endpoint: String = "https://openrouter.ai/api/v1/chat/completions",
-    private val provider: VlmProvider = OpenRouterProvider(apiKey, endpoint)
+    provider: VlmProvider? = null
 ) : VlmClient {
 
-    override val isConfigured: Boolean = apiKey.isNotBlank()
+    private val endpoint = endpoint
+    private val usesInjectedProvider = provider != null
+    private var keySelection = OpenRouterApiKeySelection(
+        requestedMode = OpenRouterKeyMode.EMBEDDED_APP_KEY,
+        activeMode = OpenRouterKeyMode.EMBEDDED_APP_KEY,
+        apiKey = apiKey.trim()
+    )
+    private var provider: VlmProvider = provider ?: OpenRouterProvider(keySelection.apiKey, endpoint)
+
+    override val isConfigured: Boolean
+        get() = keySelection.hasUsableKey
 
     override suspend fun chat(
         messages: List<VlmChatMessage>,
@@ -135,6 +147,14 @@ class OpenRouterVlmClient(
 
     fun updateProfile(newProfile: VlmProfile) {
         profile = newProfile
+    }
+
+    fun updateApiKeySelection(selection: OpenRouterApiKeySelection) {
+        if (selection == keySelection) return
+        keySelection = selection
+        if (!usesInjectedProvider) {
+            provider = OpenRouterProvider(selection.apiKey, endpoint)
+        }
     }
 
     private fun resolveTokenPolicy(

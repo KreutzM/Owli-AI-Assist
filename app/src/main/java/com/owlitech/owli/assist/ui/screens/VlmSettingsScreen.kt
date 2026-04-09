@@ -11,6 +11,7 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -22,6 +23,7 @@ import androidx.compose.ui.unit.dp
 import com.owlitech.owli.assist.R
 import com.owlitech.owli.assist.settings.AppSettings
 import com.owlitech.owli.assist.settings.LanguagePreference
+import com.owlitech.owli.assist.settings.OpenRouterKeyMode
 
 @Composable
 fun VlmSettingsScreen(
@@ -56,6 +58,7 @@ fun VlmSettingsScreen(
             onCheckedChange = { v -> onUpdate { it.copy(streamingVlmTtsEnabled = v) } },
             helper = stringResource(R.string.vlm_settings_streaming_tts_helper)
         )
+        OpenRouterKeySetting(keyMode = settings.openRouterKeyMode)
         SettingSwitch(
             label = stringResource(R.string.settings_tts_enabled),
             checked = settings.ttsEnabled,
@@ -82,6 +85,30 @@ fun VlmSettingsScreen(
             onValueChange = { v -> onUpdate { it.copy(ttsPitch = v) } },
             helper = stringResource(R.string.settings_tts_pitch_helper)
         )
+    }
+}
+
+@Composable
+private fun OpenRouterKeySetting(keyMode: OpenRouterKeyMode) {
+    val status = when (keyMode) {
+        OpenRouterKeyMode.EMBEDDED_APP_KEY -> stringResource(R.string.vlm_settings_openrouter_key_status_embedded)
+        OpenRouterKeyMode.USER_PROVIDED_KEY -> stringResource(R.string.vlm_settings_openrouter_key_status_user)
+    }
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        verticalArrangement = Arrangement.spacedBy(6.dp)
+    ) {
+        Text(stringResource(R.string.vlm_settings_openrouter_key_title), style = MaterialTheme.typography.titleSmall)
+        Text(status, style = MaterialTheme.typography.bodyMedium)
+        Text(stringResource(R.string.vlm_settings_openrouter_key_helper), style = MaterialTheme.typography.bodySmall)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            OutlinedButton(onClick = {}, enabled = false) {
+                Text(stringResource(R.string.vlm_settings_openrouter_key_scan_qr))
+            }
+            OutlinedButton(onClick = {}, enabled = false) {
+                Text(stringResource(R.string.vlm_settings_openrouter_key_enter_manually))
+            }
+        }
     }
 }
 

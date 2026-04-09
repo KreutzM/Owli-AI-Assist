@@ -27,6 +27,7 @@ import com.owlitech.owli.assist.settings.AppSettingsDefaults
 import com.owlitech.owli.assist.settings.LanguagePreference
 import com.owlitech.owli.assist.settings.SettingsRepository
 import com.owlitech.owli.assist.settings.SettingsViewModel
+import com.owlitech.owli.assist.settings.resolveOpenRouterApiKeySelection
 import com.owlitech.owli.assist.ui.AppTopBar
 import com.owlitech.owli.assist.ui.MainViewModel
 import com.owlitech.owli.assist.ui.navigation.AppNavHost
@@ -216,6 +217,13 @@ class MainActivity : AppCompatActivity() {
         if (!ttsEnabled) {
             streamingTtsController.cancel()
         }
+        vlmClient.updateApiKeySelection(
+            resolveOpenRouterApiKeySelection(
+                settings = settings,
+                embeddedAppKey = BuildConfig.OPENROUTER_API_KEY,
+                userProvidedKey = null
+            )
+        )
         activeVlmProfile = vlmProfilesConfig.resolve(settings.vlmProfileId)
         mainViewModel.applyVlmProfile(activeVlmProfile)
         updateVlmAudioState()
