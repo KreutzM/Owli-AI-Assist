@@ -77,6 +77,12 @@
     <string name="vlm_settings_select">Select</string>
     <string name="vlm_settings_streaming_tts">Streaming TTS (VLM)</string>
     <string name="vlm_settings_streaming_tts_helper">Earlier TTS start during streaming</string>
+    <string name="vlm_settings_openrouter_key_title">OpenRouter key</string>
+    <string name="vlm_settings_openrouter_key_status_embedded">Using the app key for now.</string>
+    <string name="vlm_settings_openrouter_key_status_user">Custom user key selected.</string>
+    <string name="vlm_settings_openrouter_key_helper">Custom keys will be added here later by QR code scan or manual entry. No user key is stored yet.</string>
+    <string name="vlm_settings_openrouter_key_scan_qr">Scan QR code</string>
+    <string name="vlm_settings_openrouter_key_enter_manually">Enter manually</string>
 
     <string name="vlm_profile_active_suffix">(Active)</string>
     <string name="vlm_profile_model_format">Model: %1$s</string>
