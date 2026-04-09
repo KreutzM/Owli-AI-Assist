@@ -11,7 +11,9 @@ und Reasoning nur fuer Debug/Telemetry nutzen.
 - Das haelt die OpenRouter-Funktion fuer den Zwischenstand lauffaehig, ist aber keine sichere Secret-Speicherung.
 - `AppSettings.openRouterKeyMode` modelliert bereits `EMBEDDED_APP_KEY` vs. `USER_PROVIDED_KEY`.
 - Der Runtime-Resolver faellt ohne gespeicherten Nutzer-Key weiterhin auf den embedded App-Key zurueck; dadurch bleibt das aktuelle Verhalten unveraendert.
-- In Settings kann ein eigener OpenRouter-Key manuell eingegeben oder per expliziter Paste-Aktion eingefuegt werden; QR-Import ist noch nicht implementiert.
+- In Settings kann ein eigener OpenRouter-Key manuell eingegeben, per expliziter Paste-Aktion eingefuegt oder per QR-Code importiert werden.
+- QR-Import akzeptiert aktuell rohe OpenRouter-Keys und `openrouter:key=<KEY>`; der erkannte Key wird vor dem Speichern nicht angezeigt.
+- QR-Decoding nutzt ML Kit Barcode Scanning; CameraX liefert nur Kamera-Frames und keinen QR-Decoder.
 - Beim Speichern wird `AppSettings.openRouterKeyMode` auf `USER_PROVIDED_KEY` gesetzt, beim Loeschen auf `EMBEDDED_APP_KEY`.
 - `OpenRouterUserKeyStore` ist die schmale Storage-API fuer spaetere Import-/Eingabe-Flows (`saveKey`, `loadKey`, `hasKey`, `clearKey`).
 - `AndroidOpenRouterUserKeyStore` verschluesselt den Nutzer-Key mit einem Android-Keystore-backed AES-GCM-Key und speichert nur Version, IV und Ciphertext in separaten privaten Preferences.

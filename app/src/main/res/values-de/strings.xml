@@ -4,6 +4,7 @@
     <string name="nav_title_vlm_settings">Einstellungen</string>
     <string name="nav_title_app">OwliAi Assist</string>
     <string name="nav_title_vlm_profiles">VLM Profile</string>
+    <string name="nav_title_openrouter_key_qr_import">OpenRouter Key scannen</string>
     <string name="nav_title_help">Hilfe</string>
     <string name="nav_title_about">Ueber</string>
 
@@ -96,6 +97,17 @@
     <string name="vlm_settings_openrouter_key_cleared">Eigener Key geloescht.</string>
     <string name="vlm_settings_openrouter_key_missing_user_key">Speichere zuerst einen eigenen Key, bevor du den Nutzer-Key-Modus auswaehlst.</string>
     <string name="vlm_settings_openrouter_key_stored_but_app_active">Ein eigener Key ist gespeichert, aber aktuell ist der App-Key aktiv.</string>
+    <string name="openrouter_qr_import_title">OpenRouter Key per QR-Code scannen</string>
+    <string name="openrouter_qr_import_helper">Richte die Kamera auf einen QR-Code, der entweder den rohen OpenRouter Key oder openrouter:key=&lt;KEY&gt; enthaelt.</string>
+    <string name="openrouter_qr_import_permission">Kamerazugriff ist notwendig, um den QR-Code zu scannen.</string>
+    <string name="openrouter_qr_import_request_permission">Kamera erlauben</string>
+    <string name="openrouter_qr_import_scanning">Suche QR-Code&#8230;</string>
+    <string name="openrouter_qr_import_invalid">QR-Code gefunden, aber er sieht nicht wie ein OpenRouter Key aus.</string>
+    <string name="openrouter_qr_import_found">OpenRouter Key gefunden.</string>
+    <string name="openrouter_qr_import_found_helper">Der Key bleibt verborgen. Speichere ihn, um deinen eigenen OpenRouter Key zu verwenden.</string>
+    <string name="openrouter_qr_import_use_key">Speichern und verwenden</string>
+    <string name="openrouter_qr_import_scan_again">Erneut scannen</string>
+    <string name="openrouter_qr_import_cancel">Abbrechen</string>
 
     <string name="vlm_profile_active_suffix">(Aktiv)</string>
     <string name="vlm_profile_model_format">Modell: %1$s</string>
