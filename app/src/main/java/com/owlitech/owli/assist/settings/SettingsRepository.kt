@@ -21,6 +21,7 @@ class SettingsRepository(private val context: Context) {
             val updated = transform(current)
             prefs[PrefKeys.vlmProfileId] = updated.vlmProfileId
             prefs[PrefKeys.vlmProfileIdUserSet] = updated.vlmProfileIdUserSet
+            prefs[PrefKeys.openRouterKeyMode] = updated.openRouterKeyMode.name
             prefs[PrefKeys.ttsEnabled] = updated.ttsEnabled
             prefs[PrefKeys.ttsSpeechRate] = updated.ttsSpeechRate
             prefs[PrefKeys.ttsPitch] = updated.ttsPitch
@@ -39,6 +40,7 @@ class SettingsRepository(private val context: Context) {
 private object PrefKeys {
     val vlmProfileId = stringPreferencesKey("vlmProfileId")
     val vlmProfileIdUserSet = booleanPreferencesKey("vlmProfileIdUserSet")
+    val openRouterKeyMode = stringPreferencesKey("openRouterKeyMode")
     val ttsEnabled = booleanPreferencesKey("ttsEnabled")
     val ttsSpeechRate = floatPreferencesKey("ttsSpeechRate")
     val ttsPitch = floatPreferencesKey("ttsPitch")
@@ -52,13 +54,22 @@ private fun androidx.datastore.preferences.core.Preferences.toSettings(): AppSet
     return AppSettings(
         vlmProfileId = storedProfileId ?: AppSettingsDefaults.vlmProfileId,
         vlmProfileIdUserSet = profileIdUserSet,
+        openRouterKeyMode = enumValueOrDefault(
+            this[PrefKeys.openRouterKeyMode],
+            AppSettingsDefaults.openRouterKeyMode
+        ),
         ttsEnabled = this[PrefKeys.ttsEnabled] ?: AppSettingsDefaults.ttsEnabled,
         ttsSpeechRate = this[PrefKeys.ttsSpeechRate] ?: AppSettingsDefaults.ttsSpeechRate,
         ttsPitch = this[PrefKeys.ttsPitch] ?: AppSettingsDefaults.ttsPitch,
         streamingVlmTtsEnabled = this[PrefKeys.streamingVlmTtsEnabled]
             ?: AppSettingsDefaults.streamingVlmTtsEnabled,
-        languagePreference = LanguagePreference.valueOf(
-            this[PrefKeys.languagePreference] ?: AppSettingsDefaults.languagePreference.name
+        languagePreference = enumValueOrDefault(
+            this[PrefKeys.languagePreference],
+            AppSettingsDefaults.languagePreference
         )
     )
+}
+
+private inline fun <reified T : Enum<T>> enumValueOrDefault(value: String?, default: T): T {
+    return value?.let { runCatching { enumValueOf<T>(it) }.getOrNull() } ?: default
 }

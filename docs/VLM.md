@@ -9,6 +9,9 @@ und Reasoning nur fuer Debug/Telemetry nutzen.
 - Die App liest `OPENROUTER_API_KEY` lokal aus `local.properties`.
 - Fuer den aktuellen Release-Pfad wird dieser Wert in `BuildConfig` uebernommen und damit mit der App ausgeliefert.
 - Das haelt die OpenRouter-Funktion fuer den Zwischenstand lauffaehig, ist aber keine sichere Secret-Speicherung.
+- `AppSettings.openRouterKeyMode` modelliert bereits `EMBEDDED_APP_KEY` vs. `USER_PROVIDED_KEY`.
+- Der Runtime-Resolver faellt ohne gespeicherten Nutzer-Key weiterhin auf den embedded App-Key zurueck; dadurch bleibt das aktuelle Verhalten unveraendert.
+- In Settings gibt es einen sichtbaren Einstieg fuer QR-Scan und manuelle Eingabe, aber diese Aktionen speichern in diesem Stand noch keinen Key.
 - Eine spaetere Backend-/Proxy-/Token-Loesung bleibt notwendig, wenn der Provider-Key nicht mehr im Client stecken soll.
 
 ## 0a) Datenfluss (aktueller App-Stand)
