@@ -12,6 +12,9 @@ und Reasoning nur fuer Debug/Telemetry nutzen.
 - `AppSettings.openRouterKeyMode` modelliert bereits `EMBEDDED_APP_KEY` vs. `USER_PROVIDED_KEY`.
 - Der Runtime-Resolver faellt ohne gespeicherten Nutzer-Key weiterhin auf den embedded App-Key zurueck; dadurch bleibt das aktuelle Verhalten unveraendert.
 - In Settings gibt es einen sichtbaren Einstieg fuer QR-Scan und manuelle Eingabe, aber diese Aktionen speichern in diesem Stand noch keinen Key.
+- `OpenRouterUserKeyStore` ist die schmale Storage-API fuer spaetere Import-/Eingabe-Flows (`saveKey`, `loadKey`, `hasKey`, `clearKey`).
+- `AndroidOpenRouterUserKeyStore` verschluesselt den Nutzer-Key mit einem Android-Keystore-backed AES-GCM-Key und speichert nur Version, IV und Ciphertext in separaten privaten Preferences.
+- Der Nutzer-Key wird nicht in `AppSettings`, DataStore, Logs oder Docs persistiert; leere Keys werden abgelehnt, vorhandene Keys werden beim Speichern ueberschrieben, `clearKey` entfernt den gespeicherten Blob.
 - Eine spaetere Backend-/Proxy-/Token-Loesung bleibt notwendig, wenn der Provider-Key nicht mehr im Client stecken soll.
 
 ## 0a) Datenfluss (aktueller App-Stand)
