@@ -38,6 +38,8 @@
 
 ### End-of-run output (required)
 - End every Codex run with a compact review packet that can be reviewed in chat or pasted into a PR.
+- Do not wait for the user to request it explicitly; every run must include this packet by default.
+- If a user prompt requests a different review format for that run, follow the user prompt.
 - Use this exact structure:
 
 ```text
