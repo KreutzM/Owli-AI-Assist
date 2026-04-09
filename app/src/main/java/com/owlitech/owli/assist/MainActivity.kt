@@ -24,6 +24,7 @@ import com.owlitech.owli.assist.audio.AudioFeedbackEngine
 import com.owlitech.owli.assist.audio.StreamingTtsController
 import com.owlitech.owli.assist.settings.AppSettings
 import com.owlitech.owli.assist.settings.AppSettingsDefaults
+import com.owlitech.owli.assist.settings.AndroidOpenRouterUserKeyStore
 import com.owlitech.owli.assist.settings.LanguagePreference
 import com.owlitech.owli.assist.settings.SettingsRepository
 import com.owlitech.owli.assist.settings.SettingsViewModel
@@ -39,12 +40,14 @@ import com.owlitech.owli.assist.vlm.VlmProfile
 import com.owlitech.owli.assist.vlm.VlmProfileLoader
 import com.owlitech.owli.assist.vlm.VlmProfilesConfig
 import com.owlitech.owli.assist.vlm.VlmUiState
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
 
@@ -70,8 +73,11 @@ class MainActivity : AppCompatActivity() {
     private val mainViewModel: MainViewModel by viewModels {
         MainViewModel.Factory(vlmClient)
     }
+    private val openRouterUserKeyStore by lazy {
+        AndroidOpenRouterUserKeyStore(applicationContext)
+    }
     private val settingsViewModel: SettingsViewModel by viewModels {
-        SettingsViewModel.Factory(SettingsRepository(applicationContext))
+        SettingsViewModel.Factory(SettingsRepository(applicationContext), openRouterUserKeyStore)
     }
     private var settingsCollectJob: Job? = null
     private var streamingTimeoutJob: Job? = null
@@ -217,16 +223,25 @@ class MainActivity : AppCompatActivity() {
         if (!ttsEnabled) {
             streamingTtsController.cancel()
         }
-        vlmClient.updateApiKeySelection(
-            resolveOpenRouterApiKeySelection(
-                settings = settings,
-                embeddedAppKey = BuildConfig.OPENROUTER_API_KEY,
-                userProvidedKey = null
-            )
-        )
+        applyOpenRouterApiKeySelection(settings)
         activeVlmProfile = vlmProfilesConfig.resolve(settings.vlmProfileId)
         mainViewModel.applyVlmProfile(activeVlmProfile)
         updateVlmAudioState()
+    }
+
+    private fun applyOpenRouterApiKeySelection(settings: AppSettings) {
+        lifecycleScope.launch {
+            val userProvidedKey = withContext(Dispatchers.IO) {
+                openRouterUserKeyStore.loadKey()
+            }
+            vlmClient.updateApiKeySelection(
+                resolveOpenRouterApiKeySelection(
+                    settings = settings,
+                    embeddedAppKey = BuildConfig.OPENROUTER_API_KEY,
+                    userProvidedKey = userProvidedKey
+                )
+            )
+        }
     }
 
     private fun applyLocale(preference: LanguagePreference) {

@@ -3,7 +3,6 @@ package com.owlitech.owli.assist.ui
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
-import com.owlitech.owli.assist.BuildConfig
 import com.owlitech.owli.assist.util.AppLogger
 import com.owlitech.owli.assist.vlm.OpenRouterVlmClient
 import com.owlitech.owli.assist.vlm.VlmAttachment
@@ -27,8 +26,7 @@ import java.util.concurrent.atomic.AtomicBoolean
 
 private const val MISSING_OPENROUTER_CLIENT_KEY_LOG = "OpenRouter client key fehlt"
 private const val MISSING_OPENROUTER_CLIENT_KEY_UI =
-    "OpenRouter client key fehlt. Lokale Builds lesen OPENROUTER_API_KEY aus local.properties; " +
-        "Release-Builds liefern diesen Wert aktuell mit der App aus. Das ist eine Zwischenloesung, keine sichere Secret-Speicherung."
+    "OpenRouter client key fehlt. Bitte pruefe den App-Key oder hinterlege in den Einstellungen einen eigenen OpenRouter-Key."
 
 class MainViewModel(
     private val vlmClient: VlmClient = OpenRouterVlmClient(
@@ -125,7 +123,7 @@ class MainViewModel(
     }
 
     private suspend fun performNewSceneWithSnapshot(jpeg: ByteArray) {
-        if (!vlmClient.isConfigured || BuildConfig.OPENROUTER_API_KEY.isBlank()) {
+        if (!vlmClient.isConfigured) {
             AppLogger.e("VLM", MISSING_OPENROUTER_CLIENT_KEY_LOG)
             _vlmUiState.value = VlmUiState.Error(MISSING_OPENROUTER_CLIENT_KEY_UI)
             return
@@ -231,7 +229,7 @@ class MainViewModel(
     }
 
     fun askVlm(questionText: String) {
-        if (!vlmClient.isConfigured || BuildConfig.OPENROUTER_API_KEY.isBlank()) {
+        if (!vlmClient.isConfigured) {
             AppLogger.e("VLM", MISSING_OPENROUTER_CLIENT_KEY_LOG)
             _vlmUiState.value = VlmUiState.Error(MISSING_OPENROUTER_CLIENT_KEY_UI)
             return
