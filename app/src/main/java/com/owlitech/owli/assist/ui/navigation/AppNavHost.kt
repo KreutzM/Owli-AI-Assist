@@ -34,6 +34,7 @@ fun AppNavHost(
     onAddVlmImage: (ByteArray) -> Int?
 ) {
     val settings by settingsViewModel.settings.collectAsState()
+    val hasOpenRouterUserKey by settingsViewModel.hasOpenRouterUserKey.collectAsState()
     val vlmState by mainViewModel.vlmUiState.collectAsState()
     val isAutoScanRunning by mainViewModel.isAutoScanRunning.collectAsState()
     val vlmAttachments by mainViewModel.vlmAttachments.collectAsState()
@@ -64,8 +65,11 @@ fun AppNavHost(
                 VlmSettingsScreen(
                     settings = settings,
                     activeVlmProfileLabel = activeVlmProfile.label,
+                    hasOpenRouterUserKey = hasOpenRouterUserKey,
                     onOpenVlmProfiles = { navController.navigate(AppRoute.VlmProfiles.route) },
-                    onUpdate = { update -> settingsViewModel.update { update(it) } }
+                    onUpdate = { update -> settingsViewModel.update { update(it) } },
+                    onSaveOpenRouterUserKey = { apiKey -> settingsViewModel.saveOpenRouterUserKey(apiKey) },
+                    onClearOpenRouterUserKey = { settingsViewModel.clearOpenRouterUserKey() }
                 )
             }
         }

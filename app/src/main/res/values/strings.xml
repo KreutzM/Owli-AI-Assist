@@ -80,9 +80,22 @@
     <string name="vlm_settings_openrouter_key_title">OpenRouter key</string>
     <string name="vlm_settings_openrouter_key_status_embedded">Using the app key for now.</string>
     <string name="vlm_settings_openrouter_key_status_user">Custom user key selected.</string>
-    <string name="vlm_settings_openrouter_key_helper">Custom keys will be added here later by QR code scan or manual entry. No user key is stored yet.</string>
+    <string name="vlm_settings_openrouter_key_helper">Enter or paste your own OpenRouter key. The key is stored locally through the secure key store.</string>
     <string name="vlm_settings_openrouter_key_scan_qr">Scan QR code</string>
-    <string name="vlm_settings_openrouter_key_enter_manually">Enter manually</string>
+    <string name="vlm_settings_openrouter_key_input_label">OpenRouter key</string>
+    <string name="vlm_settings_openrouter_key_stored_yes">A custom key is stored.</string>
+    <string name="vlm_settings_openrouter_key_stored_no">No custom key is stored.</string>
+    <string name="vlm_settings_openrouter_key_show">Show</string>
+    <string name="vlm_settings_openrouter_key_hide">Hide</string>
+    <string name="vlm_settings_openrouter_key_paste">Paste</string>
+    <string name="vlm_settings_openrouter_key_save">Save custom key</string>
+    <string name="vlm_settings_openrouter_key_clear">Delete stored key</string>
+    <string name="vlm_settings_openrouter_key_use_app_key">Use app key</string>
+    <string name="vlm_settings_openrouter_key_use_custom_key">Use custom key</string>
+    <string name="vlm_settings_openrouter_key_saved">Custom key saved.</string>
+    <string name="vlm_settings_openrouter_key_cleared">Custom key deleted.</string>
+    <string name="vlm_settings_openrouter_key_missing_user_key">Save a custom key before selecting user-key mode.</string>
+    <string name="vlm_settings_openrouter_key_stored_but_app_active">A custom key is stored, but the app key is currently active.</string>
 
     <string name="vlm_profile_active_suffix">(Active)</string>
     <string name="vlm_profile_model_format">Model: %1$s</string>
