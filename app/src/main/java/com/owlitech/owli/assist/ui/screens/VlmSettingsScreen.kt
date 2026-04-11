@@ -14,10 +14,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -34,13 +30,9 @@ fun VlmSettingsScreen(
     activeVlmProfileLabel: String,
     hasOpenRouterUserKey: Boolean,
     onOpenVlmProfiles: () -> Unit,
-    onOpenQrImport: () -> Unit,
-    onUpdate: (((AppSettings) -> AppSettings)) -> Unit,
-    onSaveOpenRouterUserKey: (String) -> Unit,
-    onClearOpenRouterUserKey: () -> Unit
+    onOpenOpenRouterKeySettings: () -> Unit,
+    onUpdate: (((AppSettings) -> AppSettings)) -> Unit
 ) {
-    var isOpenRouterKeyDialogOpen by rememberSaveable { mutableStateOf(false) }
-
     Column(
         modifier = Modifier
             .padding(12.dp)
@@ -70,7 +62,7 @@ fun VlmSettingsScreen(
         OpenRouterKeySetting(
             keyMode = settings.openRouterKeyMode,
             hasStoredKey = hasOpenRouterUserKey,
-            onOpenDialog = { isOpenRouterKeyDialogOpen = true }
+            onOpenScreen = onOpenOpenRouterKeySettings
         )
         SettingSwitch(
             label = stringResource(R.string.settings_tts_enabled),
@@ -99,28 +91,13 @@ fun VlmSettingsScreen(
             helper = stringResource(R.string.settings_tts_pitch_helper)
         )
     }
-
-    if (isOpenRouterKeyDialogOpen) {
-        OpenRouterKeySettingsDialog(
-            keyMode = settings.openRouterKeyMode,
-            hasStoredKey = hasOpenRouterUserKey,
-            onSelectMode = { mode -> onUpdate { it.copy(openRouterKeyMode = mode) } },
-            onOpenQrImport = {
-                isOpenRouterKeyDialogOpen = false
-                onOpenQrImport()
-            },
-            onSaveKey = onSaveOpenRouterUserKey,
-            onClearKey = onClearOpenRouterUserKey,
-            onDismiss = { isOpenRouterKeyDialogOpen = false }
-        )
-    }
 }
 
 @Composable
 private fun OpenRouterKeySetting(
     keyMode: OpenRouterKeyMode,
     hasStoredKey: Boolean,
-    onOpenDialog: () -> Unit
+    onOpenScreen: () -> Unit
 ) {
     val activeStatus = when (keyMode) {
         OpenRouterKeyMode.EMBEDDED_APP_KEY -> stringResource(R.string.vlm_settings_openrouter_key_status_embedded)
@@ -139,7 +116,7 @@ private fun OpenRouterKeySetting(
         Text(activeStatus, style = MaterialTheme.typography.bodyMedium)
         Text(storedStatus, style = MaterialTheme.typography.bodySmall)
         Text(stringResource(R.string.vlm_settings_openrouter_key_entry_helper), style = MaterialTheme.typography.bodySmall)
-        Button(onClick = onOpenDialog) {
+        Button(onClick = onOpenScreen) {
             Text(stringResource(R.string.vlm_settings_openrouter_key_manage))
         }
         if (!hasStoredKey && keyMode == OpenRouterKeyMode.USER_PROVIDED_KEY) {

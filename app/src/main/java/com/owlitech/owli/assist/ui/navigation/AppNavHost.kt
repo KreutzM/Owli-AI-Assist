@@ -18,6 +18,7 @@ import com.owlitech.owli.assist.ui.MainViewModel
 import com.owlitech.owli.assist.ui.screens.AboutScreen
 import com.owlitech.owli.assist.ui.screens.HelpScreen
 import com.owlitech.owli.assist.ui.screens.OpenRouterKeyQrImportScreen
+import com.owlitech.owli.assist.ui.screens.OpenRouterKeySettingsScreen
 import com.owlitech.owli.assist.ui.screens.VlmProfilesScreen
 import com.owlitech.owli.assist.ui.screens.VlmScreen
 import com.owlitech.owli.assist.ui.screens.VlmSettingsScreen
@@ -68,10 +69,22 @@ fun AppNavHost(
                     activeVlmProfileLabel = activeVlmProfile.label,
                     hasOpenRouterUserKey = hasOpenRouterUserKey,
                     onOpenVlmProfiles = { navController.navigate(AppRoute.VlmProfiles.route) },
+                    onOpenOpenRouterKeySettings = {
+                        navController.navigate(AppRoute.OpenRouterKeySettings.route)
+                    },
+                    onUpdate = { update -> settingsViewModel.update { update(it) } }
+                )
+            }
+        }
+        composable(AppRoute.OpenRouterKeySettings.route) {
+            Box(modifier = Modifier.padding(defaultPadding)) {
+                OpenRouterKeySettingsScreen(
+                    keyMode = settings.openRouterKeyMode,
+                    hasStoredKey = hasOpenRouterUserKey,
+                    onSelectMode = { mode -> settingsViewModel.update { it.copy(openRouterKeyMode = mode) } },
                     onOpenQrImport = { navController.navigate(AppRoute.OpenRouterKeyQrImport.route) },
-                    onUpdate = { update -> settingsViewModel.update { update(it) } },
-                    onSaveOpenRouterUserKey = { apiKey -> settingsViewModel.saveOpenRouterUserKey(apiKey) },
-                    onClearOpenRouterUserKey = { settingsViewModel.clearOpenRouterUserKey() }
+                    onSaveKey = { apiKey -> settingsViewModel.saveOpenRouterUserKey(apiKey) },
+                    onClearKey = { settingsViewModel.clearOpenRouterUserKey() }
                 )
             }
         }
