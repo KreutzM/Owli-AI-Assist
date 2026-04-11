@@ -87,6 +87,15 @@ h1 {
   color: var(--muted);
 }
 
+.meta p {
+  margin: 0 0 8px;
+  line-height: 1.5;
+}
+
+.meta p:last-child {
+  margin-bottom: 0;
+}
+
 code {
   font-family: Consolas, "Courier New", monospace;
   background: #f6f1ea;
@@ -105,6 +114,26 @@ code {
 .field {
   display: grid;
   gap: 8px;
+}
+
+.mode-group {
+  margin: 0;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+.mode-group legend {
+  padding: 0 6px;
+  font-weight: 700;
+}
+
+.choice {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
 .field span {
@@ -143,6 +172,10 @@ code {
   align-items: center;
   gap: 10px;
   color: var(--muted);
+}
+
+.is-hidden {
+  display: none;
 }
 
 .primary-actions,

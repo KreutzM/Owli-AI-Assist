@@ -20,7 +20,9 @@
       </div>
 
       <div class="meta">
-        <span>Encoded format: <code>openrouter:key=&lt;KEY&gt;</code></span>
+        <p>Plain mode stores: <code>openrouter:key=&lt;KEY&gt;</code></p>
+        <p>PIN mode stores an encrypted payload for QR transport only: <code>openrouter:keyenc:v1:pbkdf2-sha256:...</code></p>
+        <p>The PIN reduces casual QR reading, but it is not strong long-term secret protection.</p>
       </div>
 
       <form id="qr-form" class="form">
@@ -43,10 +45,44 @@
           The key stays in memory only for this page session unless you download the QR image.
         </p>
 
+        <fieldset class="mode-group">
+          <legend>QR mode</legend>
+          <label class="choice">
+            <input id="mode-plain" type="radio" name="qr-mode" value="plain" checked>
+            <span>Plain QR</span>
+          </label>
+          <label class="choice">
+            <input id="mode-pin" type="radio" name="qr-mode" value="pin">
+            <span>PIN-protected QR</span>
+          </label>
+        </fieldset>
+
+        <label id="pin-field" class="field pin-field is-hidden">
+          <span>4-digit PIN</span>
+          <input
+            id="pin-input"
+            name="pin"
+            type="password"
+            inputmode="numeric"
+            pattern="[0-9]*"
+            autocomplete="off"
+            placeholder="Leave blank to use 1597"
+            aria-describedby="pin-help"
+          >
+        </label>
+
+        <p id="pin-help" class="helper pin-helper is-hidden">
+          If left blank, the default PIN is <code>1597</code>. If you enter a PIN, it must be exactly 4 digits.
+        </p>
+
         <div class="inline-actions">
           <label class="toggle">
             <input id="show-key" type="checkbox">
             <span>Show key</span>
+          </label>
+          <label id="show-pin-wrap" class="toggle is-hidden">
+            <input id="show-pin" type="checkbox">
+            <span>Show PIN</span>
           </label>
         </div>
 
