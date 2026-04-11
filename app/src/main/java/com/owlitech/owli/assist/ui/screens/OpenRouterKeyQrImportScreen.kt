@@ -22,6 +22,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -35,6 +36,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
@@ -46,10 +50,14 @@ import com.google.mlkit.vision.barcode.common.Barcode
 import com.google.mlkit.vision.barcode.BarcodeScannerOptions
 import com.google.mlkit.vision.common.InputImage
 import com.owlitech.owli.assist.R
+import com.owlitech.owli.assist.settings.OpenRouterEncryptedQrPayload
+import com.owlitech.owli.assist.settings.OpenRouterEncryptedQrPayloadDecryptor
+import com.owlitech.owli.assist.settings.OpenRouterKeyQrPayload
 import com.owlitech.owli.assist.settings.OpenRouterKeyQrPayloadParser
 import java.util.concurrent.Executor
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
+import androidx.compose.foundation.text.KeyboardOptions
 
 @Composable
 fun OpenRouterKeyQrImportScreen(
@@ -63,7 +71,11 @@ fun OpenRouterKeyQrImportScreen(
         )
     }
     var scannedKey by rememberSaveable { mutableStateOf<String?>(null) }
+    var pendingEncryptedPayload by remember { mutableStateOf<OpenRouterEncryptedQrPayload?>(null) }
     var scanError by rememberSaveable { mutableStateOf<String?>(null) }
+    var pinDraft by rememberSaveable { mutableStateOf("") }
+    var showPin by rememberSaveable { mutableStateOf(false) }
+    var pinError by rememberSaveable { mutableStateOf<String?>(null) }
     val permissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission()
     ) { granted ->
@@ -81,16 +93,72 @@ fun OpenRouterKeyQrImportScreen(
 
         when {
             scannedKey != null -> ConfirmScannedKey(
+                title = stringResource(R.string.openrouter_qr_import_found),
+                helper = stringResource(R.string.openrouter_qr_import_found_helper),
                 onUse = {
                     scannedKey?.let(onConfirmKey)
                     scannedKey = null
                 },
                 onScanAgain = {
                     scannedKey = null
+                    pendingEncryptedPayload = null
                     scanError = null
+                    pinDraft = ""
+                    showPin = false
+                    pinError = null
                 },
                 onCancel = {
                     scannedKey = null
+                    pendingEncryptedPayload = null
+                    pinDraft = ""
+                    showPin = false
+                    pinError = null
+                    onCancel()
+                }
+            )
+
+            pendingEncryptedPayload != null -> DecryptEncryptedKeyPrompt(
+                pin = pinDraft,
+                showPin = showPin,
+                errorText = pinError,
+                onPinChange = {
+                    pinDraft = it
+                    pinError = null
+                },
+                onTogglePinVisibility = { showPin = !showPin },
+                onUsePin = {
+                    val payload = pendingEncryptedPayload ?: return@DecryptEncryptedKeyPrompt
+                    val pinValidationError = runCatching {
+                        OpenRouterEncryptedQrPayloadDecryptor.normalizePin(pinDraft)
+                    }.exceptionOrNull()
+                    if (pinValidationError != null) {
+                        pinError = context.getString(R.string.openrouter_qr_import_pin_invalid)
+                        return@DecryptEncryptedKeyPrompt
+                    }
+
+                    val decryptedKey = OpenRouterEncryptedQrPayloadDecryptor.decrypt(payload, pinDraft)
+                    if (decryptedKey != null) {
+                        scannedKey = decryptedKey
+                        pendingEncryptedPayload = null
+                        pinDraft = ""
+                        showPin = false
+                        pinError = null
+                    } else {
+                        pinError = context.getString(R.string.openrouter_qr_import_pin_decrypt_failed)
+                    }
+                },
+                onScanAgain = {
+                    pendingEncryptedPayload = null
+                    pinDraft = ""
+                    showPin = false
+                    pinError = null
+                    scanError = null
+                },
+                onCancel = {
+                    pendingEncryptedPayload = null
+                    pinDraft = ""
+                    showPin = false
+                    pinError = null
                     onCancel()
                 }
             )
@@ -106,14 +174,31 @@ fun OpenRouterKeyQrImportScreen(
                         .fillMaxWidth()
                         .height(420.dp),
                     onQrPayload = { payload ->
-                        val key = OpenRouterKeyQrPayloadParser.extractKey(payload)
-                        if (key != null) {
-                            scannedKey = key
-                            scanError = null
-                            true
-                        } else {
-                            scanError = context.getString(R.string.openrouter_qr_import_invalid)
-                            false
+                        when (val parsed = OpenRouterKeyQrPayloadParser.parse(payload)) {
+                            is OpenRouterKeyQrPayload.PlainKey -> {
+                                scannedKey = parsed.key
+                                pendingEncryptedPayload = null
+                                pinDraft = ""
+                                showPin = false
+                                pinError = null
+                                scanError = null
+                                true
+                            }
+
+                            is OpenRouterKeyQrPayload.EncryptedKey -> {
+                                pendingEncryptedPayload = parsed.payload
+                                scannedKey = null
+                                pinDraft = ""
+                                showPin = false
+                                pinError = null
+                                scanError = null
+                                true
+                            }
+
+                            null -> {
+                                scanError = context.getString(R.string.openrouter_qr_import_invalid)
+                                false
+                            }
                         }
                     }
                 )
@@ -146,15 +231,74 @@ private fun CameraPermissionPrompt(
 
 @Composable
 private fun ConfirmScannedKey(
+    title: String,
+    helper: String,
     onUse: () -> Unit,
     onScanAgain: () -> Unit,
     onCancel: () -> Unit
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(stringResource(R.string.openrouter_qr_import_found), style = MaterialTheme.typography.bodyMedium)
-        Text(stringResource(R.string.openrouter_qr_import_found_helper), style = MaterialTheme.typography.bodySmall)
+        Text(title, style = MaterialTheme.typography.bodyMedium)
+        Text(helper, style = MaterialTheme.typography.bodySmall)
         Button(onClick = onUse) {
             Text(stringResource(R.string.openrouter_qr_import_use_key))
+        }
+        OutlinedButton(onClick = onScanAgain) {
+            Text(stringResource(R.string.openrouter_qr_import_scan_again))
+        }
+        OutlinedButton(onClick = onCancel) {
+            Text(stringResource(R.string.openrouter_qr_import_cancel))
+        }
+    }
+}
+
+@Composable
+private fun DecryptEncryptedKeyPrompt(
+    pin: String,
+    showPin: Boolean,
+    errorText: String?,
+    onPinChange: (String) -> Unit,
+    onTogglePinVisibility: () -> Unit,
+    onUsePin: () -> Unit,
+    onScanAgain: () -> Unit,
+    onCancel: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            stringResource(R.string.openrouter_qr_import_encrypted_found),
+            style = MaterialTheme.typography.bodyMedium
+        )
+        Text(
+            stringResource(R.string.openrouter_qr_import_encrypted_helper),
+            style = MaterialTheme.typography.bodySmall
+        )
+        OutlinedTextField(
+            value = pin,
+            onValueChange = onPinChange,
+            modifier = Modifier.fillMaxWidth(),
+            label = { Text(stringResource(R.string.openrouter_qr_import_pin_label)) },
+            singleLine = true,
+            visualTransformation = if (showPin) VisualTransformation.None else PasswordVisualTransformation(),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.NumberPassword)
+        )
+        Text(
+            stringResource(R.string.openrouter_qr_import_pin_helper),
+            style = MaterialTheme.typography.bodySmall
+        )
+        OutlinedButton(onClick = onTogglePinVisibility) {
+            Text(
+                if (showPin) {
+                    stringResource(R.string.vlm_settings_openrouter_key_hide)
+                } else {
+                    stringResource(R.string.vlm_settings_openrouter_key_show)
+                }
+            )
+        }
+        errorText?.let {
+            Text(it, style = MaterialTheme.typography.bodySmall)
+        }
+        Button(onClick = onUsePin) {
+            Text(stringResource(R.string.openrouter_qr_import_decrypt))
         }
         OutlinedButton(onClick = onScanAgain) {
             Text(stringResource(R.string.openrouter_qr_import_scan_again))

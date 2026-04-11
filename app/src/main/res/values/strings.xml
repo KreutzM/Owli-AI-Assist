@@ -101,13 +101,20 @@
     <string name="vlm_settings_openrouter_key_missing_user_key">Save a custom key before selecting user-key mode.</string>
     <string name="vlm_settings_openrouter_key_stored_but_app_active">A custom key is stored, but the app key is currently active.</string>
     <string name="openrouter_qr_import_title">Scan OpenRouter key QR code</string>
-    <string name="openrouter_qr_import_helper">Point the camera at a QR code that contains either the raw OpenRouter key or openrouter:key=&lt;KEY&gt;.</string>
+    <string name="openrouter_qr_import_helper">Point the camera at a QR code that contains a raw OpenRouter key, openrouter:key=&lt;KEY&gt;, or a PIN-protected encrypted import payload.</string>
     <string name="openrouter_qr_import_permission">Camera access is needed to scan the QR code.</string>
     <string name="openrouter_qr_import_request_permission">Allow camera</string>
     <string name="openrouter_qr_import_scanning">Scanning for QR code&#8230;</string>
     <string name="openrouter_qr_import_invalid">QR code found, but it does not look like an OpenRouter key.</string>
     <string name="openrouter_qr_import_found">OpenRouter key found.</string>
     <string name="openrouter_qr_import_found_helper">The key is hidden. Save it to use your custom OpenRouter key.</string>
+    <string name="openrouter_qr_import_encrypted_found">Encrypted OpenRouter key found.</string>
+    <string name="openrouter_qr_import_encrypted_helper">Enter the 4-digit PIN to decrypt the key locally on this device. If the PIN field is blank, the default PIN 1597 is used.</string>
+    <string name="openrouter_qr_import_pin_label">4-digit PIN</string>
+    <string name="openrouter_qr_import_pin_helper">Leave the PIN blank to use the default PIN 1597. Any non-empty PIN must be exactly 4 digits.</string>
+    <string name="openrouter_qr_import_pin_invalid">PIN must be exactly 4 digits.</string>
+    <string name="openrouter_qr_import_pin_decrypt_failed">Could not decrypt the QR payload. Check the PIN and try again.</string>
+    <string name="openrouter_qr_import_decrypt">Decrypt key</string>
     <string name="openrouter_qr_import_use_key">Save and use key</string>
     <string name="openrouter_qr_import_scan_again">Scan again</string>
     <string name="openrouter_qr_import_cancel">Cancel</string>
