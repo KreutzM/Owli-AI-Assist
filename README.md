@@ -52,6 +52,7 @@ Owli-AI Assist ist eine Android-App fuer blinde Nutzer mit einem VLM-first-Workf
 ## Developer Tools
 - Lokaler Editor fuer `vlm-profiles.json`: `tools/vlm-profile-editor/`
 - CLI-Validator fuer VLM-Profile: `tools/validate_vlm_profiles.py`
+- Statischer OpenRouter-QR-Generator: `tools/QR-Gen/`
 
 ## Workflow
 - Team-Workflow: `docs/DEVELOPMENT.md`
