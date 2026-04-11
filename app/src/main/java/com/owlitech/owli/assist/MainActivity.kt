@@ -26,6 +26,7 @@ import com.owlitech.owli.assist.settings.AppSettings
 import com.owlitech.owli.assist.settings.AppSettingsDefaults
 import com.owlitech.owli.assist.settings.AndroidOpenRouterUserKeyStore
 import com.owlitech.owli.assist.settings.LanguagePreference
+import com.owlitech.owli.assist.settings.OpenRouterCurrentKeyInfoService
 import com.owlitech.owli.assist.settings.SettingsRepository
 import com.owlitech.owli.assist.settings.SettingsViewModel
 import com.owlitech.owli.assist.settings.resolveOpenRouterApiKeySelection
@@ -76,8 +77,16 @@ class MainActivity : AppCompatActivity() {
     private val openRouterUserKeyStore by lazy {
         AndroidOpenRouterUserKeyStore(applicationContext)
     }
+    private val openRouterCurrentKeyInfoService by lazy {
+        OpenRouterCurrentKeyInfoService()
+    }
     private val settingsViewModel: SettingsViewModel by viewModels {
-        SettingsViewModel.Factory(SettingsRepository(applicationContext), openRouterUserKeyStore)
+        SettingsViewModel.Factory(
+            repository = SettingsRepository(applicationContext),
+            openRouterUserKeyStore = openRouterUserKeyStore,
+            embeddedOpenRouterApiKey = BuildConfig.OPENROUTER_API_KEY,
+            openRouterCurrentKeyInfoService = openRouterCurrentKeyInfoService
+        )
     }
     private var settingsCollectJob: Job? = null
     private var streamingTimeoutJob: Job? = null
