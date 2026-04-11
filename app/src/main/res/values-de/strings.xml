@@ -4,6 +4,7 @@
     <string name="nav_title_vlm_settings">Einstellungen</string>
     <string name="nav_title_app">OwliAi Assist</string>
     <string name="nav_title_vlm_profiles">VLM Profile</string>
+    <string name="nav_title_openrouter_key_settings">OpenRouter Key</string>
     <string name="nav_title_openrouter_key_qr_import">OpenRouter Key scannen</string>
     <string name="nav_title_help">Hilfe</string>
     <string name="nav_title_about">Ueber</string>
@@ -79,6 +80,8 @@
     <string name="vlm_settings_streaming_tts">Streaming TTS (VLM)</string>
     <string name="vlm_settings_streaming_tts_helper">Frueher TTS-Start bei Streaming</string>
     <string name="vlm_settings_openrouter_key_title">OpenRouter Key</string>
+    <string name="vlm_settings_openrouter_key_manage">Key verwalten</string>
+    <string name="vlm_settings_openrouter_key_entry_helper">Oeffne den Key-Bildschirm, um einen Key hinzuzufuegen, zu ersetzen, zu loeschen oder zwischen App-Key und eigenem Key zu wechseln.</string>
     <string name="vlm_settings_openrouter_key_status_embedded">Aktuell wird der App-Key verwendet.</string>
     <string name="vlm_settings_openrouter_key_status_user">Eigener Nutzer-Key ausgewaehlt.</string>
     <string name="vlm_settings_openrouter_key_helper">Gib deinen eigenen OpenRouter Key ein oder fuege ihn ein. Der Key wird lokal ueber den sicheren Key Store gespeichert.</string>
