@@ -17,6 +17,7 @@ import com.owlitech.owli.assist.settings.SettingsViewModel
 import com.owlitech.owli.assist.ui.MainViewModel
 import com.owlitech.owli.assist.ui.screens.AboutScreen
 import com.owlitech.owli.assist.ui.screens.HelpScreen
+import com.owlitech.owli.assist.ui.screens.OpenRouterKeyInfoScreen
 import com.owlitech.owli.assist.ui.screens.OpenRouterKeyQrImportScreen
 import com.owlitech.owli.assist.ui.screens.OpenRouterKeySettingsScreen
 import com.owlitech.owli.assist.ui.screens.VlmProfilesScreen
@@ -37,6 +38,7 @@ fun AppNavHost(
 ) {
     val settings by settingsViewModel.settings.collectAsState()
     val hasOpenRouterUserKey by settingsViewModel.hasOpenRouterUserKey.collectAsState()
+    val openRouterKeyInfoState by settingsViewModel.openRouterKeyInfoState.collectAsState()
     val vlmState by mainViewModel.vlmUiState.collectAsState()
     val isAutoScanRunning by mainViewModel.isAutoScanRunning.collectAsState()
     val vlmAttachments by mainViewModel.vlmAttachments.collectAsState()
@@ -83,8 +85,17 @@ fun AppNavHost(
                     hasStoredKey = hasOpenRouterUserKey,
                     onSelectMode = { mode -> settingsViewModel.update { it.copy(openRouterKeyMode = mode) } },
                     onOpenQrImport = { navController.navigate(AppRoute.OpenRouterKeyQrImport.route) },
+                    onOpenKeyInfo = { navController.navigate(AppRoute.OpenRouterKeyInfo.route) },
                     onSaveKey = { apiKey -> settingsViewModel.saveOpenRouterUserKey(apiKey) },
                     onClearKey = { settingsViewModel.clearOpenRouterUserKey() }
+                )
+            }
+        }
+        composable(AppRoute.OpenRouterKeyInfo.route) {
+            Box(modifier = Modifier.padding(defaultPadding)) {
+                OpenRouterKeyInfoScreen(
+                    state = openRouterKeyInfoState,
+                    onRefresh = { settingsViewModel.loadOpenRouterKeyInfo() }
                 )
             }
         }

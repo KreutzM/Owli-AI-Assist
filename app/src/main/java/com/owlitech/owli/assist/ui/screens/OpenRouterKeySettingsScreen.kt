@@ -36,6 +36,7 @@ fun OpenRouterKeySettingsScreen(
     hasStoredKey: Boolean,
     onSelectMode: (OpenRouterKeyMode) -> Unit,
     onOpenQrImport: () -> Unit,
+    onOpenKeyInfo: () -> Unit,
     onSaveKey: (String) -> Unit,
     onClearKey: () -> Unit
 ) {
@@ -133,6 +134,12 @@ fun OpenRouterKeySettingsScreen(
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(stringResource(R.string.vlm_settings_openrouter_key_scan_qr))
+        }
+        OutlinedButton(
+            onClick = onOpenKeyInfo,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(stringResource(R.string.vlm_settings_openrouter_key_info))
         }
         OutlinedButton(
             onClick = {
