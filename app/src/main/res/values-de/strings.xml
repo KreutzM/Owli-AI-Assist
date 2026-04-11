@@ -101,13 +101,20 @@
     <string name="vlm_settings_openrouter_key_missing_user_key">Speichere zuerst einen eigenen Key, bevor du den Nutzer-Key-Modus auswaehlst.</string>
     <string name="vlm_settings_openrouter_key_stored_but_app_active">Ein eigener Key ist gespeichert, aber aktuell ist der App-Key aktiv.</string>
     <string name="openrouter_qr_import_title">OpenRouter Key per QR-Code scannen</string>
-    <string name="openrouter_qr_import_helper">Richte die Kamera auf einen QR-Code, der entweder den rohen OpenRouter Key oder openrouter:key=&lt;KEY&gt; enthaelt.</string>
+    <string name="openrouter_qr_import_helper">Richte die Kamera auf einen QR-Code, der einen rohen OpenRouter Key, openrouter:key=&lt;KEY&gt; oder eine PIN-geschuetzte verschluesselte Import-Payload enthaelt.</string>
     <string name="openrouter_qr_import_permission">Kamerazugriff ist notwendig, um den QR-Code zu scannen.</string>
     <string name="openrouter_qr_import_request_permission">Kamera erlauben</string>
     <string name="openrouter_qr_import_scanning">Suche QR-Code&#8230;</string>
     <string name="openrouter_qr_import_invalid">QR-Code gefunden, aber er sieht nicht wie ein OpenRouter Key aus.</string>
     <string name="openrouter_qr_import_found">OpenRouter Key gefunden.</string>
     <string name="openrouter_qr_import_found_helper">Der Key bleibt verborgen. Speichere ihn, um deinen eigenen OpenRouter Key zu verwenden.</string>
+    <string name="openrouter_qr_import_encrypted_found">Verschluesselter OpenRouter Key gefunden.</string>
+    <string name="openrouter_qr_import_encrypted_helper">Gib die 4-stellige PIN ein, um den Key lokal auf diesem Geraet zu entschluesseln. Wenn das PIN-Feld leer bleibt, wird die Standard-PIN 1597 verwendet.</string>
+    <string name="openrouter_qr_import_pin_label">4-stellige PIN</string>
+    <string name="openrouter_qr_import_pin_helper">Lass das PIN-Feld leer, um die Standard-PIN 1597 zu verwenden. Jede nicht-leere PIN muss genau 4 Ziffern haben.</string>
+    <string name="openrouter_qr_import_pin_invalid">Die PIN muss genau 4 Ziffern haben.</string>
+    <string name="openrouter_qr_import_pin_decrypt_failed">Die QR-Payload konnte nicht entschluesselt werden. Pruefe die PIN und versuche es erneut.</string>
+    <string name="openrouter_qr_import_decrypt">Key entschluesseln</string>
     <string name="openrouter_qr_import_use_key">Speichern und verwenden</string>
     <string name="openrouter_qr_import_scan_again">Erneut scannen</string>
     <string name="openrouter_qr_import_cancel">Abbrechen</string>
