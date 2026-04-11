@@ -79,6 +79,8 @@
     <string name="vlm_settings_streaming_tts">Streaming TTS (VLM)</string>
     <string name="vlm_settings_streaming_tts_helper">Frueher TTS-Start bei Streaming</string>
     <string name="vlm_settings_openrouter_key_title">OpenRouter Key</string>
+    <string name="vlm_settings_openrouter_key_manage">Key verwalten</string>
+    <string name="vlm_settings_openrouter_key_entry_helper">Oeffne den Key-Dialog, um einen Key hinzuzufuegen, zu ersetzen, zu loeschen oder zwischen App-Key und eigenem Key zu wechseln.</string>
     <string name="vlm_settings_openrouter_key_status_embedded">Aktuell wird der App-Key verwendet.</string>
     <string name="vlm_settings_openrouter_key_status_user">Eigener Nutzer-Key ausgewaehlt.</string>
     <string name="vlm_settings_openrouter_key_helper">Gib deinen eigenen OpenRouter Key ein oder fuege ihn ein. Der Key wird lokal ueber den sicheren Key Store gespeichert.</string>
@@ -95,6 +97,7 @@
     <string name="vlm_settings_openrouter_key_use_custom_key">Eigenen Key verwenden</string>
     <string name="vlm_settings_openrouter_key_saved">Eigener Key gespeichert.</string>
     <string name="vlm_settings_openrouter_key_cleared">Eigener Key geloescht.</string>
+    <string name="vlm_settings_openrouter_key_close">Schliessen</string>
     <string name="vlm_settings_openrouter_key_missing_user_key">Speichere zuerst einen eigenen Key, bevor du den Nutzer-Key-Modus auswaehlst.</string>
     <string name="vlm_settings_openrouter_key_stored_but_app_active">Ein eigener Key ist gespeichert, aber aktuell ist der App-Key aktiv.</string>
     <string name="openrouter_qr_import_title">OpenRouter Key per QR-Code scannen</string>
