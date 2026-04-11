@@ -1,0 +1,8 @@
+This tool vendors one third-party library:
+
+1. qrcode.min.js
+   Source: https://github.com/davidshimjs/qrcodejs
+   Copyright: David Shim
+   License: MIT
+
+The vendored file is used only for local, client-side QR generation.

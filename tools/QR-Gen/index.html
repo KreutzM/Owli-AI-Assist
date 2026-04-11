@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Owli OpenRouter QR Generator</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="page">
+    <section class="card">
+      <p class="eyebrow">Owli AI Tool</p>
+      <h1>OpenRouter QR Generator</h1>
+      <p class="lead">
+        Generate a QR code locally in your browser to import a custom OpenRouter key into the Owli app.
+      </p>
+
+      <div class="notice" role="status" aria-live="polite">
+        This page generates the QR code locally in your browser. Your key is not sent to the server.
+      </div>
+
+      <div class="meta">
+        <span>Encoded format: <code>openrouter:key=&lt;KEY&gt;</code></span>
+      </div>
+
+      <form id="qr-form" class="form">
+        <label class="field">
+          <span>OpenRouter key</span>
+          <input
+            id="key-input"
+            name="openrouter-key"
+            type="password"
+            autocomplete="off"
+            autocapitalize="off"
+            autocorrect="off"
+            spellcheck="false"
+            placeholder="Paste your OpenRouter key"
+            aria-describedby="key-help"
+          >
+        </label>
+
+        <p id="key-help" class="helper">
+          The key stays in memory only for this page session unless you download the QR image.
+        </p>
+
+        <div class="inline-actions">
+          <label class="toggle">
+            <input id="show-key" type="checkbox">
+            <span>Show key</span>
+          </label>
+        </div>
+
+        <div class="primary-actions">
+          <button id="generate-button" type="submit">Generate QR code</button>
+          <button id="reset-button" type="button" class="secondary">Clear</button>
+        </div>
+      </form>
+
+      <section class="result" aria-labelledby="result-title">
+        <div class="result-header">
+          <h2 id="result-title">QR Code</h2>
+          <button id="download-button" type="button" class="secondary" disabled>Download PNG</button>
+        </div>
+
+        <div id="message" class="message" role="status" aria-live="polite">
+          Enter a key and generate a QR code.
+        </div>
+
+        <div id="qr-output" class="qr-output" aria-label="Generated OpenRouter QR code"></div>
+
+        <details class="payload-details">
+          <summary>Show encoded payload</summary>
+          <code id="payload-preview">openrouter:key=</code>
+        </details>
+      </section>
+    </section>
+  </main>
+
+  <script src="qrcode.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
