@@ -7,52 +7,72 @@ import org.junit.Test
 
 class AppSettingsTest {
     @Test
-    fun defaultsUseEmbeddedOpenRouterKeyMode() {
+    fun defaultsUseBackendManagedTransport() {
         val settings = AppSettings()
 
+        assertEquals(VlmTransportMode.BACKEND_MANAGED, settings.vlmTransportMode)
         assertEquals(OpenRouterKeyMode.EMBEDDED_APP_KEY, settings.openRouterKeyMode)
     }
 
     @Test
-    fun resolverUsesUserProvidedKeyWhenModeAndKeyAreAvailable() {
-        val settings = AppSettings(openRouterKeyMode = OpenRouterKeyMode.USER_PROVIDED_KEY)
+    fun transportResolverUsesUserProvidedKeyForByokMode() {
+        val settings = AppSettings(vlmTransportMode = VlmTransportMode.DIRECT_OPENROUTER_BYOK)
 
-        val selection = resolveOpenRouterApiKeySelection(
+        val selection = resolveVlmTransportSelection(
             settings = settings,
             embeddedAppKey = "embedded",
             userProvidedKey = " user-key "
         )
 
-        assertEquals(OpenRouterKeyMode.USER_PROVIDED_KEY, selection.requestedMode)
-        assertEquals(OpenRouterKeyMode.USER_PROVIDED_KEY, selection.activeMode)
+        assertEquals(VlmTransportMode.DIRECT_OPENROUTER_BYOK, selection.requestedMode)
+        assertEquals(VlmTransportMode.DIRECT_OPENROUTER_BYOK, selection.activeMode)
         assertEquals("user-key", selection.apiKey)
-        assertTrue(selection.hasUsableKey)
+        assertTrue(selection.hasUsableTransport)
     }
 
     @Test
-    fun resolverFallsBackToEmbeddedKeyWhenUserModeHasNoStoredKey() {
-        val settings = AppSettings(openRouterKeyMode = OpenRouterKeyMode.USER_PROVIDED_KEY)
+    fun transportResolverDoesNotHideMissingByokKeyBehindEmbeddedFallback() {
+        val settings = AppSettings(vlmTransportMode = VlmTransportMode.DIRECT_OPENROUTER_BYOK)
 
-        val selection = resolveOpenRouterApiKeySelection(
+        val selection = resolveVlmTransportSelection(
             settings = settings,
             embeddedAppKey = " embedded ",
             userProvidedKey = null
         )
 
-        assertEquals(OpenRouterKeyMode.USER_PROVIDED_KEY, selection.requestedMode)
-        assertEquals(OpenRouterKeyMode.EMBEDDED_APP_KEY, selection.activeMode)
-        assertEquals("embedded", selection.apiKey)
-        assertTrue(selection.hasUsableKey)
+        assertEquals(VlmTransportMode.DIRECT_OPENROUTER_BYOK, selection.requestedMode)
+        assertEquals(VlmTransportMode.DIRECT_OPENROUTER_BYOK, selection.activeMode)
+        assertEquals("", selection.apiKey)
+        assertFalse(selection.hasUsableTransport)
     }
 
     @Test
-    fun resolverReportsMissingKeyWhenEmbeddedKeyIsBlank() {
-        val selection = resolveOpenRouterApiKeySelection(
-            settings = AppSettings(),
+    fun transportResolverReportsMissingEmbeddedDebugKeyWhenBlank() {
+        val selection = resolveVlmTransportSelection(
+            settings = AppSettings(vlmTransportMode = VlmTransportMode.EMBEDDED_DEBUG),
             embeddedAppKey = " "
         )
 
-        assertEquals(OpenRouterKeyMode.EMBEDDED_APP_KEY, selection.activeMode)
-        assertFalse(selection.hasUsableKey)
+        assertEquals(VlmTransportMode.EMBEDDED_DEBUG, selection.activeMode)
+        assertFalse(selection.hasUsableTransport)
+    }
+
+    @Test
+    fun openRouterSelectionMappingMatchesTransportMode() {
+        val byokSelection = VlmTransportSelection(
+            requestedMode = VlmTransportMode.DIRECT_OPENROUTER_BYOK,
+            activeMode = VlmTransportMode.DIRECT_OPENROUTER_BYOK,
+            apiKey = "user"
+        ).toOpenRouterApiKeySelection()
+        val debugSelection = VlmTransportSelection(
+            requestedMode = VlmTransportMode.EMBEDDED_DEBUG,
+            activeMode = VlmTransportMode.EMBEDDED_DEBUG,
+            apiKey = "embedded"
+        ).toOpenRouterApiKeySelection()
+
+        assertEquals(OpenRouterKeyMode.USER_PROVIDED_KEY, byokSelection.activeMode)
+        assertEquals("user", byokSelection.apiKey)
+        assertEquals(OpenRouterKeyMode.EMBEDDED_APP_KEY, debugSelection.activeMode)
+        assertEquals("embedded", debugSelection.apiKey)
     }
 }

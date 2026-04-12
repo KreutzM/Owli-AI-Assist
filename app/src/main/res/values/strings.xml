@@ -4,7 +4,7 @@
     <string name="nav_title_vlm_settings">Settings</string>
     <string name="nav_title_app">OwliAi Assist</string>
     <string name="nav_title_vlm_profiles">VLM Profiles</string>
-    <string name="nav_title_openrouter_key_settings">OpenRouter key</string>
+    <string name="nav_title_openrouter_key_settings">VLM transport</string>
     <string name="nav_title_openrouter_key_info">OpenRouter key info</string>
     <string name="nav_title_openrouter_key_qr_import">Scan OpenRouter key</string>
     <string name="nav_title_help">Help</string>
@@ -77,15 +77,17 @@
     <string name="settings_slider_value_format">%1$s: %2$.2f</string>
 
     <string name="vlm_settings_profile_title">VLM profile</string>
+    <string name="vlm_settings_profile_backend_note">Backend mode currently uses the Owli-managed describe and follow-up path. Direct OpenRouter profiles apply to direct BYOK or debug mode.</string>
     <string name="vlm_settings_select">Select</string>
     <string name="vlm_settings_streaming_tts">Streaming TTS (VLM)</string>
     <string name="vlm_settings_streaming_tts_helper">Earlier TTS start during streaming</string>
-    <string name="vlm_settings_openrouter_key_title">OpenRouter key</string>
+    <string name="vlm_settings_openrouter_key_title">VLM transport</string>
     <string name="vlm_settings_openrouter_key_manage">Manage key</string>
-    <string name="vlm_settings_openrouter_key_entry_helper">Open the key screen to add, replace, delete, or switch between app key and custom key.</string>
-    <string name="vlm_settings_openrouter_key_status_embedded">Using the app key for now.</string>
+    <string name="vlm_settings_openrouter_key_entry_helper">Open the transport screen to use the Owli backend, switch to direct OpenRouter BYOK, or manage the stored custom key.</string>
+    <string name="vlm_settings_openrouter_key_status_backend">Using the Owli backend.</string>
     <string name="vlm_settings_openrouter_key_status_user">Custom user key selected.</string>
-    <string name="vlm_settings_openrouter_key_helper">Enter or paste your own OpenRouter key. The key is stored locally through the secure key store.</string>
+    <string name="vlm_settings_openrouter_key_status_embedded_debug">Using the embedded app key in debug mode.</string>
+    <string name="vlm_settings_openrouter_key_helper">Choose the active VLM transport. Backend mode is the normal production path. Direct OpenRouter uses your stored custom key. The embedded app key remains debug-only.</string>
     <string name="vlm_settings_openrouter_key_scan_qr">Scan QR code</string>
     <string name="vlm_settings_openrouter_key_input_label">OpenRouter key</string>
     <string name="vlm_settings_openrouter_key_stored_yes">A custom key is stored.</string>
@@ -96,12 +98,15 @@
     <string name="vlm_settings_openrouter_key_save">Save custom key</string>
     <string name="vlm_settings_openrouter_key_clear">Delete stored key</string>
     <string name="vlm_settings_openrouter_key_info">Show key info</string>
-    <string name="vlm_settings_openrouter_key_use_app_key">Use app key</string>
-    <string name="vlm_settings_openrouter_key_use_custom_key">Use custom key</string>
+    <string name="vlm_settings_openrouter_key_use_backend">Use Owli backend</string>
+    <string name="vlm_settings_openrouter_key_use_custom_key_transport">Use custom OpenRouter key</string>
+    <string name="vlm_settings_openrouter_key_use_app_key_debug">Use app key (debug)</string>
     <string name="vlm_settings_openrouter_key_saved">Custom key saved.</string>
     <string name="vlm_settings_openrouter_key_cleared">Custom key deleted.</string>
-    <string name="vlm_settings_openrouter_key_missing_user_key">Save a custom key before selecting user-key mode.</string>
-    <string name="vlm_settings_openrouter_key_stored_but_app_active">A custom key is stored, but the app key is currently active.</string>
+    <string name="vlm_settings_openrouter_key_missing_user_key">Save a custom key before selecting direct OpenRouter BYOK mode.</string>
+    <string name="vlm_settings_openrouter_key_stored_but_backend_active">A custom key is stored, but the Owli backend is currently active.</string>
+    <string name="vlm_settings_openrouter_key_info_backend_note">OpenRouter key info is only available while a direct OpenRouter mode is active.</string>
+    <string name="vlm_settings_openrouter_key_debug_note">The embedded app key is kept only for debug or development compatibility.</string>
     <string name="openrouter_qr_import_title">Scan OpenRouter key QR code</string>
     <string name="openrouter_qr_import_helper">Point the camera at a QR code that contains a raw OpenRouter key, openrouter:key=&lt;KEY&gt;, or a PIN-protected encrypted import payload.</string>
     <string name="openrouter_qr_import_permission">Camera access is needed to scan the QR code.</string>
@@ -125,6 +130,7 @@
     <string name="openrouter_key_info_loading">Loading key info&#8230;</string>
     <string name="openrouter_key_info_refresh">Refresh key info</string>
     <string name="openrouter_key_info_source">Key source</string>
+    <string name="openrouter_key_info_source_backend">Owli backend</string>
     <string name="openrouter_key_info_source_app_key">Embedded app key</string>
     <string name="openrouter_key_info_source_user_key">User-provided key</string>
     <string name="openrouter_key_info_label">Label</string>
@@ -139,6 +145,7 @@
     <string name="openrouter_key_info_free_tier">Free tier</string>
     <string name="openrouter_key_info_yes">Yes</string>
     <string name="openrouter_key_info_no">No</string>
+    <string name="openrouter_key_info_error_backend_active">The Owli backend is active. OpenRouter key info is only available for direct OpenRouter modes.</string>
     <string name="openrouter_key_info_error_no_active_key">No active OpenRouter key is available right now.</string>
     <string name="openrouter_key_info_error_unauthorized">OpenRouter rejected the current key while fetching key info.</string>
     <string name="openrouter_key_info_error_network">Could not fetch key info from OpenRouter right now. Try again.</string>

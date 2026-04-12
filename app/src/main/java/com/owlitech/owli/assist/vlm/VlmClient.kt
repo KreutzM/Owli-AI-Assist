@@ -1,5 +1,8 @@
 package com.owlitech.owli.assist.vlm
 
+import com.owlitech.owli.assist.settings.VlmTransportMode
+import com.owlitech.owli.assist.settings.VlmTransportSelection
+
 sealed class VlmContentPart {
     data class Text(val text: String) : VlmContentPart()
     data class ImageUrl(val url: String) : VlmContentPart()
@@ -51,4 +54,13 @@ interface VlmClient {
         maxTokens: Int = -1,
         temperature: Double = -1.0
     ): VlmClientResult
+}
+
+interface VlmRuntimeClient : VlmClient {
+    val transportMode: VlmTransportMode
+    val supportsFollowUpImageAttachments: Boolean
+
+    fun updateProfile(profile: VlmProfile)
+    fun updateTransportSelection(selection: VlmTransportSelection)
+    fun resetConversation()
 }

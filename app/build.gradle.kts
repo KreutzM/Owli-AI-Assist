@@ -27,8 +27,8 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Current interim release model: the OpenRouter client key is packaged into the app.
-        // This keeps the app working today, but it is not secure secret storage.
+        // Embedded OpenRouter key support remains available only as a debug/development fallback.
+        // Production transport should use the Owli backend or a user-provided direct BYOK key.
         buildConfigField("String", "OPENROUTER_API_KEY", "\"$openRouterClientKeyEscaped\"")
     }
 

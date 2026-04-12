@@ -21,7 +21,7 @@ import com.owlitech.owli.assist.R
 import com.owlitech.owli.assist.settings.OpenRouterCurrentKeyInfo
 import com.owlitech.owli.assist.settings.OpenRouterKeyInfoErrorReason
 import com.owlitech.owli.assist.settings.OpenRouterKeyInfoUiState
-import com.owlitech.owli.assist.settings.OpenRouterKeyMode
+import com.owlitech.owli.assist.settings.VlmTransportMode
 import java.text.NumberFormat
 
 @Composable
@@ -90,7 +90,7 @@ private fun LoadingState(state: OpenRouterKeyInfoUiState) {
 
 @Composable
 private fun SuccessState(
-    sourceMode: OpenRouterKeyMode,
+    sourceMode: VlmTransportMode,
     info: OpenRouterCurrentKeyInfo,
     onRefresh: () -> Unit
 ) {
@@ -177,7 +177,7 @@ private fun SuccessState(
 
 @Composable
 private fun ErrorState(
-    sourceMode: OpenRouterKeyMode?,
+    sourceMode: VlmTransportMode?,
     reason: OpenRouterKeyInfoErrorReason,
     onRefresh: () -> Unit
 ) {
@@ -190,6 +190,7 @@ private fun ErrorState(
         }
         Text(
             text = when (reason) {
+                OpenRouterKeyInfoErrorReason.BACKEND_MODE_ACTIVE -> stringResource(R.string.openrouter_key_info_error_backend_active)
                 OpenRouterKeyInfoErrorReason.NO_ACTIVE_KEY -> stringResource(R.string.openrouter_key_info_error_no_active_key)
                 OpenRouterKeyInfoErrorReason.UNAUTHORIZED -> stringResource(R.string.openrouter_key_info_error_unauthorized)
                 OpenRouterKeyInfoErrorReason.NETWORK -> stringResource(R.string.openrouter_key_info_error_network)
@@ -219,9 +220,10 @@ private fun InfoItem(
 }
 
 @Composable
-private fun keySourceLabel(sourceMode: OpenRouterKeyMode): String {
+private fun keySourceLabel(sourceMode: VlmTransportMode): String {
     return when (sourceMode) {
-        OpenRouterKeyMode.EMBEDDED_APP_KEY -> stringResource(R.string.openrouter_key_info_source_app_key)
-        OpenRouterKeyMode.USER_PROVIDED_KEY -> stringResource(R.string.openrouter_key_info_source_user_key)
+        VlmTransportMode.BACKEND_MANAGED -> stringResource(R.string.openrouter_key_info_source_backend)
+        VlmTransportMode.DIRECT_OPENROUTER_BYOK -> stringResource(R.string.openrouter_key_info_source_user_key)
+        VlmTransportMode.EMBEDDED_DEBUG -> stringResource(R.string.openrouter_key_info_source_app_key)
     }
 }

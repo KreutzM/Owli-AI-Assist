@@ -21,6 +21,7 @@ class SettingsRepository(private val context: Context) {
             val updated = transform(current)
             prefs[PrefKeys.vlmProfileId] = updated.vlmProfileId
             prefs[PrefKeys.vlmProfileIdUserSet] = updated.vlmProfileIdUserSet
+            prefs[PrefKeys.vlmTransportMode] = updated.vlmTransportMode.name
             prefs[PrefKeys.openRouterKeyMode] = updated.openRouterKeyMode.name
             prefs[PrefKeys.ttsEnabled] = updated.ttsEnabled
             prefs[PrefKeys.ttsSpeechRate] = updated.ttsSpeechRate
@@ -40,6 +41,7 @@ class SettingsRepository(private val context: Context) {
 private object PrefKeys {
     val vlmProfileId = stringPreferencesKey("vlmProfileId")
     val vlmProfileIdUserSet = booleanPreferencesKey("vlmProfileIdUserSet")
+    val vlmTransportMode = stringPreferencesKey("vlmTransportMode")
     val openRouterKeyMode = stringPreferencesKey("openRouterKeyMode")
     val ttsEnabled = booleanPreferencesKey("ttsEnabled")
     val ttsSpeechRate = floatPreferencesKey("ttsSpeechRate")
@@ -51,13 +53,20 @@ private object PrefKeys {
 private fun androidx.datastore.preferences.core.Preferences.toSettings(): AppSettings {
     val storedProfileId = this[PrefKeys.vlmProfileId]
     val profileIdUserSet = this[PrefKeys.vlmProfileIdUserSet] ?: (storedProfileId != null)
+    val legacyKeyMode = enumValueOrDefault(
+        this[PrefKeys.openRouterKeyMode],
+        AppSettingsDefaults.openRouterKeyMode
+    )
+    val transportMode = enumValueOrNull<VlmTransportMode>(this[PrefKeys.vlmTransportMode])
+        ?: when (legacyKeyMode) {
+            OpenRouterKeyMode.USER_PROVIDED_KEY -> VlmTransportMode.DIRECT_OPENROUTER_BYOK
+            OpenRouterKeyMode.EMBEDDED_APP_KEY -> AppSettingsDefaults.vlmTransportMode
+        }
     return AppSettings(
         vlmProfileId = storedProfileId ?: AppSettingsDefaults.vlmProfileId,
         vlmProfileIdUserSet = profileIdUserSet,
-        openRouterKeyMode = enumValueOrDefault(
-            this[PrefKeys.openRouterKeyMode],
-            AppSettingsDefaults.openRouterKeyMode
-        ),
+        vlmTransportMode = transportMode,
+        openRouterKeyMode = legacyKeyMode,
         ttsEnabled = this[PrefKeys.ttsEnabled] ?: AppSettingsDefaults.ttsEnabled,
         ttsSpeechRate = this[PrefKeys.ttsSpeechRate] ?: AppSettingsDefaults.ttsSpeechRate,
         ttsPitch = this[PrefKeys.ttsPitch] ?: AppSettingsDefaults.ttsPitch,
@@ -72,4 +81,8 @@ private fun androidx.datastore.preferences.core.Preferences.toSettings(): AppSet
 
 private inline fun <reified T : Enum<T>> enumValueOrDefault(value: String?, default: T): T {
     return value?.let { runCatching { enumValueOf<T>(it) }.getOrNull() } ?: default
+}
+
+private inline fun <reified T : Enum<T>> enumValueOrNull(value: String?): T? {
+    return value?.let { runCatching { enumValueOf<T>(it) }.getOrNull() }
 }
