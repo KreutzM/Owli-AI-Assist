@@ -13,6 +13,7 @@ import com.owlitech.owli.assist.vlm.VlmConfig
 import com.owlitech.owli.assist.vlm.VlmContentPart
 import com.owlitech.owli.assist.vlm.VlmProfile
 import com.owlitech.owli.assist.vlm.VlmProfileLoader
+import com.owlitech.owli.assist.vlm.VlmRuntimeClient
 import com.owlitech.owli.assist.vlm.VlmSceneDescription
 import com.owlitech.owli.assist.vlm.VlmSession
 import com.owlitech.owli.assist.vlm.VlmStreamingCallback
@@ -24,9 +25,11 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.concurrent.atomic.AtomicBoolean
 
-private const val MISSING_OPENROUTER_CLIENT_KEY_LOG = "OpenRouter client key fehlt"
-private const val MISSING_OPENROUTER_CLIENT_KEY_UI =
-    "OpenRouter client key fehlt. Bitte pruefe den App-Key oder hinterlege in den Einstellungen einen eigenen OpenRouter-Key."
+private const val MISSING_VLM_TRANSPORT_LOG = "VLM transport ist nicht konfiguriert"
+private const val MISSING_VLM_TRANSPORT_UI =
+    "VLM transport ist nicht konfiguriert. Waehle das Owli-Backend oder hinterlege einen eigenen OpenRouter-Key."
+private const val BACKEND_ATTACHMENTS_UNSUPPORTED_UI =
+    "Zusatzbilder bei Folgefragen werden aktuell nur im direkten OpenRouter-Modus unterstuetzt."
 
 class MainViewModel(
     private val vlmClient: VlmClient = OpenRouterVlmClient(
@@ -124,8 +127,8 @@ class MainViewModel(
 
     private suspend fun performNewSceneWithSnapshot(jpeg: ByteArray) {
         if (!vlmClient.isConfigured) {
-            AppLogger.e("VLM", MISSING_OPENROUTER_CLIENT_KEY_LOG)
-            _vlmUiState.value = VlmUiState.Error(MISSING_OPENROUTER_CLIENT_KEY_UI)
+            AppLogger.e("VLM", MISSING_VLM_TRANSPORT_LOG)
+            _vlmUiState.value = VlmUiState.Error(MISSING_VLM_TRANSPORT_UI)
             return
         }
         clearVlmAttachments()
@@ -230,8 +233,8 @@ class MainViewModel(
 
     fun askVlm(questionText: String) {
         if (!vlmClient.isConfigured) {
-            AppLogger.e("VLM", MISSING_OPENROUTER_CLIENT_KEY_LOG)
-            _vlmUiState.value = VlmUiState.Error(MISSING_OPENROUTER_CLIENT_KEY_UI)
+            AppLogger.e("VLM", MISSING_VLM_TRANSPORT_LOG)
+            _vlmUiState.value = VlmUiState.Error(MISSING_VLM_TRANSPORT_UI)
             return
         }
         val session = vlmSession ?: run {
@@ -242,6 +245,13 @@ class MainViewModel(
         val attachments = attachmentStore.attachments.value
         val snapshotBytes = session.snapshotBytes
         if (questionText.isBlank() && attachments.isEmpty()) return
+        if (attachments.isNotEmpty() && !supportsFollowUpImageAttachments()) {
+            _vlmUiState.value = VlmUiState.Error(
+                BACKEND_ATTACHMENTS_UNSUPPORTED_UI,
+                snapshotBytes = snapshotBytes
+            )
+            return
+        }
         _vlmUiState.value = VlmUiState.Asking(lastVlmDescription, questionText, snapshotBytes = snapshotBytes)
         AppLogger.i("VLM", "askVlm started questionLength=${questionText.length}")
         viewModelScope.launch {
@@ -359,6 +369,7 @@ class MainViewModel(
         lastVlmDescription = null
         clearVlmAttachments()
         _lastVlmImageBytes.value = null
+        (vlmClient as? VlmRuntimeClient)?.resetConversation()
     }
 
     fun applyVlmConfig(config: VlmConfig) {
@@ -371,12 +382,17 @@ class MainViewModel(
         vlmProfile = profile
         vlmSystemPrompt = profile.systemPrompt.ifBlank { VlmConfig.DEFAULT_SYSTEM_PROMPT }
         vlmOverviewPrompt = profile.overviewPrompt.ifBlank { VlmConfig.DEFAULT_OVERVIEW_PROMPT }
+        (vlmClient as? VlmRuntimeClient)?.updateProfile(profile)
         (vlmClient as? OpenRouterVlmClient)?.updateProfile(profile)
         AppLogger.i(
             "VLM",
             "VLM profile applied id=${profile.id} model=${profile.modelId} " +
                 "streaming=${profile.streamingEnabled}"
         )
+    }
+
+    private fun supportsFollowUpImageAttachments(): Boolean {
+        return (vlmClient as? VlmRuntimeClient)?.supportsFollowUpImageAttachments ?: true
     }
 
     private fun buildOverviewMessages(session: VlmSession): List<VlmChatMessage> {

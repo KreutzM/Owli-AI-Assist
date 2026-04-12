@@ -4,28 +4,39 @@ Dieses Dokument beschreibt die VLM-Integration ueber OpenRouter mit profilbasier
 Ziel: Modelle ohne Codeaenderung per JSON austauschen, stabile Antworten (message.content) erzwingen
 und Reasoning nur fuer Debug/Telemetry nutzen.
 
-## 0) OpenRouter client key (aktueller Zwischenstand)
+## 0) Transport-Modell (aktueller Stand)
 
-- Die App liest `OPENROUTER_API_KEY` lokal aus `local.properties`.
-- Fuer den aktuellen Release-Pfad wird dieser Wert in `BuildConfig` uebernommen und damit mit der App ausgeliefert.
-- Das haelt die OpenRouter-Funktion fuer den Zwischenstand lauffaehig, ist aber keine sichere Secret-Speicherung.
-- `AppSettings.openRouterKeyMode` modelliert bereits `EMBEDDED_APP_KEY` vs. `USER_PROVIDED_KEY`.
-- Der Runtime-Resolver faellt ohne gespeicherten Nutzer-Key weiterhin auf den embedded App-Key zurueck; dadurch bleibt das aktuelle Verhalten unveraendert.
-- In Settings fuehrt ein eigener Unterbildschirm fuer den OpenRouter-Key zur manuellen Eingabe, expliziten Paste-Aktion oder zum QR-Code-Import.
+- `AppSettings.vlmTransportMode` modelliert die echten Laufzeitpfade jetzt explizit:
+  - `BACKEND_MANAGED`
+  - `DIRECT_OPENROUTER_BYOK`
+  - `EMBEDDED_DEBUG`
+- Der normale Produktionspfad ist `BACKEND_MANAGED` gegen `https://api.owli-ai.com`.
+- Direkter OpenRouter-Betrieb bleibt als separater BYOK-Pfad erhalten und nutzt den lokal verschluesselt gespeicherten Nutzer-Key.
+- Die App liest `OPENROUTER_API_KEY` weiter lokal aus `local.properties`, uebernimmt ihn in `BuildConfig`, behandelt ihn aber nur noch als Debug-/Entwicklungs-Fallback.
+- In Settings fuehrt ein eigener Unterbildschirm fuer Transport- und Key-Verwaltung zur manuellen Eingabe, expliziten Paste-Aktion oder zum QR-Code-Import.
 - QR-Import akzeptiert rohe OpenRouter-Keys, `openrouter:key=<KEY>` und PIN-geschuetzte QR-Payloads im Format `openrouter:keyenc:v1:pbkdf2-sha256:<iterations>:<salt_b64url>:<iv_b64url>:<ciphertext_b64url>`.
-- Im Key-Verwalten-Bildschirm kann die App fuer den aktuell aktiven OpenRouter-Key ueber `GET /api/v1/key` Key-Infos wie Label, Limits, Reset-Info, Nutzungswerte und Free-Tier-Status abrufen.
+- Im Key-Verwalten-Bildschirm kann die App fuer den aktuell aktiven direkten OpenRouter-Key ueber `GET /api/v1/key` Key-Infos wie Label, Limits, Reset-Info, Nutzungswerte und Free-Tier-Status abrufen.
 - QR-Decoding nutzt ML Kit Barcode Scanning; CameraX liefert nur Kamera-Frames und keinen QR-Decoder.
-- Beim Speichern wird `AppSettings.openRouterKeyMode` auf `USER_PROVIDED_KEY` gesetzt, beim Loeschen auf `EMBEDDED_APP_KEY`.
+- Beim Speichern eines Nutzer-Keys wird `DIRECT_OPENROUTER_BYOK` aktiv, beim Loeschen faellt die App auf `BACKEND_MANAGED` zurueck.
 - `OpenRouterUserKeyStore` ist die schmale Storage-API fuer spaetere Import-/Eingabe-Flows (`saveKey`, `loadKey`, `hasKey`, `clearKey`).
 - `AndroidOpenRouterUserKeyStore` verschluesselt den Nutzer-Key mit einem Android-Keystore-backed AES-GCM-Key und speichert nur Version, IV und Ciphertext in separaten privaten Preferences.
 - Der Nutzer-Key wird nicht in `AppSettings`, DataStore, Logs oder Docs persistiert; leere Keys werden abgelehnt, vorhandene Keys werden beim Speichern ueberschrieben, `clearKey` entfernt den gespeicherten Blob.
-- Eine spaetere Backend-/Proxy-/Token-Loesung bleibt notwendig, wenn der Provider-Key nicht mehr im Client stecken soll.
+
+## 0b) Backend-Transport (Phase 6)
+
+- `POST /api/v1/session/bootstrap` liefert ein kurzlebiges `sessionToken` fuer das aktuelle `installationId`/App-Version/Locale-Paar.
+- `POST /api/v1/scene/describe` nutzt dieses `sessionToken` plus Snapshot-Bild und liefert `answerText` sowie ein kurzlebiges `sceneToken`.
+- `POST /api/v1/scene/followup` nutzt `sessionToken` + `sceneToken` + `questionText` fuer Rueckfragen zur zuletzt beschriebenen Szene.
+- Der Backend-Pfad ist bewusst explizit und nicht nur ein versteckter Ersatz fuer den alten OpenRouter-Client.
+- Zusatzbilder bei Folgefragen bleiben vorerst ein Direct-BYOK-Only-Pfad; Backend-Follow-up arbeitet in diesem Stand nur mit Textfragen auf Basis des `sceneToken`.
 
 ## 0a) Datenfluss (aktueller App-Stand)
 
 - Lokal auf dem Geraet bleiben Live-Kameravorschau, Snapshot-Erfassung bis zur Nutzeraktion, DataStore-Einstellungen, VLM-Profilwahl und TTS-Wiedergabe.
-- An OpenRouter gehen nur Daten aus expliziten VLM-Aktionen: das Snapshot-Bild, optionale weitere Bild-Anhaenge und der zugehoerige Nutzertext.
-- Die Antwort kommt als Text zurueck; die App zeigt aktuell `message.content` als Raw-Text an und kann ihn optional per TTS ausgeben.
+- An das Owli-Backend oder direkt an OpenRouter gehen nur Daten aus expliziten VLM-Aktionen.
+- Backend-Modus: Snapshot-Bild fuer `scene/describe`, danach Textfragen fuer `scene/followup`.
+- Direct-BYOK-Modus: Snapshot-Bild, optionale weitere Bild-Anhaenge und der zugehoerige Nutzertext gehen direkt an OpenRouter.
+- Die Antwort kommt als Text zurueck; die App zeigt aktuell Rohtext an und kann ihn optional per TTS ausgeben.
 - Android-Backup und Device-Transfer-Restore sind fuer die shipped App deaktiviert; lokale App-Daten werden daher nicht ueber Android-Backup migriert.
 
 ## 1) Zentrale Konfiguration

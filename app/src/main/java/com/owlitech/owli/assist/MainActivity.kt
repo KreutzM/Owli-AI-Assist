@@ -29,14 +29,17 @@ import com.owlitech.owli.assist.settings.LanguagePreference
 import com.owlitech.owli.assist.settings.OpenRouterCurrentKeyInfoService
 import com.owlitech.owli.assist.settings.SettingsRepository
 import com.owlitech.owli.assist.settings.SettingsViewModel
-import com.owlitech.owli.assist.settings.resolveOpenRouterApiKeySelection
+import com.owlitech.owli.assist.settings.resolveVlmTransportSelection
 import com.owlitech.owli.assist.ui.AppTopBar
 import com.owlitech.owli.assist.ui.MainViewModel
 import com.owlitech.owli.assist.ui.navigation.AppNavHost
 import com.owlitech.owli.assist.ui.navigation.AppRoute
 import com.owlitech.owli.assist.ui.theme.OwliTheme
 import com.owlitech.owli.assist.util.AppLogger
+import com.owlitech.owli.assist.vlm.OwliBackendInstallationIdStore
+import com.owlitech.owli.assist.vlm.OwliBackendVlmClient
 import com.owlitech.owli.assist.vlm.OpenRouterVlmClient
+import com.owlitech.owli.assist.vlm.SwitchingVlmClient
 import com.owlitech.owli.assist.vlm.VlmProfile
 import com.owlitech.owli.assist.vlm.VlmProfileLoader
 import com.owlitech.owli.assist.vlm.VlmProfilesConfig
@@ -68,8 +71,22 @@ class MainActivity : AppCompatActivity() {
     }
 
     private lateinit var vlmProfilesConfig: VlmProfilesConfig
+    private val backendInstallationIdStore by lazy {
+        OwliBackendInstallationIdStore(applicationContext)
+    }
     private val vlmClient by lazy {
-        OpenRouterVlmClient(vlmProfilesConfig.resolve(vlmProfilesConfig.defaultProfileId))
+        val defaultProfile = vlmProfilesConfig.resolve(vlmProfilesConfig.defaultProfileId)
+        SwitchingVlmClient(
+            backendClient = OwliBackendVlmClient(
+                profile = defaultProfile,
+                installationIdProvider = { backendInstallationIdStore.getOrCreate() }
+            ),
+            openRouterClient = OpenRouterVlmClient(defaultProfile),
+            initialSelection = resolveVlmTransportSelection(
+                settings = AppSettings(),
+                embeddedAppKey = BuildConfig.OPENROUTER_API_KEY
+            )
+        )
     }
     private val mainViewModel: MainViewModel by viewModels {
         MainViewModel.Factory(vlmClient)
@@ -232,19 +249,19 @@ class MainActivity : AppCompatActivity() {
         if (!ttsEnabled) {
             streamingTtsController.cancel()
         }
-        applyOpenRouterApiKeySelection(settings)
+        applyVlmTransportSelection(settings)
         activeVlmProfile = vlmProfilesConfig.resolve(settings.vlmProfileId)
         mainViewModel.applyVlmProfile(activeVlmProfile)
         updateVlmAudioState()
     }
 
-    private fun applyOpenRouterApiKeySelection(settings: AppSettings) {
+    private fun applyVlmTransportSelection(settings: AppSettings) {
         lifecycleScope.launch {
             val userProvidedKey = withContext(Dispatchers.IO) {
                 openRouterUserKeyStore.loadKey()
             }
-            vlmClient.updateApiKeySelection(
-                resolveOpenRouterApiKeySelection(
+            vlmClient.updateTransportSelection(
+                resolveVlmTransportSelection(
                     settings = settings,
                     embeddedAppKey = BuildConfig.OPENROUTER_API_KEY,
                     userProvidedKey = userProvidedKey
