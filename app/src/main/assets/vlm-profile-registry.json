@@ -1,0 +1,285 @@
+{
+  "schema_version": "vlm_profile_registry/v1",
+  "default_profile_id": "gpt52-scene-brief",
+  "profiles": [
+    {
+      "id": "gpt52-scene-brief",
+      "label": "GPT-5.2 Chat - Szene (Kurz)",
+      "description": "Kurze, vorlesefreundliche Szenenbeschreibung mit Orientierung.",
+      "availability": "both",
+      "ui": {
+        "group": "scene",
+        "sort_order": 10,
+        "badges": [
+          "streaming",
+          "orientation"
+        ]
+      },
+      "backend": {
+        "profile_id": "scene-brief",
+        "supports_streaming": true,
+        "supports_followup": true,
+        "supports_followup_images": false
+      },
+      "byok": {
+        "provider": "openrouter",
+        "model_id": "openai/gpt-5.2-chat",
+        "family": "gpt5",
+        "streaming_enabled": true,
+        "system_prompt": "Du bist ein visueller Assistenz-Agent fuer blinde und stark sehbehinderte Menschen. Du analysierst Eingabebilder (und ggf. die Nutzerfrage) und lieferst eine zugaengliche, strukturierte Beschreibung, die Orientierung und Verstaendnis unterstuetzt.",
+        "overview_prompt": "Beschreibe das Bild nach dem Systemprompt. Nutze die Antwortvorlage. Halte es kurz, ausser mehr Orientierung ist klar noetig.",
+        "capabilities": {
+          "supports_vision": true,
+          "supports_reasoning": true,
+          "supports_json": false
+        },
+        "image": {
+          "max_side_px": 1024,
+          "jpeg_quality": 82
+        },
+        "token_policy": {
+          "max_tokens": 420,
+          "reasoning_effort": "minimal",
+          "reasoning_exclude": true,
+          "retry1_max_tokens": 560,
+          "retry2_max_tokens": 700
+        },
+        "parameter_overrides": {
+          "temperature": 0.1
+        }
+      },
+      "debug": {
+        "embedded_key_allowed": true
+      }
+    },
+    {
+      "id": "gpt52-scene-detail",
+      "label": "GPT-5.2 Chat - Szene (Detail)",
+      "description": "Detailreichere strukturierte Beschreibung mit mehr Orientierungspunkten.",
+      "availability": "both",
+      "ui": {
+        "group": "scene",
+        "sort_order": 20,
+        "badges": [
+          "streaming",
+          "detail"
+        ]
+      },
+      "backend": {
+        "profile_id": "scene-detail",
+        "supports_streaming": true,
+        "supports_followup": true,
+        "supports_followup_images": false
+      },
+      "byok": {
+        "provider": "openrouter",
+        "model_id": "openai/gpt-5.2-chat",
+        "family": "gpt5",
+        "streaming_enabled": true,
+        "system_prompt": "Du bist ein visueller Assistenz-Agent fuer blinde und stark sehbehinderte Menschen. Du analysierst Eingabebilder (und ggf. die Nutzerfrage) und lieferst eine zugaengliche, strukturierte Beschreibung, die Orientierung und Verstaendnis unterstuetzt.",
+        "overview_prompt": "Beschreibe das Bild nach dem Systemprompt. Nutze die Antwortvorlage. Du darfst im Detail-Teil tiefer gehen.",
+        "capabilities": {
+          "supports_vision": true,
+          "supports_reasoning": true,
+          "supports_json": false
+        },
+        "image": {
+          "max_side_px": 1280,
+          "jpeg_quality": 85
+        },
+        "token_policy": {
+          "max_tokens": 720,
+          "reasoning_effort": "low",
+          "reasoning_exclude": true,
+          "retry1_max_tokens": 950,
+          "retry2_max_tokens": 1200
+        },
+        "parameter_overrides": {
+          "temperature": 0.1
+        }
+      },
+      "debug": {
+        "embedded_key_allowed": true
+      }
+    },
+    {
+      "id": "gpt52-ocr-reader",
+      "label": "GPT-5.2 Chat - Dokument/OCR",
+      "description": "Layout plus OCR fuer Dokumente, Schilder und Displays.",
+      "availability": "both",
+      "ui": {
+        "group": "reader",
+        "sort_order": 30,
+        "badges": [
+          "streaming",
+          "ocr"
+        ]
+      },
+      "backend": {
+        "profile_id": "ocr-reader",
+        "supports_streaming": true,
+        "supports_followup": true,
+        "supports_followup_images": false
+      },
+      "byok": {
+        "provider": "openrouter",
+        "model_id": "openai/gpt-5.2-chat",
+        "family": "gpt5",
+        "streaming_enabled": true,
+        "system_prompt": "Du bist ein visueller Assistenz-Agent fuer blinde und stark sehbehinderte Menschen. Wenn Text im Bild relevant ist, priorisiere Texttreue und Layout.",
+        "overview_prompt": "Fokus: Text im Bild. Liefere zuerst Layout und Kurzueberblick, dann Text in Lesereihenfolge.",
+        "capabilities": {
+          "supports_vision": true,
+          "supports_reasoning": true,
+          "supports_json": false
+        },
+        "image": {
+          "max_side_px": 1600,
+          "jpeg_quality": 92
+        },
+        "token_policy": {
+          "max_tokens": 1400,
+          "reasoning_effort": "low",
+          "reasoning_exclude": true,
+          "retry1_max_tokens": 2200,
+          "retry2_max_tokens": 3200
+        },
+        "parameter_overrides": {
+          "temperature": 0.0
+        }
+      },
+      "debug": {
+        "embedded_key_allowed": true
+      }
+    },
+    {
+      "id": "nano-fast-blind",
+      "label": "Nano Fast - Blind Overview",
+      "description": "Schnelle strukturierte Szenenbeschreibung fuer blinde Nutzer.",
+      "availability": "byok",
+      "ui": {
+        "group": "scene",
+        "sort_order": 40,
+        "badges": [
+          "streaming",
+          "fast"
+        ]
+      },
+      "byok": {
+        "provider": "openrouter",
+        "model_id": "openai/gpt-5-nano",
+        "family": "gpt5",
+        "streaming_enabled": true,
+        "system_prompt": "Du beschreibst einer blinden Person die Szene vor ihr. Gib einen klaren Ueberblick ueber die Umgebung und die raeumliche Anordnung.",
+        "overview_prompt": "Beschreibe die Szene vor der Person strukturiert und gut orientierbar.",
+        "capabilities": {
+          "supports_vision": true,
+          "supports_reasoning": true,
+          "supports_json": false
+        },
+        "image": {
+          "max_side_px": 1024,
+          "jpeg_quality": 80
+        },
+        "token_policy": {
+          "max_tokens": 640,
+          "reasoning_exclude": true,
+          "retry1_max_tokens": 840,
+          "retry2_max_tokens": 1040
+        }
+      },
+      "debug": {
+        "embedded_key_allowed": true
+      }
+    },
+    {
+      "id": "mini-fast-reader",
+      "label": "GPT-5 Mini - Vorleser",
+      "description": "Zuverlaessiges Vorlesen kleiner Texte fuer blinde Nutzer.",
+      "availability": "byok",
+      "ui": {
+        "group": "reader",
+        "sort_order": 50,
+        "badges": [
+          "streaming",
+          "reader"
+        ]
+      },
+      "byok": {
+        "provider": "openrouter",
+        "model_id": "openai/gpt-5-mini",
+        "family": "gpt5",
+        "streaming_enabled": true,
+        "system_prompt": "Du bist ein Assistent fuer eine blinde Person. Deine Aufgabe ist es, alle im Bild erkennbaren Texte moeglichst exakt vorzulesen.",
+        "overview_prompt": "Lies bitte alle erkennbaren Texte im folgenden Bild vor.",
+        "capabilities": {
+          "supports_vision": true,
+          "supports_reasoning": true,
+          "supports_json": false
+        },
+        "image": {
+          "max_side_px": 1024,
+          "jpeg_quality": 80
+        },
+        "token_policy": {
+          "max_tokens": 1420,
+          "reasoning_exclude": true,
+          "retry1_max_tokens": 2560,
+          "retry2_max_tokens": 3700
+        }
+      },
+      "debug": {
+        "embedded_key_allowed": true
+      }
+    },
+    {
+      "id": "Nano Bike",
+      "label": "Nano Fahrrad",
+      "description": "Kurzansagen fuer Rad-Navigation mit konservativer Sicherheitslogik.",
+      "availability": "byok",
+      "ui": {
+        "group": "bike",
+        "sort_order": 60,
+        "badges": [
+          "autoscan",
+          "bike"
+        ]
+      },
+      "byok": {
+        "provider": "openrouter",
+        "model_id": "openai/gpt-5-nano",
+        "family": "gpt5",
+        "streaming_enabled": false,
+        "system_prompt": "Du bist ein Assistenzsystem fuer sehbehinderte Radfahrer. Du analysierst ein einzelnes Kamerabild und gibst eine sehr kurze Status-Ausgabe.",
+        "overview_prompt": "Gib die kurze status-ausgabe nach den regeln.",
+        "capabilities": {
+          "supports_vision": true,
+          "supports_reasoning": false,
+          "supports_json": false
+        },
+        "image": {
+          "max_side_px": 1024,
+          "jpeg_quality": 80
+        },
+        "token_policy": {
+          "max_tokens": 90,
+          "reasoning_effort": "minimal",
+          "reasoning_exclude": true,
+          "retry1_max_tokens": 120,
+          "retry2_max_tokens": 140
+        },
+        "parameter_overrides": {
+          "temperature": 0.0
+        },
+        "auto_scan": {
+          "enabled_by_default": false,
+          "interval_ms": 5000,
+          "speak_free_every_ms": 12000
+        }
+      },
+      "debug": {
+        "embedded_key_allowed": true
+      }
+    }
+  ]
+}
