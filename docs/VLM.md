@@ -21,6 +21,7 @@ und Reasoning nur fuer Debug/Telemetry nutzen.
 - `OpenRouterUserKeyStore` ist die schmale Storage-API fuer spaetere Import-/Eingabe-Flows (`saveKey`, `loadKey`, `hasKey`, `clearKey`).
 - `AndroidOpenRouterUserKeyStore` verschluesselt den Nutzer-Key mit einem Android-Keystore-backed AES-GCM-Key und speichert nur Version, IV und Ciphertext in separaten privaten Preferences.
 - Der Nutzer-Key wird nicht in `AppSettings`, DataStore, Logs oder Docs persistiert; leere Keys werden abgelehnt, vorhandene Keys werden beim Speichern ueberschrieben, `clearKey` entfernt den gespeicherten Blob.
+- Zusaetzlich liegt jetzt eine neue kanonische Registry-Grundlage in `app/src/main/assets/vlm-profile-registry.json`; Details und Migrationsziel stehen in `docs/VLM-Profile-Registry.md`.
 
 ## 0b) Backend-Transport (Phase 6)
 
