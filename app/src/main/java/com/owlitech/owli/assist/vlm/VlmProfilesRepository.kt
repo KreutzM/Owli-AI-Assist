@@ -56,7 +56,7 @@ class VlmProfilesRepository(context: Context) {
     private val service = OwliBackendProfilesService()
 
     fun loadInitialConfig(): VlmProfilesConfig {
-        val localRegistry = VlmProfileLoader.loadLocalRegistryAsset(appContext)
+        val localRegistry = loadLocalRegistry()
         val cachedRaw = cacheStore.load()
         val cachedConfig = cachedRaw
             ?.let(VlmProfileLoader::parsePublicRegistry)
@@ -71,11 +71,11 @@ class VlmProfilesRepository(context: Context) {
         if (cachedConfig != null) {
             return cachedConfig
         }
-        return localRegistry ?: VlmProfileLoader.loadLegacyAsset(appContext)
+        return localRegistry?.toProfilesConfig() ?: VlmProfileLoader.loadLegacyAsset(appContext)
     }
 
     suspend fun refreshRemoteConfig(): VlmProfilesConfig? = withContext(Dispatchers.IO) {
-        val localRegistry = VlmProfileLoader.loadLocalRegistryAsset(appContext)
+        val localRegistry = loadLocalRegistry()
         return@withContext runCatching {
             val rawJson = service.fetchProfilesJson()
             val publicRegistry = VlmProfileLoader.parsePublicRegistry(rawJson)
@@ -85,5 +85,15 @@ class VlmProfilesRepository(context: Context) {
         }.onFailure { error ->
             AppLogger.w("VLM", "Remote profiles refresh failed; keeping cached/local profiles. ${error::class.java.simpleName}")
         }.getOrNull()
+    }
+
+    private fun loadLocalRegistry(): LocalRegistryConfig? {
+        return runCatching {
+            val raw = appContext.assets.open("vlm-profile-registry.json").bufferedReader().use { it.readText() }
+            VlmProfileLoader.parseLocalRegistry(raw)
+        }.getOrElse { error ->
+            AppLogger.e(error, "Failed to read vlm-profile-registry.json for repository fallback")
+            null
+        }
     }
 }

@@ -111,7 +111,7 @@ fun VlmTransportSelection.toOpenRouterApiKeySelection(): OpenRouterApiKeySelecti
 }
 
 object AppSettingsDefaults {
-    const val vlmProfileId: String = "gpt4o_default"
+    const val vlmProfileId: String = "gpt52-scene-brief"
     const val vlmProfileIdUserSet: Boolean = false
     val vlmTransportMode: VlmTransportMode = VlmTransportMode.BACKEND_MANAGED
     val openRouterKeyMode: OpenRouterKeyMode = OpenRouterKeyMode.EMBEDDED_APP_KEY

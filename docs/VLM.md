@@ -23,7 +23,8 @@ und Reasoning nur fuer Debug/Telemetry nutzen.
 - Der Nutzer-Key wird nicht in `AppSettings`, DataStore, Logs oder Docs persistiert; leere Keys werden abgelehnt, vorhandene Keys werden beim Speichern ueberschrieben, `clearKey` entfernt den gespeicherten Blob.
 - Zusaetzlich liegt jetzt eine neue kanonische Registry-Grundlage in `app/src/main/assets/vlm-profile-registry.json`; Details und Migrationsziel stehen in `docs/VLM-Profile-Registry.md`.
 - Fuer die Profilauswahl versucht die App jetzt zuerst `GET https://api.owli-ai.com/api/v1/profiles`, cached die erfolgreiche oeffentliche Antwort lokal und faellt bei Fehlern explizit auf Cache, dann auf `vlm-profile-registry.json` und zuletzt auf `vlm-profiles.json` zurueck.
-- Die Remote-/Cache-Antwort liefert nur client-sichere Profilidentitaet und Transport-Verfuegbarkeit; app-lokale BYOK-Details wie Prompts, Modell-ID und Token-Policy kommen waehrend der Migration weiter aus der lokalen Registry.
+- Die Remote-/Cache-Antwort liefert nur client-sichere Profilidentitaet und Transport-Verfuegbarkeit; app-lokale BYOK-Details wie Prompts, Modell-ID und Token-Policy kommen waehrend der Migration weiter aus dem `byok`-Block der kanonischen lokalen Registry statt aus dem alten Runtime-Asset.
+- Der app-seitige Default zeigt jetzt ebenfalls auf die kanonische Registry-ID `gpt52-scene-brief`; `vlm-profiles.json` bleibt nur noch der letzte Legacy-Fallback.
 
 ## 0b) Backend-Transport (Phase 6)
 
