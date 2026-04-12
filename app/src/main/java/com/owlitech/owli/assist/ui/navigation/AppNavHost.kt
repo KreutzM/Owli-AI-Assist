@@ -81,9 +81,12 @@ fun AppNavHost(
         composable(AppRoute.OpenRouterKeySettings.route) {
             Box(modifier = Modifier.padding(defaultPadding)) {
                 OpenRouterKeySettingsScreen(
-                    keyMode = settings.openRouterKeyMode,
+                    transportMode = settings.vlmTransportMode,
                     hasStoredKey = hasOpenRouterUserKey,
-                    onSelectMode = { mode -> settingsViewModel.update { it.copy(openRouterKeyMode = mode) } },
+                    hasEmbeddedAppKey = settingsViewModel.hasEmbeddedOpenRouterAppKey,
+                    onSelectBackendTransport = { settingsViewModel.selectBackendManagedTransport() },
+                    onSelectByokTransport = { settingsViewModel.selectDirectByokTransport() },
+                    onSelectEmbeddedDebugTransport = { settingsViewModel.selectEmbeddedDebugTransport() },
                     onOpenQrImport = { navController.navigate(AppRoute.OpenRouterKeyQrImport.route) },
                     onOpenKeyInfo = { navController.navigate(AppRoute.OpenRouterKeyInfo.route) },
                     onSaveKey = { apiKey -> settingsViewModel.saveOpenRouterUserKey(apiKey) },

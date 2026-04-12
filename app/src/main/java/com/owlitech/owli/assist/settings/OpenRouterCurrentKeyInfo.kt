@@ -14,21 +14,22 @@ data class OpenRouterCurrentKeyInfo(
 )
 
 data class OpenRouterCurrentKeyInfoResult(
-    val sourceMode: OpenRouterKeyMode,
+    val sourceMode: VlmTransportMode,
     val info: OpenRouterCurrentKeyInfo
 )
 
 sealed interface OpenRouterKeyInfoUiState {
     data object Idle : OpenRouterKeyInfoUiState
-    data class Loading(val sourceMode: OpenRouterKeyMode) : OpenRouterKeyInfoUiState
+    data class Loading(val sourceMode: VlmTransportMode) : OpenRouterKeyInfoUiState
     data class Success(val result: OpenRouterCurrentKeyInfoResult) : OpenRouterKeyInfoUiState
     data class Error(
-        val sourceMode: OpenRouterKeyMode?,
+        val sourceMode: VlmTransportMode?,
         val reason: OpenRouterKeyInfoErrorReason
     ) : OpenRouterKeyInfoUiState
 }
 
 enum class OpenRouterKeyInfoErrorReason {
+    BACKEND_MODE_ACTIVE,
     NO_ACTIVE_KEY,
     UNAUTHORIZED,
     NETWORK,

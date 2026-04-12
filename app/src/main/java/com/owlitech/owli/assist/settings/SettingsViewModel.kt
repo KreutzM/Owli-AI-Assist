@@ -20,6 +20,7 @@ class SettingsViewModel(
     private val embeddedOpenRouterApiKey: String,
     private val openRouterCurrentKeyInfoService: OpenRouterCurrentKeyInfoService
 ) : ViewModel() {
+    val hasEmbeddedOpenRouterAppKey: Boolean = embeddedOpenRouterApiKey.isNotBlank()
 
     private val _settings = MutableStateFlow(AppSettings())
     val settings: StateFlow<AppSettings> = _settings.asStateFlow()
@@ -49,7 +50,12 @@ class SettingsViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             openRouterUserKeyStore.saveKey(normalized)
             _hasOpenRouterUserKey.value = true
-            repository.update { it.copy(openRouterKeyMode = OpenRouterKeyMode.USER_PROVIDED_KEY) }
+            repository.update {
+                it.copy(
+                    vlmTransportMode = VlmTransportMode.DIRECT_OPENROUTER_BYOK,
+                    openRouterKeyMode = OpenRouterKeyMode.USER_PROVIDED_KEY
+                )
+            }
         }
     }
 
@@ -57,7 +63,42 @@ class SettingsViewModel(
         viewModelScope.launch(Dispatchers.IO) {
             openRouterUserKeyStore.clearKey()
             _hasOpenRouterUserKey.value = false
-            repository.update { it.copy(openRouterKeyMode = OpenRouterKeyMode.EMBEDDED_APP_KEY) }
+            repository.update {
+                it.copy(
+                    vlmTransportMode = VlmTransportMode.BACKEND_MANAGED,
+                    openRouterKeyMode = OpenRouterKeyMode.EMBEDDED_APP_KEY
+                )
+            }
+        }
+    }
+
+    fun selectBackendManagedTransport() {
+        viewModelScope.launch {
+            repository.update { it.copy(vlmTransportMode = VlmTransportMode.BACKEND_MANAGED) }
+        }
+    }
+
+    fun selectDirectByokTransport() {
+        viewModelScope.launch(Dispatchers.IO) {
+            if (!openRouterUserKeyStore.hasKey()) return@launch
+            repository.update {
+                it.copy(
+                    vlmTransportMode = VlmTransportMode.DIRECT_OPENROUTER_BYOK,
+                    openRouterKeyMode = OpenRouterKeyMode.USER_PROVIDED_KEY
+                )
+            }
+        }
+    }
+
+    fun selectEmbeddedDebugTransport() {
+        if (!hasEmbeddedOpenRouterAppKey) return
+        viewModelScope.launch {
+            repository.update {
+                it.copy(
+                    vlmTransportMode = VlmTransportMode.EMBEDDED_DEBUG,
+                    openRouterKeyMode = OpenRouterKeyMode.EMBEDDED_APP_KEY
+                )
+            }
         }
     }
 
@@ -71,14 +112,21 @@ class SettingsViewModel(
 
     fun loadOpenRouterKeyInfo() {
         viewModelScope.launch(Dispatchers.IO) {
-            val selection = resolveOpenRouterApiKeySelection(
+            val selection = resolveVlmTransportSelection(
                 settings = _settings.value,
                 embeddedAppKey = embeddedOpenRouterApiKey,
                 userProvidedKey = openRouterUserKeyStore.loadKey()
             )
-            if (!selection.hasUsableKey) {
+            if (selection.activeMode == VlmTransportMode.BACKEND_MANAGED) {
                 _openRouterKeyInfoState.value = OpenRouterKeyInfoUiState.Error(
-                    sourceMode = null,
+                    sourceMode = selection.activeMode,
+                    reason = OpenRouterKeyInfoErrorReason.BACKEND_MODE_ACTIVE
+                )
+                return@launch
+            }
+            if (!selection.hasUsableTransport) {
+                _openRouterKeyInfoState.value = OpenRouterKeyInfoUiState.Error(
+                    sourceMode = selection.activeMode,
                     reason = OpenRouterKeyInfoErrorReason.NO_ACTIVE_KEY
                 )
                 return@launch
@@ -86,7 +134,7 @@ class SettingsViewModel(
 
             _openRouterKeyInfoState.value = OpenRouterKeyInfoUiState.Loading(selection.activeMode)
             _openRouterKeyInfoState.value = try {
-                val info = openRouterCurrentKeyInfoService.fetchCurrentKeyInfo(selection.apiKey)
+                val info = openRouterCurrentKeyInfoService.fetchCurrentKeyInfo(selection.apiKey.orEmpty())
                 OpenRouterKeyInfoUiState.Success(
                     OpenRouterCurrentKeyInfoResult(
                         sourceMode = selection.activeMode,

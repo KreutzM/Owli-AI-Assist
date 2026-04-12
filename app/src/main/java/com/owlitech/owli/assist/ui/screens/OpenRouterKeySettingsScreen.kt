@@ -28,13 +28,16 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import com.owlitech.owli.assist.R
-import com.owlitech.owli.assist.settings.OpenRouterKeyMode
+import com.owlitech.owli.assist.settings.VlmTransportMode
 
 @Composable
 fun OpenRouterKeySettingsScreen(
-    keyMode: OpenRouterKeyMode,
+    transportMode: VlmTransportMode,
     hasStoredKey: Boolean,
-    onSelectMode: (OpenRouterKeyMode) -> Unit,
+    hasEmbeddedAppKey: Boolean,
+    onSelectBackendTransport: () -> Unit,
+    onSelectByokTransport: () -> Unit,
+    onSelectEmbeddedDebugTransport: () -> Unit,
     onOpenQrImport: () -> Unit,
     onOpenKeyInfo: () -> Unit,
     onSaveKey: (String) -> Unit,
@@ -46,9 +49,10 @@ fun OpenRouterKeySettingsScreen(
     val clipboardManager = LocalClipboardManager.current
     val keySavedStatus = stringResource(R.string.vlm_settings_openrouter_key_saved)
     val keyClearedStatus = stringResource(R.string.vlm_settings_openrouter_key_cleared)
-    val activeStatus = when (keyMode) {
-        OpenRouterKeyMode.EMBEDDED_APP_KEY -> stringResource(R.string.vlm_settings_openrouter_key_status_embedded)
-        OpenRouterKeyMode.USER_PROVIDED_KEY -> stringResource(R.string.vlm_settings_openrouter_key_status_user)
+    val activeStatus = when (transportMode) {
+        VlmTransportMode.BACKEND_MANAGED -> stringResource(R.string.vlm_settings_openrouter_key_status_backend)
+        VlmTransportMode.DIRECT_OPENROUTER_BYOK -> stringResource(R.string.vlm_settings_openrouter_key_status_user)
+        VlmTransportMode.EMBEDDED_DEBUG -> stringResource(R.string.vlm_settings_openrouter_key_status_embedded_debug)
     }
     val storedStatus = if (hasStoredKey) {
         stringResource(R.string.vlm_settings_openrouter_key_stored_yes)
@@ -117,17 +121,24 @@ fun OpenRouterKeySettingsScreen(
             Text(stringResource(R.string.vlm_settings_openrouter_key_save))
         }
         OutlinedButton(
-            onClick = { onSelectMode(OpenRouterKeyMode.EMBEDDED_APP_KEY) },
+            onClick = onSelectBackendTransport,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(stringResource(R.string.vlm_settings_openrouter_key_use_app_key))
+            Text(stringResource(R.string.vlm_settings_openrouter_key_use_backend))
         }
         OutlinedButton(
-            onClick = { onSelectMode(OpenRouterKeyMode.USER_PROVIDED_KEY) },
+            onClick = onSelectByokTransport,
             enabled = hasStoredKey,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Text(stringResource(R.string.vlm_settings_openrouter_key_use_custom_key))
+            Text(stringResource(R.string.vlm_settings_openrouter_key_use_custom_key_transport))
+        }
+        OutlinedButton(
+            onClick = onSelectEmbeddedDebugTransport,
+            enabled = hasEmbeddedAppKey,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(stringResource(R.string.vlm_settings_openrouter_key_use_app_key_debug))
         }
         OutlinedButton(
             onClick = onOpenQrImport,
@@ -137,6 +148,7 @@ fun OpenRouterKeySettingsScreen(
         }
         OutlinedButton(
             onClick = onOpenKeyInfo,
+            enabled = transportMode != VlmTransportMode.BACKEND_MANAGED,
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(stringResource(R.string.vlm_settings_openrouter_key_info))
@@ -156,15 +168,27 @@ fun OpenRouterKeySettingsScreen(
         localStatus?.let {
             Text(it, style = MaterialTheme.typography.bodySmall)
         }
-        if (!hasStoredKey && keyMode == OpenRouterKeyMode.USER_PROVIDED_KEY) {
+        if (!hasStoredKey && transportMode == VlmTransportMode.DIRECT_OPENROUTER_BYOK) {
             Text(
                 stringResource(R.string.vlm_settings_openrouter_key_missing_user_key),
                 style = MaterialTheme.typography.bodySmall
             )
         }
-        if (keyMode == OpenRouterKeyMode.EMBEDDED_APP_KEY && hasStoredKey) {
+        if (transportMode == VlmTransportMode.BACKEND_MANAGED) {
             Text(
-                stringResource(R.string.vlm_settings_openrouter_key_stored_but_app_active),
+                stringResource(R.string.vlm_settings_openrouter_key_info_backend_note),
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        if (transportMode == VlmTransportMode.BACKEND_MANAGED && hasStoredKey) {
+            Text(
+                stringResource(R.string.vlm_settings_openrouter_key_stored_but_backend_active),
+                style = MaterialTheme.typography.bodySmall
+            )
+        }
+        if (transportMode == VlmTransportMode.EMBEDDED_DEBUG) {
+            Text(
+                stringResource(R.string.vlm_settings_openrouter_key_debug_note),
                 style = MaterialTheme.typography.bodySmall
             )
         }

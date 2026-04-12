@@ -4,7 +4,7 @@
     <string name="nav_title_vlm_settings">Einstellungen</string>
     <string name="nav_title_app">OwliAi Assist</string>
     <string name="nav_title_vlm_profiles">VLM Profile</string>
-    <string name="nav_title_openrouter_key_settings">OpenRouter Key</string>
+    <string name="nav_title_openrouter_key_settings">VLM-Transport</string>
     <string name="nav_title_openrouter_key_info">OpenRouter Key-Infos</string>
     <string name="nav_title_openrouter_key_qr_import">OpenRouter Key scannen</string>
     <string name="nav_title_help">Hilfe</string>
@@ -77,15 +77,17 @@
     <string name="settings_slider_value_format">%1$s: %2$.2f</string>
 
     <string name="vlm_settings_profile_title">VLM Profil</string>
+    <string name="vlm_settings_profile_backend_note">Im Backend-Modus nutzt die App aktuell den Owli-gesteuerten Describe-/Follow-up-Pfad. Direkte OpenRouter-Profile gelten fuer BYOK oder den Debug-Modus.</string>
     <string name="vlm_settings_select">Auswaehlen</string>
     <string name="vlm_settings_streaming_tts">Streaming TTS (VLM)</string>
     <string name="vlm_settings_streaming_tts_helper">Frueher TTS-Start bei Streaming</string>
-    <string name="vlm_settings_openrouter_key_title">OpenRouter Key</string>
+    <string name="vlm_settings_openrouter_key_title">VLM-Transport</string>
     <string name="vlm_settings_openrouter_key_manage">Key verwalten</string>
-    <string name="vlm_settings_openrouter_key_entry_helper">Oeffne den Key-Bildschirm, um einen Key hinzuzufuegen, zu ersetzen, zu loeschen oder zwischen App-Key und eigenem Key zu wechseln.</string>
-    <string name="vlm_settings_openrouter_key_status_embedded">Aktuell wird der App-Key verwendet.</string>
+    <string name="vlm_settings_openrouter_key_entry_helper">Oeffne den Transport-Bildschirm, um das Owli-Backend zu nutzen, auf direkten OpenRouter-BYOK zu wechseln oder den gespeicherten eigenen Key zu verwalten.</string>
+    <string name="vlm_settings_openrouter_key_status_backend">Aktuell wird das Owli-Backend verwendet.</string>
     <string name="vlm_settings_openrouter_key_status_user">Eigener Nutzer-Key ausgewaehlt.</string>
-    <string name="vlm_settings_openrouter_key_helper">Gib deinen eigenen OpenRouter Key ein oder fuege ihn ein. Der Key wird lokal ueber den sicheren Key Store gespeichert.</string>
+    <string name="vlm_settings_openrouter_key_status_embedded_debug">Aktuell wird der eingebettete App-Key im Debug-Modus verwendet.</string>
+    <string name="vlm_settings_openrouter_key_helper">Waehle den aktiven VLM-Transport. Der Backend-Modus ist der normale Produktionspfad. Direkter OpenRouter nutzt deinen gespeicherten eigenen Key. Der eingebettete App-Key bleibt nur fuer Debug-Zwecke.</string>
     <string name="vlm_settings_openrouter_key_scan_qr">QR-Code scannen</string>
     <string name="vlm_settings_openrouter_key_input_label">OpenRouter Key</string>
     <string name="vlm_settings_openrouter_key_stored_yes">Ein eigener Key ist gespeichert.</string>
@@ -96,12 +98,15 @@
     <string name="vlm_settings_openrouter_key_save">Eigenen Key speichern</string>
     <string name="vlm_settings_openrouter_key_clear">Gespeicherten Key loeschen</string>
     <string name="vlm_settings_openrouter_key_info">Key-Infos anzeigen</string>
-    <string name="vlm_settings_openrouter_key_use_app_key">App-Key verwenden</string>
-    <string name="vlm_settings_openrouter_key_use_custom_key">Eigenen Key verwenden</string>
+    <string name="vlm_settings_openrouter_key_use_backend">Owli-Backend verwenden</string>
+    <string name="vlm_settings_openrouter_key_use_custom_key_transport">Eigenen OpenRouter-Key verwenden</string>
+    <string name="vlm_settings_openrouter_key_use_app_key_debug">App-Key verwenden (Debug)</string>
     <string name="vlm_settings_openrouter_key_saved">Eigener Key gespeichert.</string>
     <string name="vlm_settings_openrouter_key_cleared">Eigener Key geloescht.</string>
-    <string name="vlm_settings_openrouter_key_missing_user_key">Speichere zuerst einen eigenen Key, bevor du den Nutzer-Key-Modus auswaehlst.</string>
-    <string name="vlm_settings_openrouter_key_stored_but_app_active">Ein eigener Key ist gespeichert, aber aktuell ist der App-Key aktiv.</string>
+    <string name="vlm_settings_openrouter_key_missing_user_key">Speichere zuerst einen eigenen Key, bevor du den direkten OpenRouter-BYOK-Modus auswaehlst.</string>
+    <string name="vlm_settings_openrouter_key_stored_but_backend_active">Ein eigener Key ist gespeichert, aber aktuell ist das Owli-Backend aktiv.</string>
+    <string name="vlm_settings_openrouter_key_info_backend_note">OpenRouter-Key-Infos sind nur verfuegbar, wenn ein direkter OpenRouter-Modus aktiv ist.</string>
+    <string name="vlm_settings_openrouter_key_debug_note">Der eingebettete App-Key bleibt nur fuer Debug- oder Entwicklungs-Kompatibilitaet erhalten.</string>
     <string name="openrouter_qr_import_title">OpenRouter Key per QR-Code scannen</string>
     <string name="openrouter_qr_import_helper">Richte die Kamera auf einen QR-Code, der einen rohen OpenRouter Key, openrouter:key=&lt;KEY&gt; oder eine PIN-geschuetzte verschluesselte Import-Payload enthaelt.</string>
     <string name="openrouter_qr_import_permission">Kamerazugriff ist notwendig, um den QR-Code zu scannen.</string>
@@ -125,6 +130,7 @@
     <string name="openrouter_key_info_loading">Lade Key-Infos&#8230;</string>
     <string name="openrouter_key_info_refresh">Key-Infos aktualisieren</string>
     <string name="openrouter_key_info_source">Key-Quelle</string>
+    <string name="openrouter_key_info_source_backend">Owli-Backend</string>
     <string name="openrouter_key_info_source_app_key">Eingebetteter App-Key</string>
     <string name="openrouter_key_info_source_user_key">Eigener Nutzer-Key</string>
     <string name="openrouter_key_info_label">Label</string>
@@ -139,6 +145,7 @@
     <string name="openrouter_key_info_free_tier">Free Tier</string>
     <string name="openrouter_key_info_yes">Ja</string>
     <string name="openrouter_key_info_no">Nein</string>
+    <string name="openrouter_key_info_error_backend_active">Das Owli-Backend ist aktiv. OpenRouter-Key-Infos sind nur fuer direkte OpenRouter-Modi verfuegbar.</string>
     <string name="openrouter_key_info_error_no_active_key">Aktuell ist kein aktiver OpenRouter Key verfuegbar.</string>
     <string name="openrouter_key_info_error_unauthorized">OpenRouter hat den aktuellen Key beim Abruf der Key-Infos abgelehnt.</string>
     <string name="openrouter_key_info_error_network">Die Key-Infos konnten gerade nicht von OpenRouter geladen werden. Versuche es erneut.</string>
