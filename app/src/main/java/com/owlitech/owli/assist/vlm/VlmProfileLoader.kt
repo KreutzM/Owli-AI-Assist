@@ -1,22 +1,38 @@
 package com.owlitech.owli.assist.vlm
 
 import android.content.Context
+import com.owlitech.owli.assist.settings.VlmTransportMode
 import com.owlitech.owli.assist.util.AppLogger
 import org.json.JSONArray
 import org.json.JSONObject
 
+enum class VlmProfilesSource {
+    REMOTE_BACKEND,
+    CACHED_BACKEND,
+    LOCAL_REGISTRY_ASSET,
+    LOCAL_LEGACY_ASSET,
+    HARDCODED_FALLBACK
+}
+
 data class VlmProfilesConfig(
     val profiles: List<VlmProfile>,
-    val defaultProfileId: String
+    val defaultProfileId: String,
+    val source: VlmProfilesSource
 ) {
-    fun resolve(profileId: String?): VlmProfile {
-        if (profiles.isEmpty()) {
-            return VlmProfileLoader.fallbackProfiles().first()
+    fun profilesForTransport(mode: VlmTransportMode): List<VlmProfile> {
+        val filtered = profiles.filter { it.isAvailableIn(mode) }
+        return if (filtered.isNotEmpty()) filtered else profiles
+    }
+
+    fun resolve(profileId: String?, mode: VlmTransportMode? = null): VlmProfile {
+        val candidates = mode?.let(::profilesForTransport).orEmpty().ifEmpty {
+            if (profiles.isNotEmpty()) profiles else VlmProfileLoader.fallbackProfiles()
         }
-        val id = normalizeProfileId(profileId ?: defaultProfileId)
-        return profiles.firstOrNull { it.id == id }
-            ?: profiles.firstOrNull { it.id == defaultProfileId }
-            ?: profiles.first()
+        val normalizedId = normalizeProfileId(profileId ?: defaultProfileId)
+        val normalizedDefaultId = normalizeProfileId(defaultProfileId)
+        return candidates.firstOrNull { it.id == normalizedId }
+            ?: candidates.firstOrNull { it.id == normalizedDefaultId }
+            ?: candidates.first()
     }
 
     private fun normalizeProfileId(profileId: String): String {
@@ -28,22 +44,94 @@ data class VlmProfilesConfig(
     }
 }
 
+internal data class PublicVlmProfileRegistry(
+    val defaultProfileId: String,
+    val profiles: List<PublicVlmProfile>
+)
+
+internal data class PublicVlmProfile(
+    val id: String,
+    val label: String,
+    val description: String?,
+    val backendAvailable: Boolean,
+    val backendSupportsStreaming: Boolean,
+    val directByokAvailable: Boolean,
+    val directByokSupportsStreaming: Boolean
+)
+
 object VlmProfileLoader {
-    fun load(context: Context): VlmProfilesConfig {
+
+    fun loadLegacyAsset(context: Context): VlmProfilesConfig {
         return runCatching {
             val raw = context.assets.open("vlm-profiles.json").bufferedReader().use { it.readText() }
-            parse(raw)
+            parseLegacy(raw)
         }.getOrElse { ex ->
             AppLogger.e(ex, "Failed to load vlm-profiles.json, using fallback profiles")
             fallbackConfig()
         }
     }
 
+    fun loadLocalRegistryAsset(context: Context): VlmProfilesConfig? {
+        return runCatching {
+            val raw = context.assets.open("vlm-profile-registry.json").bufferedReader().use { it.readText() }
+            parseRegistryAsset(raw)
+        }.getOrElse { ex ->
+            AppLogger.e(ex, "Failed to load vlm-profile-registry.json")
+            null
+        }
+    }
+
+    internal fun parsePublicRegistry(raw: String): PublicVlmProfileRegistry? {
+        val root = runCatching { JSONObject(raw) }.getOrNull() ?: return null
+        val schemaVersion = root.optString("schemaVersion").trim()
+        if (schemaVersion != "vlm_profile_registry/v1") {
+            return null
+        }
+        val profilesArray = root.optJSONArray("profiles") ?: JSONArray()
+        val profiles = buildList {
+            for (i in 0 until profilesArray.length()) {
+                val obj = profilesArray.optJSONObject(i) ?: continue
+                parsePublicProfile(obj)?.let(::add)
+            }
+        }
+        if (profiles.isEmpty()) return null
+        val defaultId = root.optString("defaultProfileId", profiles.first().id).trim().ifBlank {
+            profiles.first().id
+        }
+        val resolvedDefault = profiles.firstOrNull { it.id == defaultId }?.id ?: profiles.first().id
+        return PublicVlmProfileRegistry(
+            defaultProfileId = resolvedDefault,
+            profiles = profiles
+        )
+    }
+
+    internal fun mergePublicRegistry(
+        publicRegistry: PublicVlmProfileRegistry,
+        localRegistry: VlmProfilesConfig?
+    ): VlmProfilesConfig {
+        val localProfilesById = localRegistry?.profiles?.associateBy { it.id }.orEmpty()
+        val mergedProfiles = publicRegistry.profiles.mapNotNull { publicProfile ->
+            val localProfile = localProfilesById[publicProfile.id]
+            mergeProfile(publicProfile, localProfile)
+        }
+        if (mergedProfiles.isEmpty()) {
+            return localRegistry ?: fallbackConfig()
+        }
+        val defaultId = mergedProfiles.firstOrNull { it.id == publicRegistry.defaultProfileId }?.id
+            ?: mergedProfiles.first().id
+        return VlmProfilesConfig(
+            profiles = mergedProfiles,
+            defaultProfileId = defaultId,
+            source = VlmProfilesSource.REMOTE_BACKEND
+        )
+    }
+
     fun fallbackConfig(): VlmProfilesConfig {
         val profiles = fallbackProfiles()
         return VlmProfilesConfig(
             profiles = profiles,
-            defaultProfileId = profiles.first().id
+            defaultProfileId = profiles.first().id,
+            source = VlmProfilesSource.HARDCODED_FALLBACK
         )
     }
 
@@ -141,14 +229,14 @@ object VlmProfileLoader {
         )
     }
 
-    private fun parse(raw: String): VlmProfilesConfig {
+    internal fun parseLegacy(raw: String): VlmProfilesConfig {
         val root = JSONObject(raw)
-        val defaults = parseDefaults(root)
+        val defaults = parseLegacyDefaults(root)
         val profilesArray = root.optJSONArray("profiles") ?: JSONArray()
         val profiles = buildList {
             for (i in 0 until profilesArray.length()) {
                 val obj = profilesArray.optJSONObject(i) ?: continue
-                val profile = parseProfile(obj, defaults) ?: continue
+                val profile = parseLegacyProfile(obj, defaults) ?: continue
                 add(profile)
             }
         }
@@ -159,10 +247,38 @@ object VlmProfileLoader {
             profiles.first().id
         }
         val resolvedDefault = profiles.firstOrNull { it.id == defaultId }?.id ?: profiles.first().id
-        return VlmProfilesConfig(profiles = profiles, defaultProfileId = resolvedDefault)
+        return VlmProfilesConfig(
+            profiles = profiles,
+            defaultProfileId = resolvedDefault,
+            source = VlmProfilesSource.LOCAL_LEGACY_ASSET
+        )
     }
 
-    private fun parseDefaults(root: JSONObject): VlmProfileDefaults {
+    internal fun parseRegistryAsset(raw: String): VlmProfilesConfig {
+        val root = JSONObject(raw)
+        val profilesArray = root.optJSONArray("profiles") ?: JSONArray()
+        val profiles = buildList {
+            for (i in 0 until profilesArray.length()) {
+                val obj = profilesArray.optJSONObject(i) ?: continue
+                val profile = parseRegistryProfile(obj) ?: continue
+                add(profile)
+            }
+        }
+        if (profiles.isEmpty()) {
+            return fallbackConfig()
+        }
+        val defaultId = root.optString("default_profile_id", profiles.first().id).ifBlank {
+            profiles.first().id
+        }
+        val resolvedDefault = profiles.firstOrNull { it.id == defaultId }?.id ?: profiles.first().id
+        return VlmProfilesConfig(
+            profiles = profiles,
+            defaultProfileId = resolvedDefault,
+            source = VlmProfilesSource.LOCAL_REGISTRY_ASSET
+        )
+    }
+
+    private fun parseLegacyDefaults(root: JSONObject): VlmProfileDefaults {
         val obj = root.optJSONObject("defaults")
         val provider = obj?.optString("provider")?.trim().orEmpty().ifBlank { "openrouter" }
         val family = obj?.optString("family")?.trim()?.takeIf { it.isNotBlank() }
@@ -171,8 +287,16 @@ object VlmProfileLoader {
         val overviewPrompt = obj?.optString("overview_prompt")?.trim()?.takeIf { it.isNotBlank() }
             ?: VlmConfig.DEFAULT_OVERVIEW_PROMPT
         val imageSettings = parseImageSettings(obj?.optJSONObject("image"), VlmImageSettings())
-        val tokenPolicy = parseTokenPolicy(obj?.optJSONObject("token_policy"), VlmTokenPolicy(VlmConfig.DEFAULT_MAX_TOKENS), null)
-        val parameterOverrides = parseParameterOverrides(obj?.optJSONObject("parameter_overrides"), VlmParameterOverrides(), null)
+        val tokenPolicy = parseTokenPolicy(
+            obj?.optJSONObject("token_policy"),
+            VlmTokenPolicy(VlmConfig.DEFAULT_MAX_TOKENS),
+            null
+        )
+        val parameterOverrides = parseParameterOverrides(
+            obj?.optJSONObject("parameter_overrides"),
+            VlmParameterOverrides(),
+            null
+        )
         val capabilities = parseCapabilities(obj?.optJSONObject("capabilities"), VlmCapabilities())
         val streamingEnabled = obj?.optBoolean("streaming_enabled", false) ?: false
         return VlmProfileDefaults(
@@ -188,7 +312,7 @@ object VlmProfileLoader {
         )
     }
 
-    private fun parseProfile(obj: JSONObject, defaults: VlmProfileDefaults): VlmProfile? {
+    private fun parseLegacyProfile(obj: JSONObject, defaults: VlmProfileDefaults): VlmProfile? {
         val id = obj.optString("id", "").trim()
         val label = obj.optString("label", "").trim()
         val modelId = obj.optString("model_id", "").trim()
@@ -209,7 +333,11 @@ object VlmProfileLoader {
         val family = obj.optString("family", "").trim().ifBlank { defaults.family }
         val imageSettings = parseImageSettings(obj.optJSONObject("image"), defaults.imageSettings)
         val tokenPolicy = parseTokenPolicy(obj.optJSONObject("token_policy"), defaults.tokenPolicy, obj)
-        val parameterOverrides = parseParameterOverrides(obj.optJSONObject("parameter_overrides"), defaults.parameterOverrides, obj)
+        val parameterOverrides = parseParameterOverrides(
+            obj.optJSONObject("parameter_overrides"),
+            defaults.parameterOverrides,
+            obj
+        )
         val capabilities = parseCapabilities(obj.optJSONObject("capabilities"), defaults.capabilities)
         val autoScan = parseAutoScan(obj.optJSONObject("auto_scan"))
         val streamingEnabled = if (obj.has("streaming_enabled")) {
@@ -232,6 +360,134 @@ object VlmProfileLoader {
             capabilities = capabilities,
             streamingEnabled = streamingEnabled,
             autoScan = autoScan
+        )
+    }
+
+    private fun parseRegistryProfile(obj: JSONObject): VlmProfile? {
+        val id = obj.optString("id").trim()
+        val label = obj.optString("label").trim()
+        if (id.isBlank() || label.isBlank()) {
+            return null
+        }
+        val description = obj.optString("description").trim().ifBlank { null }
+        val availability = obj.optString("availability").trim().lowercase().ifBlank { "both" }
+        val backendAvailable = availability == "backend" || availability == "both"
+        val directByokAvailable = availability == "byok" || availability == "both"
+        val embeddedDebugAllowed = obj.optJSONObject("debug")
+            ?.optBoolean("embedded_key_allowed", directByokAvailable)
+            ?: directByokAvailable
+        val backendBlock = obj.optJSONObject("backend")
+        val byokBlock = obj.optJSONObject("byok")
+        val streamingEnabled = when {
+            byokBlock?.has("streaming_enabled") == true -> byokBlock.optBoolean("streaming_enabled")
+            backendBlock != null -> backendBlock.optBoolean("supports_streaming", false)
+            else -> false
+        }
+        val defaults = VlmProfileDefaults(
+            provider = byokBlock?.optString("provider")?.trim().orEmpty().ifBlank {
+                if (backendAvailable) "owli-backend" else "openrouter"
+            },
+            family = byokBlock?.optString("family")?.trim()?.takeIf { it.isNotBlank() },
+            systemPrompt = byokBlock?.optString("system_prompt")?.trim()?.takeIf { it.isNotBlank() }
+                ?: VlmConfig.DEFAULT_SYSTEM_PROMPT,
+            overviewPrompt = byokBlock?.optString("overview_prompt")?.trim()?.takeIf { it.isNotBlank() }
+                ?: VlmConfig.DEFAULT_OVERVIEW_PROMPT,
+            imageSettings = parseImageSettings(byokBlock?.optJSONObject("image"), VlmImageSettings()),
+            tokenPolicy = parseTokenPolicy(
+                byokBlock?.optJSONObject("token_policy"),
+                VlmTokenPolicy(VlmConfig.DEFAULT_MAX_TOKENS),
+                null
+            ),
+            parameterOverrides = parseParameterOverrides(
+                byokBlock?.optJSONObject("parameter_overrides"),
+                VlmParameterOverrides(),
+                null
+            ),
+            capabilities = parseCapabilities(byokBlock?.optJSONObject("capabilities"), VlmCapabilities()),
+            streamingEnabled = streamingEnabled
+        )
+        val modelId = byokBlock?.optString("model_id")?.trim()
+            ?.takeIf { it.isNotBlank() }
+            ?: "owli-backend/$id"
+        val autoScan = parseAutoScan(byokBlock?.optJSONObject("auto_scan"))
+        return VlmProfile(
+            id = id,
+            label = label,
+            description = description,
+            modelId = modelId,
+            provider = defaults.provider,
+            family = defaults.family,
+            systemPrompt = defaults.systemPrompt,
+            overviewPrompt = defaults.overviewPrompt,
+            imageSettings = defaults.imageSettings,
+            tokenPolicy = defaults.tokenPolicy,
+            parameterOverrides = defaults.parameterOverrides,
+            capabilities = defaults.capabilities,
+            streamingEnabled = defaults.streamingEnabled,
+            autoScan = autoScan,
+            backendManagedAvailable = backendAvailable,
+            directByokAvailable = directByokAvailable,
+            embeddedDebugAvailable = embeddedDebugAllowed
+        )
+    }
+
+    private fun parsePublicProfile(obj: JSONObject): PublicVlmProfile? {
+        val id = obj.optString("id").trim()
+        val label = obj.optString("label").trim()
+        if (id.isBlank() || label.isBlank()) {
+            return null
+        }
+        val transports = obj.optJSONObject("transports")
+        val backend = transports?.optJSONObject("backend")
+        val byok = transports?.optJSONObject("byok")
+        return PublicVlmProfile(
+            id = id,
+            label = label,
+            description = obj.optString("description").trim().ifBlank { null },
+            backendAvailable = backend?.optBoolean("available", false) ?: false,
+            backendSupportsStreaming = backend?.optBoolean("supportsStreaming", false) ?: false,
+            directByokAvailable = byok?.optBoolean("available", false) ?: false,
+            directByokSupportsStreaming = byok?.optBoolean("supportsStreaming", false) ?: false
+        )
+    }
+
+    private fun mergeProfile(publicProfile: PublicVlmProfile, localProfile: VlmProfile?): VlmProfile {
+        if (localProfile != null) {
+            return localProfile.copy(
+                label = publicProfile.label,
+                description = publicProfile.description ?: localProfile.description,
+                streamingEnabled = when {
+                    publicProfile.directByokAvailable -> localProfile.streamingEnabled
+                    publicProfile.backendAvailable -> publicProfile.backendSupportsStreaming
+                    else -> localProfile.streamingEnabled
+                },
+                backendManagedAvailable = publicProfile.backendAvailable,
+                directByokAvailable = publicProfile.directByokAvailable,
+                embeddedDebugAvailable = publicProfile.directByokAvailable && localProfile.embeddedDebugAvailable
+            )
+        }
+        val defaultTokenPolicy = VlmTokenPolicy(maxTokens = VlmConfig.DEFAULT_MAX_TOKENS)
+        return VlmProfile(
+            id = publicProfile.id,
+            label = publicProfile.label,
+            description = publicProfile.description,
+            modelId = "owli-backend/${publicProfile.id}",
+            provider = if (publicProfile.backendAvailable) "owli-backend" else "openrouter",
+            family = null,
+            systemPrompt = VlmConfig.DEFAULT_SYSTEM_PROMPT,
+            overviewPrompt = VlmConfig.DEFAULT_OVERVIEW_PROMPT,
+            imageSettings = VlmImageSettings(),
+            tokenPolicy = defaultTokenPolicy,
+            parameterOverrides = VlmParameterOverrides(),
+            capabilities = VlmCapabilities(),
+            streamingEnabled = if (publicProfile.backendAvailable) {
+                publicProfile.backendSupportsStreaming
+            } else {
+                publicProfile.directByokSupportsStreaming
+            },
+            backendManagedAvailable = publicProfile.backendAvailable,
+            directByokAvailable = publicProfile.directByokAvailable,
+            embeddedDebugAvailable = publicProfile.directByokAvailable
         )
     }
 
