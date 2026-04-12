@@ -1,5 +1,7 @@
 package com.owlitech.owli.assist.vlm
 
+import com.owlitech.owli.assist.settings.VlmTransportMode
+
 data class VlmCapabilities(
     val supportsVision: Boolean = true,
     val supportsReasoning: Boolean = false,
@@ -45,5 +47,16 @@ data class VlmProfile(
     val parameterOverrides: VlmParameterOverrides,
     val capabilities: VlmCapabilities,
     val streamingEnabled: Boolean = false,
-    val autoScan: VlmAutoScanConfig? = null
-)
+    val autoScan: VlmAutoScanConfig? = null,
+    val backendManagedAvailable: Boolean = true,
+    val directByokAvailable: Boolean = true,
+    val embeddedDebugAvailable: Boolean = true
+) {
+    fun isAvailableIn(mode: VlmTransportMode): Boolean {
+        return when (mode) {
+            VlmTransportMode.BACKEND_MANAGED -> backendManagedAvailable
+            VlmTransportMode.DIRECT_OPENROUTER_BYOK -> directByokAvailable
+            VlmTransportMode.EMBEDDED_DEBUG -> embeddedDebugAvailable
+        }
+    }
+}

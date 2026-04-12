@@ -41,8 +41,8 @@ import com.owlitech.owli.assist.vlm.OwliBackendVlmClient
 import com.owlitech.owli.assist.vlm.OpenRouterVlmClient
 import com.owlitech.owli.assist.vlm.SwitchingVlmClient
 import com.owlitech.owli.assist.vlm.VlmProfile
-import com.owlitech.owli.assist.vlm.VlmProfileLoader
 import com.owlitech.owli.assist.vlm.VlmProfilesConfig
+import com.owlitech.owli.assist.vlm.VlmProfilesRepository
 import com.owlitech.owli.assist.vlm.VlmUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
@@ -50,6 +50,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -71,11 +72,21 @@ class MainActivity : AppCompatActivity() {
     }
 
     private lateinit var vlmProfilesConfig: VlmProfilesConfig
+    private lateinit var currentSettings: AppSettings
+    private val vlmProfilesRepository by lazy {
+        VlmProfilesRepository(applicationContext)
+    }
+    private val vlmProfilesConfigFlow by lazy {
+        MutableStateFlow(vlmProfilesRepository.loadInitialConfig())
+    }
     private val backendInstallationIdStore by lazy {
         OwliBackendInstallationIdStore(applicationContext)
     }
     private val vlmClient by lazy {
-        val defaultProfile = vlmProfilesConfig.resolve(vlmProfilesConfig.defaultProfileId)
+        val defaultProfile = vlmProfilesConfig.resolve(
+            vlmProfilesConfig.defaultProfileId,
+            AppSettingsDefaults.vlmTransportMode
+        )
         SwitchingVlmClient(
             backendClient = OwliBackendVlmClient(
                 profile = defaultProfile,
@@ -126,17 +137,24 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         AppLogger.d("Activity onCreate")
-        vlmProfilesConfig = VlmProfileLoader.load(applicationContext)
-        activeVlmProfile = vlmProfilesConfig.resolve(vlmProfilesConfig.defaultProfileId)
+        currentSettings = AppSettings()
+        vlmProfilesConfig = vlmProfilesConfigFlow.value
+        activeVlmProfile = vlmProfilesConfig.resolve(
+            vlmProfilesConfig.defaultProfileId,
+            currentSettings.vlmTransportMode
+        )
         mainViewModel.applyVlmProfile(activeVlmProfile)
         audioFeedbackEngine.setOnVlmStreamIdleListener {
             updateVlmAudioState()
         }
         enableEdgeToEdge()
         observeVlmState()
+        observeVlmProfiles()
         observeSettings()
+        refreshRemoteProfiles()
         setContent {
             OwliTheme {
+                val activeProfilesConfig by vlmProfilesConfigFlow.collectAsState()
                 val navController = rememberNavController()
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentRoute = AppRoute.fromRoute(navBackStackEntry?.destination?.route)
@@ -166,7 +184,7 @@ class MainActivity : AppCompatActivity() {
                         contentPadding = innerPadding,
                         mainViewModel = mainViewModel,
                         settingsViewModel = settingsViewModel,
-                        vlmProfilesConfig = vlmProfilesConfig,
+                        vlmProfilesConfig = activeProfilesConfig,
                         onVoiceInputActiveChanged = { active -> setVoiceInputActive(active) },
                         onRepeatLastVlmResponse = { primary, secondary ->
                             repeatLastVlmResponse(primary, secondary)
@@ -226,18 +244,43 @@ class MainActivity : AppCompatActivity() {
                 .debounce(400)
                 .distinctUntilChanged()
                 .collect { settings ->
+                    currentSettings = settings
                     applySettings(settings)
                 }
         }
     }
 
+    private fun observeVlmProfiles() {
+        lifecycleScope.launch {
+            vlmProfilesConfigFlow.collect { config ->
+                vlmProfilesConfig = config
+                applySettings(currentSettings)
+            }
+        }
+    }
+
+    private fun refreshRemoteProfiles() {
+        lifecycleScope.launch {
+            val remoteConfig = vlmProfilesRepository.refreshRemoteConfig() ?: return@launch
+            vlmProfilesConfigFlow.value = remoteConfig
+        }
+    }
+
     private fun applySettings(settings: AppSettings) {
         applyLocale(settings.languagePreference)
-        val defaultProfileId = vlmProfilesConfig.defaultProfileId
-        val profileExists = vlmProfilesConfig.profiles.any { it.id == settings.vlmProfileId }
+        val defaultProfileId = vlmProfilesConfig.resolve(
+            vlmProfilesConfig.defaultProfileId,
+            settings.vlmTransportMode
+        ).id
+        val profileExists = vlmProfilesConfig
+            .profilesForTransport(settings.vlmTransportMode)
+            .any { it.id == settings.vlmProfileId }
         if ((!settings.vlmProfileIdUserSet && settings.vlmProfileId != defaultProfileId) || !profileExists) {
             settingsViewModel.update {
-                it.copy(vlmProfileId = defaultProfileId, vlmProfileIdUserSet = false)
+                it.copy(
+                    vlmProfileId = defaultProfileId,
+                    vlmProfileIdUserSet = false
+                )
             }
             return
         }
@@ -250,7 +293,7 @@ class MainActivity : AppCompatActivity() {
             streamingTtsController.cancel()
         }
         applyVlmTransportSelection(settings)
-        activeVlmProfile = vlmProfilesConfig.resolve(settings.vlmProfileId)
+        activeVlmProfile = vlmProfilesConfig.resolve(settings.vlmProfileId, settings.vlmTransportMode)
         mainViewModel.applyVlmProfile(activeVlmProfile)
         updateVlmAudioState()
     }

@@ -43,7 +43,8 @@ fun AppNavHost(
     val isAutoScanRunning by mainViewModel.isAutoScanRunning.collectAsState()
     val vlmAttachments by mainViewModel.vlmAttachments.collectAsState()
     val lastVlmImageBytes by mainViewModel.lastVlmImageBytes.collectAsState()
-    val activeVlmProfile = vlmProfilesConfig.resolve(settings.vlmProfileId)
+    val availableProfiles = vlmProfilesConfig.profilesForTransport(settings.vlmTransportMode)
+    val activeVlmProfile = vlmProfilesConfig.resolve(settings.vlmProfileId, settings.vlmTransportMode)
     val autoScanIntervalMs = activeVlmProfile.autoScan?.intervalMs?.takeIf { it > 0 } ?: 2000L
     val layoutDirection = LocalLayoutDirection.current
     val defaultPadding = PaddingValues(
@@ -137,7 +138,7 @@ fun AppNavHost(
         composable(AppRoute.VlmProfiles.route) {
             Box(modifier = Modifier.padding(defaultPadding)) {
                 VlmProfilesScreen(
-                    profiles = vlmProfilesConfig.profiles,
+                    profiles = availableProfiles,
                     activeProfileId = activeVlmProfile.id,
                     onSelect = { profile ->
                         settingsViewModel.update {
