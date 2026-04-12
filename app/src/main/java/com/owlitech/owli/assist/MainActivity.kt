@@ -254,7 +254,7 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             vlmProfilesConfigFlow.collect { config ->
                 vlmProfilesConfig = config
-                applySettings(currentSettings)
+                applyProfileSelection(currentSettings)
             }
         }
     }
@@ -268,6 +268,19 @@ class MainActivity : AppCompatActivity() {
 
     private fun applySettings(settings: AppSettings) {
         applyLocale(settings.languagePreference)
+        audioFeedbackEngine.updateSpeechRate(settings.ttsSpeechRate)
+        audioFeedbackEngine.updatePitch(settings.ttsPitch)
+        audioFeedbackEngine.setTtsEnabled(settings.ttsEnabled)
+        ttsEnabled = settings.ttsEnabled
+        streamingTtsEnabled = settings.streamingVlmTtsEnabled
+        if (!ttsEnabled) {
+            streamingTtsController.cancel()
+        }
+        applyVlmTransportSelection(settings)
+        applyProfileSelection(settings)
+    }
+
+    private fun applyProfileSelection(settings: AppSettings) {
         val defaultProfileId = vlmProfilesConfig.resolve(
             vlmProfilesConfig.defaultProfileId,
             settings.vlmTransportMode
@@ -284,15 +297,6 @@ class MainActivity : AppCompatActivity() {
             }
             return
         }
-        audioFeedbackEngine.updateSpeechRate(settings.ttsSpeechRate)
-        audioFeedbackEngine.updatePitch(settings.ttsPitch)
-        audioFeedbackEngine.setTtsEnabled(settings.ttsEnabled)
-        ttsEnabled = settings.ttsEnabled
-        streamingTtsEnabled = settings.streamingVlmTtsEnabled
-        if (!ttsEnabled) {
-            streamingTtsController.cancel()
-        }
-        applyVlmTransportSelection(settings)
         activeVlmProfile = vlmProfilesConfig.resolve(settings.vlmProfileId, settings.vlmTransportMode)
         mainViewModel.applyVlmProfile(activeVlmProfile)
         updateVlmAudioState()
