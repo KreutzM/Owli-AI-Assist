@@ -49,6 +49,78 @@ internal data class PublicVlmProfileRegistry(
     val profiles: List<PublicVlmProfile>
 )
 
+internal data class LocalRegistryConfig(
+    val defaultProfileId: String,
+    val profiles: List<LocalRegistryProfile>
+) {
+    fun toProfilesConfig(source: VlmProfilesSource = VlmProfilesSource.LOCAL_REGISTRY_ASSET): VlmProfilesConfig {
+        val effectiveProfiles = profiles.map { it.toEffectiveProfile() }
+        val resolvedDefault = effectiveProfiles.firstOrNull { it.id == defaultProfileId }?.id
+            ?: effectiveProfiles.firstOrNull()?.id
+            ?: VlmProfileLoader.fallbackConfig().defaultProfileId
+        return VlmProfilesConfig(
+            profiles = effectiveProfiles.ifEmpty { VlmProfileLoader.fallbackProfiles() },
+            defaultProfileId = resolvedDefault,
+            source = source
+        )
+    }
+}
+
+internal data class LocalRegistryProfile(
+    val id: String,
+    val label: String,
+    val description: String?,
+    val backendAvailable: Boolean,
+    val backendStreamingEnabled: Boolean,
+    val embeddedDebugAllowed: Boolean,
+    val byok: ByokProfileConfig?
+) {
+    fun toEffectiveProfile(publicProfile: PublicVlmProfile? = null): VlmProfile {
+        val label = publicProfile?.label ?: label
+        val description = publicProfile?.description ?: description
+        val backendAvailable = publicProfile?.backendAvailable ?: backendAvailable
+        val directByokAvailable = publicProfile?.directByokAvailable ?: (byok != null)
+        val streamingEnabled = when {
+            directByokAvailable && byok != null -> byok.streamingEnabled
+            publicProfile != null && publicProfile.backendAvailable -> publicProfile.backendSupportsStreaming
+            else -> backendStreamingEnabled
+        }
+        return VlmProfile(
+            id = id,
+            label = label,
+            description = description,
+            modelId = byok?.modelId ?: "owli-backend/$id",
+            provider = byok?.provider ?: if (backendAvailable) "owli-backend" else "openrouter",
+            family = byok?.family,
+            systemPrompt = byok?.systemPrompt ?: VlmConfig.DEFAULT_SYSTEM_PROMPT,
+            overviewPrompt = byok?.overviewPrompt ?: VlmConfig.DEFAULT_OVERVIEW_PROMPT,
+            imageSettings = byok?.imageSettings ?: VlmImageSettings(),
+            tokenPolicy = byok?.tokenPolicy ?: VlmTokenPolicy(VlmConfig.DEFAULT_MAX_TOKENS),
+            parameterOverrides = byok?.parameterOverrides ?: VlmParameterOverrides(),
+            capabilities = byok?.capabilities ?: VlmCapabilities(),
+            streamingEnabled = streamingEnabled,
+            autoScan = byok?.autoScan,
+            backendManagedAvailable = backendAvailable,
+            directByokAvailable = directByokAvailable,
+            embeddedDebugAvailable = directByokAvailable && embeddedDebugAllowed
+        )
+    }
+}
+
+internal data class ByokProfileConfig(
+    val provider: String,
+    val modelId: String,
+    val family: String?,
+    val systemPrompt: String,
+    val overviewPrompt: String,
+    val imageSettings: VlmImageSettings,
+    val tokenPolicy: VlmTokenPolicy,
+    val parameterOverrides: VlmParameterOverrides,
+    val capabilities: VlmCapabilities,
+    val streamingEnabled: Boolean,
+    val autoScan: VlmAutoScanConfig?
+)
+
 internal data class PublicVlmProfile(
     val id: String,
     val label: String,
@@ -74,7 +146,7 @@ object VlmProfileLoader {
     fun loadLocalRegistryAsset(context: Context): VlmProfilesConfig? {
         return runCatching {
             val raw = context.assets.open("vlm-profile-registry.json").bufferedReader().use { it.readText() }
-            parseRegistryAsset(raw)
+            parseLocalRegistry(raw)?.toProfilesConfig()
         }.getOrElse { ex ->
             AppLogger.e(ex, "Failed to load vlm-profile-registry.json")
             null
@@ -107,7 +179,7 @@ object VlmProfileLoader {
 
     internal fun mergePublicRegistry(
         publicRegistry: PublicVlmProfileRegistry,
-        localRegistry: VlmProfilesConfig?
+        localRegistry: LocalRegistryConfig?
     ): VlmProfilesConfig {
         val localProfilesById = localRegistry?.profiles?.associateBy { it.id }.orEmpty()
         val mergedProfiles = publicRegistry.profiles.mapNotNull { publicProfile ->
@@ -115,7 +187,7 @@ object VlmProfileLoader {
             mergeProfile(publicProfile, localProfile)
         }
         if (mergedProfiles.isEmpty()) {
-            return localRegistry ?: fallbackConfig()
+            return localRegistry?.toProfilesConfig() ?: fallbackConfig()
         }
         val defaultId = mergedProfiles.firstOrNull { it.id == publicRegistry.defaultProfileId }?.id
             ?: mergedProfiles.first().id
@@ -255,6 +327,10 @@ object VlmProfileLoader {
     }
 
     internal fun parseRegistryAsset(raw: String): VlmProfilesConfig {
+        return parseLocalRegistry(raw)?.toProfilesConfig() ?: fallbackConfig()
+    }
+
+    internal fun parseLocalRegistry(raw: String): LocalRegistryConfig? {
         val root = JSONObject(raw)
         val profilesArray = root.optJSONArray("profiles") ?: JSONArray()
         val profiles = buildList {
@@ -264,17 +340,14 @@ object VlmProfileLoader {
                 add(profile)
             }
         }
-        if (profiles.isEmpty()) {
-            return fallbackConfig()
-        }
+        if (profiles.isEmpty()) return null
         val defaultId = root.optString("default_profile_id", profiles.first().id).ifBlank {
             profiles.first().id
         }
         val resolvedDefault = profiles.firstOrNull { it.id == defaultId }?.id ?: profiles.first().id
-        return VlmProfilesConfig(
+        return LocalRegistryConfig(
             profiles = profiles,
-            defaultProfileId = resolvedDefault,
-            source = VlmProfilesSource.LOCAL_REGISTRY_ASSET
+            defaultProfileId = resolvedDefault
         )
     }
 
@@ -363,7 +436,7 @@ object VlmProfileLoader {
         )
     }
 
-    private fun parseRegistryProfile(obj: JSONObject): VlmProfile? {
+    private fun parseRegistryProfile(obj: JSONObject): LocalRegistryProfile? {
         val id = obj.optString("id").trim()
         val label = obj.optString("label").trim()
         if (id.isBlank() || label.isBlank()) {
@@ -378,56 +451,47 @@ object VlmProfileLoader {
             ?: directByokAvailable
         val backendBlock = obj.optJSONObject("backend")
         val byokBlock = obj.optJSONObject("byok")
-        val streamingEnabled = when {
-            byokBlock?.has("streaming_enabled") == true -> byokBlock.optBoolean("streaming_enabled")
-            backendBlock != null -> backendBlock.optBoolean("supports_streaming", false)
-            else -> false
+        val byok = parseByokProfileConfig(byokBlock)
+        return LocalRegistryProfile(
+            id = id,
+            label = label,
+            description = description,
+            backendAvailable = backendAvailable,
+            backendStreamingEnabled = backendBlock?.optBoolean("supports_streaming", false) ?: false,
+            embeddedDebugAllowed = embeddedDebugAllowed,
+            byok = if (directByokAvailable) byok else null
+        )
+    }
+
+    private fun parseByokProfileConfig(byokBlock: JSONObject?): ByokProfileConfig? {
+        if (byokBlock == null) return null
+        val provider = byokBlock.optString("provider").trim().ifBlank { "openrouter" }
+        val modelId = byokBlock.optString("model_id").trim()
+        val systemPrompt = byokBlock.optString("system_prompt").trim()
+        if (modelId.isBlank() || systemPrompt.isBlank()) return null
+        val overviewPrompt = byokBlock.optString("overview_prompt").trim().ifBlank {
+            VlmConfig.DEFAULT_OVERVIEW_PROMPT
         }
-        val defaults = VlmProfileDefaults(
-            provider = byokBlock?.optString("provider")?.trim().orEmpty().ifBlank {
-                if (backendAvailable) "owli-backend" else "openrouter"
-            },
-            family = byokBlock?.optString("family")?.trim()?.takeIf { it.isNotBlank() },
-            systemPrompt = byokBlock?.optString("system_prompt")?.trim()?.takeIf { it.isNotBlank() }
-                ?: VlmConfig.DEFAULT_SYSTEM_PROMPT,
-            overviewPrompt = byokBlock?.optString("overview_prompt")?.trim()?.takeIf { it.isNotBlank() }
-                ?: VlmConfig.DEFAULT_OVERVIEW_PROMPT,
-            imageSettings = parseImageSettings(byokBlock?.optJSONObject("image"), VlmImageSettings()),
+        return ByokProfileConfig(
+            provider = provider,
+            modelId = modelId,
+            family = byokBlock.optString("family").trim().ifBlank { null },
+            systemPrompt = systemPrompt,
+            overviewPrompt = overviewPrompt,
+            imageSettings = parseImageSettings(byokBlock.optJSONObject("image"), VlmImageSettings()),
             tokenPolicy = parseTokenPolicy(
-                byokBlock?.optJSONObject("token_policy"),
+                byokBlock.optJSONObject("token_policy"),
                 VlmTokenPolicy(VlmConfig.DEFAULT_MAX_TOKENS),
                 null
             ),
             parameterOverrides = parseParameterOverrides(
-                byokBlock?.optJSONObject("parameter_overrides"),
+                byokBlock.optJSONObject("parameter_overrides"),
                 VlmParameterOverrides(),
                 null
             ),
-            capabilities = parseCapabilities(byokBlock?.optJSONObject("capabilities"), VlmCapabilities()),
-            streamingEnabled = streamingEnabled
-        )
-        val modelId = byokBlock?.optString("model_id")?.trim()
-            ?.takeIf { it.isNotBlank() }
-            ?: "owli-backend/$id"
-        val autoScan = parseAutoScan(byokBlock?.optJSONObject("auto_scan"))
-        return VlmProfile(
-            id = id,
-            label = label,
-            description = description,
-            modelId = modelId,
-            provider = defaults.provider,
-            family = defaults.family,
-            systemPrompt = defaults.systemPrompt,
-            overviewPrompt = defaults.overviewPrompt,
-            imageSettings = defaults.imageSettings,
-            tokenPolicy = defaults.tokenPolicy,
-            parameterOverrides = defaults.parameterOverrides,
-            capabilities = defaults.capabilities,
-            streamingEnabled = defaults.streamingEnabled,
-            autoScan = autoScan,
-            backendManagedAvailable = backendAvailable,
-            directByokAvailable = directByokAvailable,
-            embeddedDebugAvailable = embeddedDebugAllowed
+            capabilities = parseCapabilities(byokBlock.optJSONObject("capabilities"), VlmCapabilities()),
+            streamingEnabled = byokBlock.optBoolean("streaming_enabled", false),
+            autoScan = parseAutoScan(byokBlock.optJSONObject("auto_scan"))
         )
     }
 
@@ -451,20 +515,9 @@ object VlmProfileLoader {
         )
     }
 
-    private fun mergeProfile(publicProfile: PublicVlmProfile, localProfile: VlmProfile?): VlmProfile {
+    private fun mergeProfile(publicProfile: PublicVlmProfile, localProfile: LocalRegistryProfile?): VlmProfile {
         if (localProfile != null) {
-            return localProfile.copy(
-                label = publicProfile.label,
-                description = publicProfile.description ?: localProfile.description,
-                streamingEnabled = when {
-                    publicProfile.directByokAvailable -> localProfile.streamingEnabled
-                    publicProfile.backendAvailable -> publicProfile.backendSupportsStreaming
-                    else -> localProfile.streamingEnabled
-                },
-                backendManagedAvailable = publicProfile.backendAvailable,
-                directByokAvailable = publicProfile.directByokAvailable,
-                embeddedDebugAvailable = publicProfile.directByokAvailable && localProfile.embeddedDebugAvailable
-            )
+            return localProfile.toEffectiveProfile(publicProfile)
         }
         val defaultTokenPolicy = VlmTokenPolicy(maxTokens = VlmConfig.DEFAULT_MAX_TOKENS)
         return VlmProfile(

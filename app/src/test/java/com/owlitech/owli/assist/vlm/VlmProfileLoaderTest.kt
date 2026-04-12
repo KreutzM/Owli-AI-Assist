@@ -52,7 +52,7 @@ class VlmProfileLoaderTest {
 
     @Test
     fun mergePublicRegistry_preservesLocalByokDetails_andFiltersByTransport() {
-        val localRegistry = VlmProfileLoader.parseRegistryAsset(
+        val localRegistry = VlmProfileLoader.parseLocalRegistry(
             """
             {
               "schema_version": "vlm_profile_registry/v1",
@@ -106,7 +106,7 @@ class VlmProfileLoaderTest {
               ]
             }
             """.trimIndent()
-        )
+        ) ?: error("failed to parse local registry")
         val publicRegistry = VlmProfileLoader.parsePublicRegistry(
             """
             {
@@ -175,6 +175,74 @@ class VlmProfileLoaderTest {
 
         val debugProfiles = merged.profilesForTransport(VlmTransportMode.EMBEDDED_DEBUG)
         assertEquals(listOf("scene-brief", "reader-fast"), debugProfiles.map { it.id })
+    }
+
+    @Test
+    fun parseLocalRegistry_buildsByokEffectiveProfileDirectlyFromRegistryBlock() {
+        val localRegistry = VlmProfileLoader.parseLocalRegistry(
+            """
+            {
+              "schema_version": "vlm_profile_registry/v1",
+              "default_profile_id": "reader-fast",
+              "profiles": [
+                {
+                  "id": "reader-fast",
+                  "label": "Reader Fast",
+                  "description": "Reader profile",
+                  "availability": "byok",
+                  "byok": {
+                    "provider": "openrouter",
+                    "model_id": "openai/gpt-5-mini",
+                    "family": "gpt5",
+                    "streaming_enabled": true,
+                    "system_prompt": "reader system",
+                    "overview_prompt": "reader overview",
+                    "capabilities": {
+                      "supports_vision": true,
+                      "supports_reasoning": true,
+                      "supports_json": false
+                    },
+                    "image": {
+                      "max_side_px": 1600,
+                      "jpeg_quality": 92
+                    },
+                    "token_policy": {
+                      "max_tokens": 1400,
+                      "reasoning_effort": "low"
+                    },
+                    "parameter_overrides": {
+                      "temperature": 0.0
+                    },
+                    "auto_scan": {
+                      "enabled_by_default": false,
+                      "interval_ms": 5000,
+                      "speak_free_every_ms": 12000
+                    }
+                  },
+                  "debug": {
+                    "embedded_key_allowed": true
+                  }
+                }
+              ]
+            }
+            """.trimIndent()
+        ) ?: error("failed to parse local registry")
+
+        val config = localRegistry.toProfilesConfig()
+        val profile = config.resolve("reader-fast", VlmTransportMode.DIRECT_OPENROUTER_BYOK)
+
+        assertEquals("openai/gpt-5-mini", profile.modelId)
+        assertEquals("reader system", profile.systemPrompt)
+        assertEquals("reader overview", profile.overviewPrompt)
+        assertEquals(1400, profile.tokenPolicy.maxTokens)
+        assertEquals("low", profile.tokenPolicy.reasoningEffort)
+        assertEquals(0.0, profile.parameterOverrides.temperature ?: Double.NaN, 0.0)
+        assertEquals(1600, profile.imageSettings.maxSidePx)
+        assertEquals(92, profile.imageSettings.jpegQuality)
+        assertTrue(profile.streamingEnabled)
+        assertNotNull(profile.autoScan)
+        assertTrue(profile.directByokAvailable)
+        assertFalse(profile.backendManagedAvailable)
     }
 
     @Test
