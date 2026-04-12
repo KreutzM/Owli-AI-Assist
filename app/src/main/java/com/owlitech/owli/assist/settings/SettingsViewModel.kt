@@ -3,6 +3,10 @@ package com.owlitech.owli.assist.settings
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.owlitech.owli.assist.settings.OpenRouterCurrentKeyInfoException.InvalidResponse
+import com.owlitech.owli.assist.settings.OpenRouterCurrentKeyInfoException.Network
+import com.owlitech.owli.assist.settings.OpenRouterCurrentKeyInfoException.NoActiveKey
+import com.owlitech.owli.assist.settings.OpenRouterCurrentKeyInfoException.Unauthorized
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -12,7 +16,9 @@ import kotlinx.coroutines.launch
 
 class SettingsViewModel(
     private val repository: SettingsRepository,
-    private val openRouterUserKeyStore: OpenRouterUserKeyStore
+    private val openRouterUserKeyStore: OpenRouterUserKeyStore,
+    private val embeddedOpenRouterApiKey: String,
+    private val openRouterCurrentKeyInfoService: OpenRouterCurrentKeyInfoService
 ) : ViewModel() {
 
     private val _settings = MutableStateFlow(AppSettings())
@@ -20,6 +26,9 @@ class SettingsViewModel(
 
     private val _hasOpenRouterUserKey = MutableStateFlow(false)
     val hasOpenRouterUserKey: StateFlow<Boolean> = _hasOpenRouterUserKey.asStateFlow()
+
+    private val _openRouterKeyInfoState = MutableStateFlow<OpenRouterKeyInfoUiState>(OpenRouterKeyInfoUiState.Idle)
+    val openRouterKeyInfoState: StateFlow<OpenRouterKeyInfoUiState> = _openRouterKeyInfoState.asStateFlow()
 
     init {
         viewModelScope.launch {
@@ -60,6 +69,45 @@ class SettingsViewModel(
         }
     }
 
+    fun loadOpenRouterKeyInfo() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val selection = resolveOpenRouterApiKeySelection(
+                settings = _settings.value,
+                embeddedAppKey = embeddedOpenRouterApiKey,
+                userProvidedKey = openRouterUserKeyStore.loadKey()
+            )
+            if (!selection.hasUsableKey) {
+                _openRouterKeyInfoState.value = OpenRouterKeyInfoUiState.Error(
+                    sourceMode = null,
+                    reason = OpenRouterKeyInfoErrorReason.NO_ACTIVE_KEY
+                )
+                return@launch
+            }
+
+            _openRouterKeyInfoState.value = OpenRouterKeyInfoUiState.Loading(selection.activeMode)
+            _openRouterKeyInfoState.value = try {
+                val info = openRouterCurrentKeyInfoService.fetchCurrentKeyInfo(selection.apiKey)
+                OpenRouterKeyInfoUiState.Success(
+                    OpenRouterCurrentKeyInfoResult(
+                        sourceMode = selection.activeMode,
+                        info = info
+                    )
+                )
+            } catch (exception: Exception) {
+                OpenRouterKeyInfoUiState.Error(
+                    sourceMode = selection.activeMode,
+                    reason = when (exception) {
+                        NoActiveKey -> OpenRouterKeyInfoErrorReason.NO_ACTIVE_KEY
+                        Unauthorized -> OpenRouterKeyInfoErrorReason.UNAUTHORIZED
+                        Network -> OpenRouterKeyInfoErrorReason.NETWORK
+                        InvalidResponse -> OpenRouterKeyInfoErrorReason.INVALID_RESPONSE
+                        else -> OpenRouterKeyInfoErrorReason.UNKNOWN
+                    }
+                )
+            }
+        }
+    }
+
     private fun refreshOpenRouterUserKeyState() {
         viewModelScope.launch(Dispatchers.IO) {
             _hasOpenRouterUserKey.value = openRouterUserKeyStore.hasKey()
@@ -68,12 +116,19 @@ class SettingsViewModel(
 
     class Factory(
         private val repository: SettingsRepository,
-        private val openRouterUserKeyStore: OpenRouterUserKeyStore
+        private val openRouterUserKeyStore: OpenRouterUserKeyStore,
+        private val embeddedOpenRouterApiKey: String,
+        private val openRouterCurrentKeyInfoService: OpenRouterCurrentKeyInfoService
     ) : ViewModelProvider.Factory {
         @Suppress("UNCHECKED_CAST")
         override fun <T : ViewModel> create(modelClass: Class<T>): T {
             if (modelClass.isAssignableFrom(SettingsViewModel::class.java)) {
-                return SettingsViewModel(repository, openRouterUserKeyStore) as T
+                return SettingsViewModel(
+                    repository = repository,
+                    openRouterUserKeyStore = openRouterUserKeyStore,
+                    embeddedOpenRouterApiKey = embeddedOpenRouterApiKey,
+                    openRouterCurrentKeyInfoService = openRouterCurrentKeyInfoService
+                ) as T
             }
             throw IllegalArgumentException("Unknown ViewModel class")
         }

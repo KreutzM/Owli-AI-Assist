@@ -13,6 +13,7 @@ und Reasoning nur fuer Debug/Telemetry nutzen.
 - Der Runtime-Resolver faellt ohne gespeicherten Nutzer-Key weiterhin auf den embedded App-Key zurueck; dadurch bleibt das aktuelle Verhalten unveraendert.
 - In Settings fuehrt ein eigener Unterbildschirm fuer den OpenRouter-Key zur manuellen Eingabe, expliziten Paste-Aktion oder zum QR-Code-Import.
 - QR-Import akzeptiert rohe OpenRouter-Keys, `openrouter:key=<KEY>` und PIN-geschuetzte QR-Payloads im Format `openrouter:keyenc:v1:pbkdf2-sha256:<iterations>:<salt_b64url>:<iv_b64url>:<ciphertext_b64url>`.
+- Im Key-Verwalten-Bildschirm kann die App fuer den aktuell aktiven OpenRouter-Key ueber `GET /api/v1/key` Key-Infos wie Label, Limits, Reset-Info, Nutzungswerte und Free-Tier-Status abrufen.
 - QR-Decoding nutzt ML Kit Barcode Scanning; CameraX liefert nur Kamera-Frames und keinen QR-Decoder.
 - Beim Speichern wird `AppSettings.openRouterKeyMode` auf `USER_PROVIDED_KEY` gesetzt, beim Loeschen auf `EMBEDDED_APP_KEY`.
 - `OpenRouterUserKeyStore` ist die schmale Storage-API fuer spaetere Import-/Eingabe-Flows (`saveKey`, `loadKey`, `hasKey`, `clearKey`).

@@ -5,6 +5,7 @@
     <string name="nav_title_app">OwliAi Assist</string>
     <string name="nav_title_vlm_profiles">VLM Profiles</string>
     <string name="nav_title_openrouter_key_settings">OpenRouter key</string>
+    <string name="nav_title_openrouter_key_info">OpenRouter key info</string>
     <string name="nav_title_openrouter_key_qr_import">Scan OpenRouter key</string>
     <string name="nav_title_help">Help</string>
     <string name="nav_title_about">About</string>
@@ -94,6 +95,7 @@
     <string name="vlm_settings_openrouter_key_paste">Paste</string>
     <string name="vlm_settings_openrouter_key_save">Save custom key</string>
     <string name="vlm_settings_openrouter_key_clear">Delete stored key</string>
+    <string name="vlm_settings_openrouter_key_info">Show key info</string>
     <string name="vlm_settings_openrouter_key_use_app_key">Use app key</string>
     <string name="vlm_settings_openrouter_key_use_custom_key">Use custom key</string>
     <string name="vlm_settings_openrouter_key_saved">Custom key saved.</string>
@@ -118,6 +120,30 @@
     <string name="openrouter_qr_import_use_key">Save and use key</string>
     <string name="openrouter_qr_import_scan_again">Scan again</string>
     <string name="openrouter_qr_import_cancel">Cancel</string>
+    <string name="openrouter_key_info_title">Current OpenRouter key info</string>
+    <string name="openrouter_key_info_note">These values come from OpenRouter for the currently active key.</string>
+    <string name="openrouter_key_info_loading">Loading key info&#8230;</string>
+    <string name="openrouter_key_info_refresh">Refresh key info</string>
+    <string name="openrouter_key_info_source">Key source</string>
+    <string name="openrouter_key_info_source_app_key">Embedded app key</string>
+    <string name="openrouter_key_info_source_user_key">User-provided key</string>
+    <string name="openrouter_key_info_label">Label</string>
+    <string name="openrouter_key_info_limit_remaining">Remaining key limit</string>
+    <string name="openrouter_key_info_limit_total">Total key limit</string>
+    <string name="openrouter_key_info_limit_reset">Limit reset</string>
+    <string name="openrouter_key_info_expires_at">Expires at</string>
+    <string name="openrouter_key_info_usage_total">Usage total</string>
+    <string name="openrouter_key_info_usage_daily">Usage daily</string>
+    <string name="openrouter_key_info_usage_weekly">Usage weekly</string>
+    <string name="openrouter_key_info_usage_monthly">Usage monthly</string>
+    <string name="openrouter_key_info_free_tier">Free tier</string>
+    <string name="openrouter_key_info_yes">Yes</string>
+    <string name="openrouter_key_info_no">No</string>
+    <string name="openrouter_key_info_error_no_active_key">No active OpenRouter key is available right now.</string>
+    <string name="openrouter_key_info_error_unauthorized">OpenRouter rejected the current key while fetching key info.</string>
+    <string name="openrouter_key_info_error_network">Could not fetch key info from OpenRouter right now. Try again.</string>
+    <string name="openrouter_key_info_error_invalid_response">OpenRouter returned key info in an unexpected format.</string>
+    <string name="openrouter_key_info_error_unknown">Could not load OpenRouter key info.</string>
 
     <string name="vlm_profile_active_suffix">(Active)</string>
     <string name="vlm_profile_model_format">Model: %1$s</string>
