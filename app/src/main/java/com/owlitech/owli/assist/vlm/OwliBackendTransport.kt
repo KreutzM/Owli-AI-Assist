@@ -397,11 +397,11 @@ class OwliBackendVlmClient(
             output.write(body.toString().toByteArray(Charsets.UTF_8))
         }
         val httpCode = connection.responseCode
-        val responseBody = (if (httpCode in 200..299) connection.inputStream else connection.errorStream)
-            ?.bufferedReader()
-            ?.use { it.readText() }
-            .orEmpty()
         if (httpCode !in 200..299) {
+            val responseBody = connection.errorStream
+                ?.bufferedReader()
+                ?.use { it.readText() }
+                .orEmpty()
             val backendMessage = OwliBackendResponseParser.parseErrorMessage(responseBody)
             throw IOException(
                 backendMessage ?: "Owli backend request failed with HTTP $httpCode."
@@ -466,18 +466,42 @@ class OwliBackendVlmClient(
                 }
                 dispatchEvent()
             } catch (backendError: IOException) {
-                throw backendError
+                throw classifyStreamingIOException(backendError, sawDelta)
             } catch (streamError: Exception) {
                 throw OwliBackendStreamProtocolException(
-                    message = "Owli backend streaming response could not be parsed.",
+                    message = if (sawDelta) {
+                        "Owli backend streaming ended before completion."
+                    } else {
+                        "Owli backend streaming did not start correctly."
+                    },
                     canFallback = !sawDelta,
                     cause = streamError
                 )
             }
         }
         return doneEvent ?: throw OwliBackendStreamProtocolException(
-            message = "Owli backend streaming response ended without a done event.",
+            message = if (sawDelta) {
+                "Owli backend streaming ended before completion."
+            } else {
+                "Owli backend streaming did not start correctly."
+            },
             canFallback = !sawDelta
+        )
+    }
+
+    internal fun classifyStreamingIOException(
+        error: IOException,
+        sawDelta: Boolean
+    ): OwliBackendStreamProtocolException {
+        val message = if (sawDelta) {
+            "Owli backend streaming ended before completion."
+        } else {
+            "Owli backend streaming did not start correctly."
+        }
+        return OwliBackendStreamProtocolException(
+            message = message,
+            canFallback = !sawDelta,
+            cause = error
         )
     }
 
@@ -509,7 +533,7 @@ class OwliBackendVlmClient(
     }
 }
 
-private class OwliBackendStreamProtocolException(
+internal class OwliBackendStreamProtocolException(
     override val message: String,
     val canFallback: Boolean,
     cause: Throwable? = null
