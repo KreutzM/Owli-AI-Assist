@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>VLM Registry Editor</title>
+    <style>
+      :root { color-scheme: light; }
+      body { margin: 0; padding: 24px; font-family: "Segoe UI", Tahoma, sans-serif; background: #f6f7f9; color: #1b1f24; }
+      header, .toolbar, .actions, .nav { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+      header { flex-direction: column; align-items: flex-start; margin-bottom: 16px; }
+      h1, h2, h3 { margin: 0; }
+      h1 { font-size: 22px; }
+      .card { background: #fff; border-radius: 10px; padding: 16px; box-shadow: 0 1px 4px rgba(10, 10, 10, 0.08); margin-bottom: 16px; }
+      .row { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 12px; }
+      label { display: flex; flex-direction: column; gap: 4px; font-size: 13px; color: #4b5563; }
+      label.toggle { flex-direction: row; align-items: center; gap: 8px; }
+      label.full { grid-column: 1 / -1; }
+      button, select, input, textarea { font: inherit; }
+      button { padding: 6px 12px; border-radius: 6px; border: 1px solid #c9ced6; background: #fff; cursor: pointer; }
+      button:disabled { opacity: 0.5; cursor: not-allowed; }
+      input[type="text"], input[type="number"], textarea, select { padding: 8px; border-radius: 6px; border: 1px solid #c9ced6; background: #fff; color: #1b1f24; }
+      textarea { min-height: 96px; resize: vertical; width: 100%; }
+      fieldset { border: 0; padding: 0; margin: 0; }
+      .status { font-size: 12px; color: #5b6472; }
+      .warn { color: #b91c1c; }
+      .muted { font-size: 13px; color: #5b6472; }
+      .error-list { margin: 8px 0 0; padding-left: 18px; color: #b91c1c; font-size: 13px; }
+      .nav a { color: #0f5ea8; text-decoration: none; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <div class="nav"><a href="./index.html">Legacy runtime editor</a></div>
+      <h1>VLM Registry Editor</h1>
+      <div class="muted">Edits the canonical transport-aware registry foundation without changing current Android runtime behavior.</div>
+      <div class="toolbar">
+        <button id="openButton" type="button">Open JSON</button>
+        <button id="saveButton" type="button" disabled>Save</button>
+        <button id="downloadButton" type="button" disabled>Download</button>
+        <span class="status" id="fileStatus">No file loaded</span>
+      </div>
+    </header>
+
+    <section class="card">
+      <div class="row">
+        <label>
+          Profile
+          <select id="profileSelect" disabled></select>
+        </label>
+        <div class="actions">
+          <button id="duplicateButton" type="button" disabled>Duplicate Profile</button>
+          <button id="deleteButton" type="button" disabled>Delete Profile</button>
+          <button id="setDefaultButton" type="button" disabled>Set as Default</button>
+          <button id="validateButton" type="button" disabled>Validate</button>
+        </div>
+      </div>
+      <div class="row">
+        <label>
+          schema_version
+          <input id="schemaVersion" type="text">
+        </label>
+        <label>
+          default_profile_id
+          <input id="defaultProfileId" type="text">
+        </label>
+      </div>
+      <div class="status" id="validationSummary"></div>
+      <ul class="error-list" id="validationErrors"></ul>
+    </section>
+
+    <section class="card">
+      <h2>Profile Details</h2>
+      <fieldset id="profileFields" disabled>
+        <h3>Core</h3>
+        <div class="row">
+          <label><span>id</span><input id="fieldId" type="text"></label>
+          <label><span>label</span><input id="fieldLabel" type="text"></label>
+          <label class="full"><span>description</span><textarea id="fieldDescription"></textarea></label>
+          <label>
+            availability
+            <select id="fieldAvailability">
+              <option value="backend">backend</option>
+              <option value="byok">byok</option>
+              <option value="both">both</option>
+            </select>
+          </label>
+        </div>
+
+        <h3>UI</h3>
+        <div class="row">
+          <label><span>ui.group</span><input id="fieldUiGroup" type="text"></label>
+          <label><span>ui.sort_order</span><input id="fieldUiSortOrder" type="number"></label>
+          <label><span>ui.badges (comma separated)</span><input id="fieldUiBadges" type="text"></label>
+          <label class="toggle"><input id="fieldUiHidden" type="checkbox"> ui.hidden</label>
+        </div>
+
+        <h3>Backend</h3>
+        <div class="row">
+          <label><span>backend.profile_id</span><input id="fieldBackendProfileId" type="text"></label>
+          <label class="toggle"><input id="fieldBackendStreaming" type="checkbox"> backend.supports_streaming</label>
+          <label class="toggle"><input id="fieldBackendFollowup" type="checkbox"> backend.supports_followup</label>
+          <label class="toggle"><input id="fieldBackendFollowupImages" type="checkbox"> backend.supports_followup_images</label>
+          <label class="full"><span>backend.notes</span><textarea id="fieldBackendNotes"></textarea></label>
+        </div>
+
+        <h3>BYOK</h3>
+        <div class="row">
+          <label><span>byok.provider</span><input id="fieldByokProvider" type="text"></label>
+          <label><span>byok.model_id</span><input id="fieldByokModelId" type="text"></label>
+          <label><span>byok.family</span><input id="fieldByokFamily" type="text"></label>
+          <label class="toggle"><input id="fieldByokStreaming" type="checkbox"> byok.streaming_enabled</label>
+        </div>
+        <div class="row">
+          <label class="toggle"><input id="fieldByokSupportsVision" type="checkbox"> byok.capabilities.supports_vision</label>
+          <label class="toggle"><input id="fieldByokSupportsReasoning" type="checkbox"> byok.capabilities.supports_reasoning</label>
+          <label class="toggle"><input id="fieldByokSupportsJson" type="checkbox"> byok.capabilities.supports_json</label>
+          <label class="toggle"><input id="fieldDebugEmbeddedAllowed" type="checkbox"> debug.embedded_key_allowed</label>
+        </div>
+        <div class="row">
+          <label><span>byok.image.max_side_px</span><input id="fieldByokImageMaxSide" type="number"></label>
+          <label><span>byok.image.jpeg_quality</span><input id="fieldByokImageJpegQuality" type="number"></label>
+          <label><span>byok.token_policy.max_tokens</span><input id="fieldByokMaxTokens" type="number"></label>
+          <label><span>byok.parameter_overrides.temperature</span><input id="fieldByokTemperature" type="number" step="0.01"></label>
+          <label><span>byok.token_policy.reasoning_effort</span><input id="fieldByokReasoningEffort" type="text"></label>
+          <label class="toggle"><input id="fieldByokReasoningExclude" type="checkbox"> byok.token_policy.reasoning_exclude</label>
+          <label><span>byok.token_policy.retry1_max_tokens</span><input id="fieldByokRetry1" type="number"></label>
+          <label><span>byok.token_policy.retry2_max_tokens</span><input id="fieldByokRetry2" type="number"></label>
+          <label class="toggle"><input id="fieldByokAutoScanEnabled" type="checkbox"> byok.auto_scan.enabled_by_default</label>
+          <label><span>byok.auto_scan.interval_ms</span><input id="fieldByokAutoScanInterval" type="number"></label>
+          <label><span>byok.auto_scan.speak_free_every_ms</span><input id="fieldByokAutoScanSpeakFree" type="number"></label>
+        </div>
+        <div class="row">
+          <label class="full"><span>byok.system_prompt</span><textarea id="fieldByokSystemPrompt"></textarea></label>
+          <label class="full"><span>byok.overview_prompt</span><textarea id="fieldByokOverviewPrompt"></textarea></label>
+        </div>
+      </fieldset>
+    </section>
+
+    <input id="fileInput" type="file" accept="application/json,.json" hidden>
+    <script src="registry.js"></script>
+  </body>
+</html>
