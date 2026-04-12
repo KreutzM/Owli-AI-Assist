@@ -139,9 +139,23 @@ class OwliBackendVlmClient(
         maxTokens: Int,
         temperature: Double
     ): VlmClientResult {
-        val result = runRequest(messages)
-        callback.onComplete(result.assistantContent, null, null, null)
-        return result
+        return try {
+            runStreamingRequest(messages, callback)
+        } catch (streamException: OwliBackendStreamProtocolException) {
+            if (!streamException.canFallback) {
+                callback.onError(streamException)
+                throw streamException
+            }
+            val fallbackResult = runRequest(messages)
+            callback.onComplete(fallbackResult.assistantContent, null, null, null)
+            fallbackResult
+        } catch (streamException: IOException) {
+            callback.onError(streamException)
+            throw streamException
+        } catch (streamException: RuntimeException) {
+            callback.onError(streamException)
+            throw streamException
+        }
     }
 
     fun updateProfile(newProfile: VlmProfile) {
@@ -166,6 +180,25 @@ class OwliBackendVlmClient(
             describeScene(latestUser)
         } else {
             followUp(latestUser)
+        }
+    }
+
+    private fun runStreamingRequest(
+        messages: List<VlmChatMessage>,
+        callback: VlmStreamingCallback
+    ): VlmClientResult {
+        if (!isConfigured) {
+            throw IOException("Owli backend transport is not configured.")
+        }
+        val latestUser = messages.lastOrNull { it.role == "user" }
+            ?: throw IOException("No user request available for backend transport.")
+        val describesScene = messages.none { it.role == "assistant" } &&
+            latestUser.content.any { it is VlmContentPart.ImageUrl }
+
+        return if (describesScene) {
+            describeSceneStreaming(latestUser, callback)
+        } else {
+            followUpStreaming(latestUser, callback)
         }
     }
 
@@ -195,6 +228,43 @@ class OwliBackendVlmClient(
             rawResponse = "<owli-backend-describe>",
             requestId = response.requestId,
             debugPath = "owli_backend.describe"
+        )
+    }
+
+    private fun describeSceneStreaming(
+        message: VlmChatMessage,
+        callback: VlmStreamingCallback
+    ): VlmClientResult {
+        val session = ensureSession()
+        if (!session.canDescribe) {
+            throw IOException("Scene describe is not enabled for the current backend session.")
+        }
+        val imageUrl = message.content.filterIsInstance<VlmContentPart.ImageUrl>().lastOrNull()?.url
+            ?: throw IOException("Backend scene describe needs a snapshot image.")
+        val dataUrl = parseDataUrl(imageUrl)
+            ?: throw IOException("Snapshot image format is not supported for backend transport.")
+        val requestBody = JSONObject()
+            .put("sessionToken", session.sessionToken)
+            .put("installationId", installationIdProvider())
+            .put("imageBase64", dataUrl.base64)
+            .put("imageMimeType", dataUrl.mimeType)
+            .put("sceneMode", "describe")
+            .put("stream", true)
+
+        val response = postJsonSse("$baseUrl/api/v1/scene/describe", requestBody, callback)
+        val sceneToken = response.sceneToken
+            ?: throw OwliBackendStreamProtocolException(
+                message = "Owli backend streaming describe finished without a scene token.",
+                canFallback = false
+            )
+        activeSceneToken = sceneToken
+        activeSceneTokenExpiresAt = response.sceneTokenExpiresAt
+        callback.onComplete(response.answerText, null, null, null)
+        return VlmClientResult(
+            assistantContent = response.answerText,
+            rawResponse = "<owli-backend-describe-stream>",
+            requestId = response.requestId,
+            debugPath = "owli_backend.describe_stream"
         )
     }
 
@@ -228,6 +298,42 @@ class OwliBackendVlmClient(
             rawResponse = "<owli-backend-followup>",
             requestId = response.requestId,
             debugPath = "owli_backend.followup"
+        )
+    }
+
+    private fun followUpStreaming(
+        message: VlmChatMessage,
+        callback: VlmStreamingCallback
+    ): VlmClientResult {
+        val session = ensureSession()
+        if (!session.canFollowUp) {
+            throw IOException("Follow-up is not enabled for the current backend session.")
+        }
+        val sceneToken = activeSceneToken?.takeIf { !isSceneTokenExpired() }
+            ?: throw IOException("No active backend scene is available. Start a new scene first.")
+        val questionText = message.content.filterIsInstance<VlmContentPart.Text>()
+            .joinToString(separator = "\n") { it.text.trim() }
+            .trim()
+        if (questionText.isBlank()) {
+            throw IOException("Backend follow-up needs a text question.")
+        }
+        if (message.content.any { it is VlmContentPart.ImageUrl }) {
+            throw IOException("Additional follow-up images are currently only supported in direct OpenRouter mode.")
+        }
+        val requestBody = JSONObject()
+            .put("sessionToken", session.sessionToken)
+            .put("installationId", installationIdProvider())
+            .put("sceneToken", sceneToken)
+            .put("questionText", questionText)
+            .put("stream", true)
+
+        val response = postJsonSse("$baseUrl/api/v1/scene/followup", requestBody, callback)
+        callback.onComplete(response.answerText, null, null, null)
+        return VlmClientResult(
+            assistantContent = response.answerText,
+            rawResponse = "<owli-backend-followup-stream>",
+            requestId = response.requestId,
+            debugPath = "owli_backend.followup_stream"
         )
     }
 
@@ -274,6 +380,107 @@ class OwliBackendVlmClient(
         return responseBody to httpCode
     }
 
+    private fun postJsonSse(
+        url: String,
+        body: JSONObject,
+        callback: VlmStreamingCallback
+    ): OwliBackendSseEvent.Done {
+        val connection = (URL(url).openConnection() as HttpURLConnection).apply {
+            requestMethod = "POST"
+            doOutput = true
+            connectTimeout = 10_000
+            readTimeout = 60_000
+            setRequestProperty("Content-Type", "application/json")
+            setRequestProperty("Accept", "text/event-stream")
+        }
+        connection.outputStream.use { output ->
+            output.write(body.toString().toByteArray(Charsets.UTF_8))
+        }
+        val httpCode = connection.responseCode
+        val responseBody = (if (httpCode in 200..299) connection.inputStream else connection.errorStream)
+            ?.bufferedReader()
+            ?.use { it.readText() }
+            .orEmpty()
+        if (httpCode !in 200..299) {
+            val backendMessage = OwliBackendResponseParser.parseErrorMessage(responseBody)
+            throw IOException(
+                backendMessage ?: "Owli backend request failed with HTTP $httpCode."
+            )
+        }
+        val contentType = connection.contentType?.lowercase(Locale.ROOT).orEmpty()
+        if (!contentType.contains("text/event-stream")) {
+            throw OwliBackendStreamProtocolException(
+                message = "Owli backend streaming response was not SSE.",
+                canFallback = true
+            )
+        }
+        var sawDelta = false
+        var doneEvent: OwliBackendSseEvent.Done? = null
+        connection.inputStream.bufferedReader().use { reader ->
+            val dataLines = mutableListOf<String>()
+            var eventName: String? = null
+
+            fun dispatchEvent() {
+                if (eventName.isNullOrBlank() || dataLines.isEmpty()) {
+                    eventName = null
+                    dataLines.clear()
+                    return
+                }
+                val rawData = dataLines.joinToString(separator = "\n")
+                when (val event = OwliBackendSseParser.parseEvent(eventName, rawData)) {
+                    is OwliBackendSseEvent.Metadata -> Unit
+                    is OwliBackendSseEvent.Delta -> {
+                        sawDelta = true
+                        callback.onDelta(event.textDelta)
+                    }
+                    is OwliBackendSseEvent.Done -> {
+                        doneEvent = event
+                    }
+                    is OwliBackendSseEvent.Error -> {
+                        throw IOException(event.message)
+                    }
+                    null -> Unit
+                }
+                eventName = null
+                dataLines.clear()
+            }
+
+            try {
+                while (true) {
+                    val line = reader.readLine() ?: break
+                    if (line.isBlank()) {
+                        dispatchEvent()
+                        if (doneEvent != null) {
+                            break
+                        }
+                        continue
+                    }
+                    if (line.startsWith(":")) continue
+                    if (line.startsWith("event:")) {
+                        eventName = line.removePrefix("event:").trim()
+                        continue
+                    }
+                    if (line.startsWith("data:")) {
+                        dataLines += line.removePrefix("data:").trimStart()
+                    }
+                }
+                dispatchEvent()
+            } catch (backendError: IOException) {
+                throw backendError
+            } catch (streamError: Exception) {
+                throw OwliBackendStreamProtocolException(
+                    message = "Owli backend streaming response could not be parsed.",
+                    canFallback = !sawDelta,
+                    cause = streamError
+                )
+            }
+        }
+        return doneEvent ?: throw OwliBackendStreamProtocolException(
+            message = "Owli backend streaming response ended without a done event.",
+            canFallback = !sawDelta
+        )
+    }
+
     private fun isSessionExpired(session: OwliBackendBootstrapResponse): Boolean {
         val expiresAt = session.expiresAt ?: return false
         return !expiresAt.isAfter(nowProvider().plusSeconds(30))
@@ -301,6 +508,12 @@ class OwliBackendVlmClient(
         val DATA_URL_REGEX = Regex("^data:(image/(?:jpeg|png|webp));base64,(.+)$")
     }
 }
+
+private class OwliBackendStreamProtocolException(
+    override val message: String,
+    val canFallback: Boolean,
+    cause: Throwable? = null
+) : IOException(message, cause)
 
 class SwitchingVlmClient(
     private val backendClient: OwliBackendVlmClient,

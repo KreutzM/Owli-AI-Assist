@@ -27,6 +27,7 @@ und Reasoning nur fuer Debug/Telemetry nutzen.
 - `POST /api/v1/session/bootstrap` liefert ein kurzlebiges `sessionToken` fuer das aktuelle `installationId`/App-Version/Locale-Paar.
 - `POST /api/v1/scene/describe` nutzt dieses `sessionToken` plus Snapshot-Bild und liefert `answerText` sowie ein kurzlebiges `sceneToken`.
 - `POST /api/v1/scene/followup` nutzt `sessionToken` + `sceneToken` + `questionText` fuer Rueckfragen zur zuletzt beschriebenen Szene.
+- Wenn `streaming_enabled=true`, sendet der Backend-Pfad fuer `scene/describe` und `scene/followup` `stream: true` und konsumiert den normalisierten SSE-Eventstrom mit `metadata`, `delta`, `done` und `error`.
 - Der Backend-Pfad ist bewusst explizit und nicht nur ein versteckter Ersatz fuer den alten OpenRouter-Client.
 - Zusatzbilder bei Folgefragen bleiben vorerst ein Direct-BYOK-Only-Pfad; Backend-Follow-up arbeitet in diesem Stand nur mit Textfragen auf Basis des `sceneToken`.
 
@@ -131,6 +132,7 @@ Empfohlen fuer GPT-5-nano mit sehr kurzer Ausgabe:
 Wenn `streaming_enabled=true`, werden Antworten per SSE gestreamt:
 - UI zeigt fortlaufenden Text an.
 - Abschluss kommt mit `onComplete` (finaler Text + usage/finish_reason).
+- Im Backend-Modus kommen die Deltas aus dem Owli-Backend-SSE-Strom; faellt dieser vor dem ersten Delta aus dem Protokoll, bleibt ein non-streaming Fallback verfuegbar.
 Wenn Streaming aus ist, verhaelt sich die App wie bisher.
 
 ## 7) Autoscan (optional)
