@@ -13,6 +13,7 @@ sealed class AppRoute(
     data object OpenRouterKeySettings : AppRoute("openrouter_key_settings", R.string.nav_title_openrouter_key_settings)
     data object OpenRouterKeyInfo : AppRoute("openrouter_key_info", R.string.nav_title_openrouter_key_info)
     data object OpenRouterKeyQrImport : AppRoute("openrouter_key_qr_import", R.string.nav_title_openrouter_key_qr_import)
+    data object PrivacyPolicy : AppRoute("privacy_policy", R.string.nav_title_privacy_policy)
     data object Help : AppRoute("help", R.string.nav_title_help)
     data object About : AppRoute("about", R.string.nav_title_about)
 
@@ -23,6 +24,7 @@ sealed class AppRoute(
             OpenRouterKeySettings.route -> OpenRouterKeySettings
             OpenRouterKeyInfo.route -> OpenRouterKeyInfo
             OpenRouterKeyQrImport.route -> OpenRouterKeyQrImport
+            PrivacyPolicy.route -> PrivacyPolicy
             Help.route -> Help
             About.route -> About
             else -> Vlm

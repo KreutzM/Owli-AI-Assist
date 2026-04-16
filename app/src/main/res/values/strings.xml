@@ -7,6 +7,7 @@
     <string name="nav_title_openrouter_key_settings">VLM transport</string>
     <string name="nav_title_openrouter_key_info">OpenRouter key info</string>
     <string name="nav_title_openrouter_key_qr_import">Scan OpenRouter key</string>
+    <string name="nav_title_privacy_policy">Privacy Policy</string>
     <string name="nav_title_help">Help</string>
     <string name="nav_title_about">About</string>
 

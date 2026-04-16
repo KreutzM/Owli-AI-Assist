@@ -173,6 +173,9 @@ class MainActivity : AppCompatActivity() {
                             onOpenVlmSettings = {
                                 navController.navigate(AppRoute.VlmSettings.route) { launchSingleTop = true }
                             },
+                            onOpenPrivacyPolicy = {
+                                navController.navigate(AppRoute.PrivacyPolicy.route) { launchSingleTop = true }
+                            },
                             onOpenHelp = {
                                 navController.navigate(AppRoute.Help.route) { launchSingleTop = true }
                             },
