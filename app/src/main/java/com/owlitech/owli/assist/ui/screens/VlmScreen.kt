@@ -192,7 +192,7 @@ fun VlmScreen(
     }
     val sendQuestion = {
         val text = question.trim()
-        if (text.isNotEmpty() && !isBusy) {
+        if (canSubmitFollowUp(text, attachments.size, isBusy)) {
             onAsk(text)
             question = ""
         }
@@ -330,7 +330,7 @@ fun VlmScreen(
             }
         )
     }
-    val sendEnabled = !isBusy && (question.isNotBlank() || attachments.isNotEmpty())
+    val sendEnabled = canSubmitFollowUp(question, attachments.size, isBusy)
     LaunchedEffect(isProcessingSpeech, focusSendAfterVoice, sendEnabled) {
         if (!focusSendAfterVoice || isProcessingSpeech) return@LaunchedEffect
         if (sendEnabled) {
