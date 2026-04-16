@@ -620,26 +620,6 @@ fun VlmScreen(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     val micEnabled = !isBusy && !isListening
-                                    Box(
-                                        modifier = Modifier
-                                            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                                            .combinedClickable(
-                                                enabled = micEnabled,
-                                                onClick = { startVoiceIntent(false) },
-                                                onLongClick = { startVoiceIntent(true) },
-                                                onLongClickLabel = longPressSendLabel
-                                            )
-                                            .semantics {
-                                                contentDescription = voiceInputLabel
-                                                when {
-                                                    isListening -> stateDescription = voiceListeningLabel
-                                                    autoSendOnVoiceResult -> stateDescription = voiceAutoSendLabel
-                                                }
-                                            },
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Icon(imageVector = Icons.Filled.Mic, contentDescription = null)
-                                    }
                                     OutlinedTextField(
                                         value = question,
                                         onValueChange = { question = it },
@@ -665,6 +645,26 @@ fun VlmScreen(
                                         enabled = sendEnabled
                                     ) {
                                         Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = null)
+                                    }
+                                    Box(
+                                        modifier = Modifier
+                                            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                            .combinedClickable(
+                                                enabled = micEnabled,
+                                                onClick = { startVoiceIntent(false) },
+                                                onLongClick = { startVoiceIntent(true) },
+                                                onLongClickLabel = longPressSendLabel
+                                            )
+                                            .semantics {
+                                                contentDescription = voiceInputLabel
+                                                when {
+                                                    isListening -> stateDescription = voiceListeningLabel
+                                                    autoSendOnVoiceResult -> stateDescription = voiceAutoSendLabel
+                                                }
+                                            },
+                                        contentAlignment = Alignment.Center
+                                    ) {
+                                        Icon(imageVector = Icons.Filled.Mic, contentDescription = null)
                                     }
                                 }
                                 if (!isListening) {
