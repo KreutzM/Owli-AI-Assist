@@ -87,7 +87,7 @@
     <string name="vlm_settings_openrouter_key_status_backend">Aktuell wird das Owli-Backend verwendet.</string>
     <string name="vlm_settings_openrouter_key_status_user">Eigener Nutzer-Key ausgewaehlt.</string>
     <string name="vlm_settings_openrouter_key_status_embedded_debug">Aktuell wird der eingebettete App-Key im Debug-Modus verwendet.</string>
-    <string name="vlm_settings_openrouter_key_helper">Waehle den aktiven VLM-Transport. Der Backend-Modus ist der normale Produktionspfad. Direkter OpenRouter nutzt deinen gespeicherten eigenen Key. Der eingebettete App-Key bleibt nur fuer Debug-Zwecke.</string>
+    <string name="vlm_settings_openrouter_key_helper">Waehle den aktiven VLM-Transport. Der Backend-Modus ist der normale Produktionspfad. Direkter OpenRouter nutzt deinen gespeicherten eigenen Key. Der eingebettete App-Key ist nur in Debug- oder Entwicklungs-Builds verfuegbar.</string>
     <string name="vlm_settings_openrouter_key_scan_qr">QR-Code scannen</string>
     <string name="vlm_settings_openrouter_key_input_label">OpenRouter Key</string>
     <string name="vlm_settings_openrouter_key_stored_yes">Ein eigener Key ist gespeichert.</string>
@@ -106,7 +106,7 @@
     <string name="vlm_settings_openrouter_key_missing_user_key">Speichere zuerst einen eigenen Key, bevor du den direkten OpenRouter-BYOK-Modus auswaehlst.</string>
     <string name="vlm_settings_openrouter_key_stored_but_backend_active">Ein eigener Key ist gespeichert, aber aktuell ist das Owli-Backend aktiv.</string>
     <string name="vlm_settings_openrouter_key_info_backend_note">OpenRouter-Key-Infos sind nur verfuegbar, wenn ein direkter OpenRouter-Modus aktiv ist.</string>
-    <string name="vlm_settings_openrouter_key_debug_note">Der eingebettete App-Key bleibt nur fuer Debug- oder Entwicklungs-Kompatibilitaet erhalten.</string>
+    <string name="vlm_settings_openrouter_key_debug_note">Der eingebettete App-Key bleibt nur fuer Debug- oder Entwicklungs-Kompatibilitaet verfuegbar und ist kein ausgelieferter Produktions-Transport.</string>
     <string name="openrouter_qr_import_title">OpenRouter Key per QR-Code scannen</string>
     <string name="openrouter_qr_import_helper">Richte die Kamera auf einen QR-Code, der einen rohen OpenRouter Key, openrouter:key=&lt;KEY&gt; oder eine PIN-geschuetzte verschluesselte Import-Payload enthaelt.</string>
     <string name="openrouter_qr_import_permission">Kamerazugriff ist notwendig, um den QR-Code zu scannen.</string>

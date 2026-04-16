@@ -33,7 +33,10 @@ class SettingsViewModel(
 
     init {
         viewModelScope.launch {
-            repository.settingsFlow.collectLatest { _settings.value = it }
+            repository.settingsFlow.collectLatest {
+                _settings.value = it
+                normalizeTransportMode(it)
+            }
         }
         refreshOpenRouterUserKeyState()
     }
@@ -159,6 +162,29 @@ class SettingsViewModel(
     private fun refreshOpenRouterUserKeyState() {
         viewModelScope.launch(Dispatchers.IO) {
             _hasOpenRouterUserKey.value = openRouterUserKeyStore.hasKey()
+        }
+    }
+
+    private fun normalizeTransportMode(settings: AppSettings) {
+        viewModelScope.launch(Dispatchers.IO) {
+            val selection = resolveVlmTransportSelection(
+                settings = settings,
+                embeddedAppKey = embeddedOpenRouterApiKey,
+                userProvidedKey = openRouterUserKeyStore.loadKey()
+            )
+            if (selection.requestedMode == selection.activeMode) {
+                return@launch
+            }
+            repository.update {
+                it.copy(
+                    vlmTransportMode = selection.activeMode,
+                    openRouterKeyMode = when (selection.activeMode) {
+                        VlmTransportMode.DIRECT_OPENROUTER_BYOK -> OpenRouterKeyMode.USER_PROVIDED_KEY
+                        VlmTransportMode.BACKEND_MANAGED,
+                        VlmTransportMode.EMBEDDED_DEBUG -> OpenRouterKeyMode.EMBEDDED_APP_KEY
+                    }
+                )
+            }
         }
     }
 

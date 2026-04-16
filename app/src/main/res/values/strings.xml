@@ -87,7 +87,7 @@
     <string name="vlm_settings_openrouter_key_status_backend">Using the Owli backend.</string>
     <string name="vlm_settings_openrouter_key_status_user">Custom user key selected.</string>
     <string name="vlm_settings_openrouter_key_status_embedded_debug">Using the embedded app key in debug mode.</string>
-    <string name="vlm_settings_openrouter_key_helper">Choose the active VLM transport. Backend mode is the normal production path. Direct OpenRouter uses your stored custom key. The embedded app key remains debug-only.</string>
+    <string name="vlm_settings_openrouter_key_helper">Choose the active VLM transport. Backend mode is the normal production path. Direct OpenRouter uses your stored custom key. The embedded app key is available only in debug or development builds.</string>
     <string name="vlm_settings_openrouter_key_scan_qr">Scan QR code</string>
     <string name="vlm_settings_openrouter_key_input_label">OpenRouter key</string>
     <string name="vlm_settings_openrouter_key_stored_yes">A custom key is stored.</string>
@@ -106,7 +106,7 @@
     <string name="vlm_settings_openrouter_key_missing_user_key">Save a custom key before selecting direct OpenRouter BYOK mode.</string>
     <string name="vlm_settings_openrouter_key_stored_but_backend_active">A custom key is stored, but the Owli backend is currently active.</string>
     <string name="vlm_settings_openrouter_key_info_backend_note">OpenRouter key info is only available while a direct OpenRouter mode is active.</string>
-    <string name="vlm_settings_openrouter_key_debug_note">The embedded app key is kept only for debug or development compatibility.</string>
+    <string name="vlm_settings_openrouter_key_debug_note">The embedded app key is available only for debug or development compatibility and is not shipped as a production transport.</string>
     <string name="openrouter_qr_import_title">Scan OpenRouter key QR code</string>
     <string name="openrouter_qr_import_helper">Point the camera at a QR code that contains a raw OpenRouter key, openrouter:key=&lt;KEY&gt;, or a PIN-protected encrypted import payload.</string>
     <string name="openrouter_qr_import_permission">Camera access is needed to scan the QR code.</string>

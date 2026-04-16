@@ -55,6 +55,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
+    private val embeddedOpenRouterApiKey by lazy {
+        if (BuildConfig.DEBUG) BuildConfig.OPENROUTER_API_KEY.trim() else ""
+    }
 
     private val audioFeedbackEngine by lazy { AudioFeedbackEngine(this) }
     private val streamingTtsController by lazy {
@@ -95,7 +98,7 @@ class MainActivity : AppCompatActivity() {
             openRouterClient = OpenRouterVlmClient(defaultProfile),
             initialSelection = resolveVlmTransportSelection(
                 settings = AppSettings(),
-                embeddedAppKey = BuildConfig.OPENROUTER_API_KEY
+                embeddedAppKey = embeddedOpenRouterApiKey
             )
         )
     }
@@ -112,7 +115,7 @@ class MainActivity : AppCompatActivity() {
         SettingsViewModel.Factory(
             repository = SettingsRepository(applicationContext),
             openRouterUserKeyStore = openRouterUserKeyStore,
-            embeddedOpenRouterApiKey = BuildConfig.OPENROUTER_API_KEY,
+            embeddedOpenRouterApiKey = embeddedOpenRouterApiKey,
             openRouterCurrentKeyInfoService = openRouterCurrentKeyInfoService
         )
     }
@@ -310,7 +313,7 @@ class MainActivity : AppCompatActivity() {
             vlmClient.updateTransportSelection(
                 resolveVlmTransportSelection(
                     settings = settings,
-                    embeddedAppKey = BuildConfig.OPENROUTER_API_KEY,
+                    embeddedAppKey = embeddedOpenRouterApiKey,
                     userProvidedKey = userProvidedKey
                 )
             )

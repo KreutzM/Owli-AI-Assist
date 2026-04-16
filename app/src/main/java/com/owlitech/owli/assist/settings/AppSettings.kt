@@ -83,13 +83,21 @@ fun resolveVlmTransportSelection(
         )
         VlmTransportMode.DIRECT_OPENROUTER_BYOK -> VlmTransportSelection(
             requestedMode = settings.vlmTransportMode,
-            activeMode = VlmTransportMode.DIRECT_OPENROUTER_BYOK,
-            apiKey = trimmedUserKey
+            activeMode = if (trimmedUserKey.isNotBlank()) {
+                VlmTransportMode.DIRECT_OPENROUTER_BYOK
+            } else {
+                VlmTransportMode.BACKEND_MANAGED
+            },
+            apiKey = trimmedUserKey.ifBlank { null }
         )
         VlmTransportMode.EMBEDDED_DEBUG -> VlmTransportSelection(
             requestedMode = settings.vlmTransportMode,
-            activeMode = VlmTransportMode.EMBEDDED_DEBUG,
-            apiKey = trimmedEmbeddedKey
+            activeMode = if (trimmedEmbeddedKey.isNotBlank()) {
+                VlmTransportMode.EMBEDDED_DEBUG
+            } else {
+                VlmTransportMode.BACKEND_MANAGED
+            },
+            apiKey = trimmedEmbeddedKey.ifBlank { null }
         )
     }
 }

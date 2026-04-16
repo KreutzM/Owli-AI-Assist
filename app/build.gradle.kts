@@ -27,12 +27,15 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Embedded OpenRouter key support remains available only as a debug/development fallback.
-        // Production transport should use the Owli backend or a user-provided direct BYOK key.
-        buildConfigField("String", "OPENROUTER_API_KEY", "\"$openRouterClientKeyEscaped\"")
+        // Production builds must not ship an embedded OpenRouter key.
+        buildConfigField("String", "OPENROUTER_API_KEY", "\"\"")
     }
 
     buildTypes {
+        debug {
+            // Embedded OpenRouter key support remains available only as a debug/development fallback.
+            buildConfigField("String", "OPENROUTER_API_KEY", "\"$openRouterClientKeyEscaped\"")
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true
