@@ -49,7 +49,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - Home-Buttons fuer Settings/Diag/VLM entfernt (Zugriff ueber TopAppBar).
 - VLM: Neue Szene-Trigger in `MainViewModel.requestNewScene()` zentralisiert.
 - VLM: Neue Szene-Requests werden vor Parallelzugriffen geschuetzt.
-- Doku: VLM-Autoscan in `docs/VLM.md`, `docs/VLM-Mode.md` und `README.md` beschrieben.
+- Doku: VLM-Autoscan in den damaligen VLM-Dokumenten und `README.md` beschrieben.
 - UI: Einhandbedienung mit Start/Stop-Toggle unten rechts; VLM-Aktionen unten rechts (Neue Szene + Auto-Toggle).
 - VLM: Manueller "Neue Szene"-Trigger schaltet Auto aus.
 - VLM: Eingabebereich hat jetzt einen dunklen Hintergrund fuer bessere Lesbarkeit.
@@ -101,7 +101,7 @@ Format (angelehnt an Keep a Changelog / SemVer):
 - SnapshotProvider fuer den letzten preprocessierten Frame (JPEG) in der Pipeline.
 - VLM-Konfiguration via `app/src/main/assets/vlm-config.json` + Loader (Model/Prompts/Token/Temperatur).
 - Audio-Ausgabe fuer VLM-Antworten (Kurzsatz + Handlungsempfehlung).
-- Dokumentation `docs/VLM-Mode.md` zu Ablauf, Schema und Safety-Regeln.
+- Dokumentation zum damaligen VLM-On-Demand-Ablauf, Schema und Safety-Regeln.
 
 ### Changed
 - BuildConfig-API-Key-Handling fuer OpenRouter (local.properties) und Manifest um INTERNET-Permission erweitert.
