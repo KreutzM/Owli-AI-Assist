@@ -31,7 +31,7 @@ class AppSettingsTest {
     }
 
     @Test
-    fun transportResolverDoesNotHideMissingByokKeyBehindEmbeddedFallback() {
+    fun transportResolverFallsBackToBackendWhenByokKeyIsMissing() {
         val settings = AppSettings(vlmTransportMode = VlmTransportMode.DIRECT_OPENROUTER_BYOK)
 
         val selection = resolveVlmTransportSelection(
@@ -41,20 +41,21 @@ class AppSettingsTest {
         )
 
         assertEquals(VlmTransportMode.DIRECT_OPENROUTER_BYOK, selection.requestedMode)
-        assertEquals(VlmTransportMode.DIRECT_OPENROUTER_BYOK, selection.activeMode)
-        assertEquals("", selection.apiKey)
-        assertFalse(selection.hasUsableTransport)
+        assertEquals(VlmTransportMode.BACKEND_MANAGED, selection.activeMode)
+        assertEquals(null, selection.apiKey)
+        assertTrue(selection.hasUsableTransport)
     }
 
     @Test
-    fun transportResolverReportsMissingEmbeddedDebugKeyWhenBlank() {
+    fun transportResolverFallsBackToBackendWhenEmbeddedDebugKeyIsMissing() {
         val selection = resolveVlmTransportSelection(
             settings = AppSettings(vlmTransportMode = VlmTransportMode.EMBEDDED_DEBUG),
             embeddedAppKey = " "
         )
 
-        assertEquals(VlmTransportMode.EMBEDDED_DEBUG, selection.activeMode)
-        assertFalse(selection.hasUsableTransport)
+        assertEquals(VlmTransportMode.EMBEDDED_DEBUG, selection.requestedMode)
+        assertEquals(VlmTransportMode.BACKEND_MANAGED, selection.activeMode)
+        assertTrue(selection.hasUsableTransport)
     }
 
     @Test
