@@ -1,6 +1,6 @@
 # Owli-AI Assist - User Manual (English)
 
-Version: 2026-04-08
+Version: 2026-04-16
 
 ## 1. Overview
 
@@ -28,13 +28,24 @@ Owli-AI Assist is an accessibility-oriented assistant app. In VLM mode, you aim 
 
 - Live preview: helps you aim before capture.
 - Still image: shown after `New scene`.
-- More actions: use the overflow menu to open the Privacy Policy and Help, repeat the last answer, or add another image.
+- App menu in the top bar: opens Settings, Privacy Policy, Help, and About.
+- In-chat actions: use `More actions` to repeat the last answer or attach another image to the current chat.
 - Attachments: manage additional images for the current chat.
 - Auto: if the active VLM profile supports auto scan, you can toggle periodic `New scene` requests on or off.
 
 ## 5. Settings
 
-- Choose a VLM profile.
+- Choose a VLM profile. The available profiles depend on the active transport mode.
+- Manage the VLM transport:
+  - `Owli backend` is the normal production path.
+  - `Custom OpenRouter key` uses direct BYOK mode with your locally encrypted stored key.
+  - In debug or development builds, an embedded app key may also be available.
+- In `Manage key`, you can:
+  - save a custom OpenRouter key manually,
+  - import it from a QR code,
+  - delete the stored key,
+  - switch the active transport,
+  - request OpenRouter key info for direct OpenRouter modes.
 - Set language to System / German / English.
 - Configure TTS on/off, speech rate, pitch, and optional streaming TTS.
 
@@ -51,6 +62,7 @@ Owli-AI Assist is an accessibility-oriented assistant app. In VLM mode, you aim 
 - Camera not working: check camera permission in Android settings.
 - Choppy speech: disable streaming TTS or reduce speech rate.
 - `Auto` is missing: the currently selected VLM profile does not support auto scan.
+- Additional image for a follow-up does not work: extra follow-up images are currently available only in direct OpenRouter BYOK mode, not in Owli backend mode.
 
 ## 8. Feedback
 

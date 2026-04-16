@@ -1,6 +1,6 @@
 # Owli-AI Assist - Benutzerhandbuch (Deutsch)
 
-Stand: 2026-04-08
+Stand: 2026-04-16
 
 ## 1. Ueberblick
 
@@ -28,13 +28,24 @@ Owli-AI Assist ist eine barrierearme Assistenz-App. Im VLM-Modus richtest du die
 
 - Live-Vorschau: hilft beim Ausrichten vor der Aufnahme.
 - Standbild: wird nach `Neue Szene` angezeigt.
-- Weitere Aktionen: ueber das Mehr-Menue kannst du die Datenschutzerklaerung und die Hilfe oeffnen, die letzte Antwort erneut sprechen oder ein weiteres Bild anhaengen.
+- App-Menue oben rechts: oeffnet Einstellungen, Datenschutzerklaerung, Hilfe und Ueber.
+- In-Chat-Aktionen: ueber `Weitere Aktionen` kannst du die letzte Antwort erneut sprechen oder ein weiteres Bild fuer den aktuellen Chat anhaengen.
 - Anhaenge: zusaetzliche Bilder fuer den aktuellen Chat verwalten.
 - Auto: falls das aktive VLM-Profil Autoscan unterstuetzt, kannst du periodische `Neue Szene`-Anfragen ein- und ausschalten.
 
 ## 5. Einstellungen
 
-- VLM-Profil auswaehlen.
+- VLM-Profil auswaehlen. Die verfuegbaren Profile haengen vom aktiven Transportmodus ab.
+- VLM-Transport verwalten:
+  - `Owli-Backend` ist der normale Produktionspfad.
+  - `Eigener OpenRouter-Key` nutzt direkten BYOK-Betrieb mit deinem lokal verschluesselt gespeicherten Key.
+  - In Debug-/Entwicklungs-Builds kann zusaetzlich ein eingebetteter App-Key verfuegbar sein.
+- Im Bereich `Key verwalten` kannst du:
+  - einen eigenen OpenRouter-Key manuell speichern,
+  - ihn per QR-Code importieren,
+  - den gespeicherten Key loeschen,
+  - den aktiven Transport umschalten,
+  - OpenRouter-Key-Infos fuer direkte OpenRouter-Modi abrufen.
 - Sprache auf System / Deutsch / Englisch setzen.
 - TTS, Sprechtempo, Tonhoehe und optional Streaming-TTS konfigurieren.
 
@@ -51,6 +62,7 @@ Owli-AI Assist ist eine barrierearme Assistenz-App. Im VLM-Modus richtest du die
 - Kamera funktioniert nicht: Kamera-Berechtigung in Android pruefen.
 - Abgehackte Sprachausgabe: Streaming-TTS deaktivieren oder Sprechtempo reduzieren.
 - `Auto` fehlt: Das aktuell ausgewaehlte VLM-Profil unterstuetzt keinen Autoscan.
+- Zusatzbild bei Folgefrage funktioniert nicht: Zusatzbilder sind aktuell nur im direkten OpenRouter-BYOK-Modus verfuegbar, nicht im Owli-Backend-Modus.
 
 ## 8. Feedback
 

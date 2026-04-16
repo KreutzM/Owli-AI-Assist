@@ -14,7 +14,7 @@
 </header>
 <main>
 <h1>Owli-AI Assist - User Manual (English)</h1>
-<p>Version: 2026-04-08</p>
+<p>Version: 2026-04-16</p>
 <h2>1. Overview</h2>
 <p>Owli-AI Assist is an accessibility-oriented assistant app. In VLM mode, you aim the camera, capture an image on demand, and receive an answer as text plus optional speech output.</p>
 <h2>2. Requirements</h2>
@@ -40,13 +40,24 @@
 <ul>
 <li>Live preview: helps you aim before capture.</li>
 <li>Still image: shown after <code>New scene</code>.</li>
-<li>More actions: use the overflow menu to open the Privacy Policy and Help, repeat the last answer, or add another image.</li>
+<li>App menu in the top bar: opens Settings, Privacy Policy, Help, and About.</li>
+<li>In-chat actions: use <code>More actions</code> to repeat the last answer or attach another image to the current chat.</li>
 <li>Attachments: manage additional images for the current chat.</li>
 <li>Auto: if the active VLM profile supports auto scan, you can toggle periodic <code>New scene</code> requests on or off.</li>
 </ul>
 <h2>5. Settings</h2>
 <ul>
-<li>Choose a VLM profile.</li>
+<li>Choose a VLM profile. The available profiles depend on the active transport mode.</li>
+<li>Manage the VLM transport:</li>
+<li><code>Owli backend</code> is the normal production path.</li>
+<li><code>Custom OpenRouter key</code> uses direct BYOK mode with your locally encrypted stored key.</li>
+<li>In debug or development builds, an embedded app key may also be available.</li>
+<li>In <code>Manage key</code>, you can:</li>
+<li>save a custom OpenRouter key manually,</li>
+<li>import it from a QR code,</li>
+<li>delete the stored key,</li>
+<li>switch the active transport,</li>
+<li>request OpenRouter key info for direct OpenRouter modes.</li>
 <li>Set language to System / German / English.</li>
 <li>Configure TTS on/off, speech rate, pitch, and optional streaming TTS.</li>
 </ul>
@@ -63,13 +74,14 @@
 <li>Camera not working: check camera permission in Android settings.</li>
 <li>Choppy speech: disable streaming TTS or reduce speech rate.</li>
 <li><code>Auto</code> is missing: the currently selected VLM profile does not support auto scan.</li>
+<li>Additional image for a follow-up does not work: extra follow-up images are currently available only in direct OpenRouter BYOK mode, not in Owli backend mode.</li>
 </ul>
 <h2>8. Feedback</h2>
 <p>Feedback is valuable: which actions do you use most, and where is navigation unclear?</p>
 </main>
 <footer>
   <hr>
-  <p class="small">Last updated: 2026-04-08</p>
+  <p class="small">Last updated: 2026-04-16</p>
 </footer>
 </body>
 </html>
