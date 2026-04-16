@@ -14,7 +14,7 @@
 </header>
 <main>
 <h1>Owli-AI Assist - Benutzerhandbuch (Deutsch)</h1>
-<p>Stand: 2026-04-08</p>
+<p>Stand: 2026-04-16</p>
 <h2>1. Ueberblick</h2>
 <p>Owli-AI Assist ist eine barrierearme Assistenz-App. Im VLM-Modus richtest du die Kamera aus, nimmst bei Bedarf ein Bild auf und bekommst danach eine Antwort als Text und optional als Sprachausgabe.</p>
 <h2>2. Voraussetzungen</h2>
@@ -40,13 +40,24 @@
 <ul>
 <li>Live-Vorschau: hilft beim Ausrichten vor der Aufnahme.</li>
 <li>Standbild: wird nach <code>Neue Szene</code> angezeigt.</li>
-<li>Weitere Aktionen: ueber das Mehr-Menue kannst du die Datenschutzerklaerung und die Hilfe oeffnen, die letzte Antwort erneut sprechen oder ein weiteres Bild anhaengen.</li>
+<li>App-Menue oben rechts: oeffnet Einstellungen, Datenschutzerklaerung, Hilfe und Ueber.</li>
+<li>In-Chat-Aktionen: ueber <code>Weitere Aktionen</code> kannst du die letzte Antwort erneut sprechen oder ein weiteres Bild fuer den aktuellen Chat anhaengen.</li>
 <li>Anhaenge: zusaetzliche Bilder fuer den aktuellen Chat verwalten.</li>
 <li>Auto: falls das aktive VLM-Profil Autoscan unterstuetzt, kannst du periodische <code>Neue Szene</code>-Anfragen ein- und ausschalten.</li>
 </ul>
 <h2>5. Einstellungen</h2>
 <ul>
-<li>VLM-Profil auswaehlen.</li>
+<li>VLM-Profil auswaehlen. Die verfuegbaren Profile haengen vom aktiven Transportmodus ab.</li>
+<li>VLM-Transport verwalten:</li>
+<li><code>Owli-Backend</code> ist der normale Produktionspfad.</li>
+<li><code>Eigener OpenRouter-Key</code> nutzt direkten BYOK-Betrieb mit deinem lokal verschluesselt gespeicherten Key.</li>
+<li>In Debug-/Entwicklungs-Builds kann zusaetzlich ein eingebetteter App-Key verfuegbar sein.</li>
+<li>Im Bereich <code>Key verwalten</code> kannst du:</li>
+<li>einen eigenen OpenRouter-Key manuell speichern,</li>
+<li>ihn per QR-Code importieren,</li>
+<li>den gespeicherten Key loeschen,</li>
+<li>den aktiven Transport umschalten,</li>
+<li>OpenRouter-Key-Infos fuer direkte OpenRouter-Modi abrufen.</li>
 <li>Sprache auf System / Deutsch / Englisch setzen.</li>
 <li>TTS, Sprechtempo, Tonhoehe und optional Streaming-TTS konfigurieren.</li>
 </ul>
@@ -63,13 +74,14 @@
 <li>Kamera funktioniert nicht: Kamera-Berechtigung in Android pruefen.</li>
 <li>Abgehackte Sprachausgabe: Streaming-TTS deaktivieren oder Sprechtempo reduzieren.</li>
 <li><code>Auto</code> fehlt: Das aktuell ausgewaehlte VLM-Profil unterstuetzt keinen Autoscan.</li>
+<li>Zusatzbild bei Folgefrage funktioniert nicht: Zusatzbilder sind aktuell nur im direkten OpenRouter-BYOK-Modus verfuegbar, nicht im Owli-Backend-Modus.</li>
 </ul>
 <h2>8. Feedback</h2>
 <p>Feedback hilft besonders bei der Frage, welche Aktionen haeufig genutzt werden und wo die Bedienung noch unklar ist.</p>
 </main>
 <footer>
   <hr>
-  <p class="small">Zuletzt aktualisiert: 2026-04-08</p>
+  <p class="small">Zuletzt aktualisiert: 2026-04-16</p>
 </footer>
 </body>
 </html>
