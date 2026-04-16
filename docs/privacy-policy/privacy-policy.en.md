@@ -53,3 +53,5 @@ An embedded app key is intended only for debug or development builds and is not 
 ## 9. Contact
 
 For questions about app behavior or privacy-related notes: `feedback@owli-ai.com`
+
+The full privacy policy on the website is available here: [owli-ai.com/privacy/assist](https://www.owli-ai.com/privacy/assist/)

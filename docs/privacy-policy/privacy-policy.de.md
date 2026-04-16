@@ -53,3 +53,5 @@ Ein eingebetteter App-Key ist nur fuer Debug- oder Entwicklungs-Builds vorgesehe
 ## 9. Kontakt
 
 Bei Fragen zum App-Verhalten oder zu Datenschutz-Hinweisen: `feedback@owli-ai.com`
+
+Die vollstaendige Datenschutzerklaerung auf der Website findest du hier: [owli-ai.com/privacy/assist](https://www.owli-ai.com/privacy/assist/)

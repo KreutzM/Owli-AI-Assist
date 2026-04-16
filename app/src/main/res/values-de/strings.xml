@@ -185,6 +185,7 @@
     <string name="about_supporters_intro">Wir danken fuer Unterstuetzung und Zusammenarbeit:</string>
     <string name="about_privacy_p1">Wenn du eine Anfrage sendest, uebertraegt die App dein Foto und deine Fragedaten nur nach deiner Aktion. Im normalen Produktionsmodus geht das an das Owli-Backend. Im direkten BYOK-Modus geht es mit deinem gespeicherten eigenen Key direkt an OpenRouter.</string>
     <string name="about_privacy_p2">Fuer KI-Antworten ist eine Internetverbindung erforderlich. Weitere angehaengte Bilder werden nur im direkten OpenRouter-BYOK-Modus gesendet.</string>
+    <string name="about_privacy_website_label">Vollstaendige Datenschutzerklaerung oeffnen</string>
     <string name="about_feedback_intro">Wenn du Feedback sendest, hilft uns Folgendes besonders:</string>
     <string name="about_copy_version_label">Version-Infos kopieren</string>
     <string name="about_copy_version_copied">Version-Infos kopiert</string>

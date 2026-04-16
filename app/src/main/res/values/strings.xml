@@ -185,6 +185,7 @@
     <string name="about_supporters_intro">We thank for support and collaboration:</string>
     <string name="about_privacy_p1">When you send a request, the app sends your photo and question data only after your action. In normal production mode this goes to the Owli backend. In direct BYOK mode it goes directly to OpenRouter with your stored custom key.</string>
     <string name="about_privacy_p2">An internet connection is required for AI responses. Additional attached images are sent only in direct OpenRouter BYOK mode.</string>
+    <string name="about_privacy_website_label">Open full privacy policy</string>
     <string name="about_feedback_intro">If you send feedback, the following is especially helpful:</string>
     <string name="about_copy_version_label">Copy version info</string>
     <string name="about_copy_version_copied">Version info copied</string>

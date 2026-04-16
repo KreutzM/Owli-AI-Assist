@@ -12,10 +12,13 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.res.stringArrayResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
@@ -24,15 +27,16 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.owlitech.owli.assist.R
 import com.owlitech.owli.assist.BuildConfig
-import androidx.compose.ui.platform.LocalClipboardManager
+import com.owlitech.owli.assist.R
+import com.owlitech.owli.assist.util.AppLinks
 import kotlinx.coroutines.launch
 
 @Composable
 fun AboutScreen() {
     val snackbarHostState = remember { SnackbarHostState() }
     val clipboardManager = LocalClipboardManager.current
+    val uriHandler = LocalUriHandler.current
     val coroutineScope = rememberCoroutineScope()
     val versionText = stringResource(
         R.string.about_version_format,
@@ -59,6 +63,7 @@ fun AboutScreen() {
     val supportersIntro = stringResource(R.string.about_supporters_intro)
     val privacyP1 = stringResource(R.string.about_privacy_p1)
     val privacyP2 = stringResource(R.string.about_privacy_p2)
+    val privacyWebsiteLabel = stringResource(R.string.about_privacy_website_label)
     val feedbackIntro = stringResource(R.string.about_feedback_intro)
     val copyVersionLabel = stringResource(R.string.about_copy_version_label)
     val copyVersionCopied = stringResource(R.string.about_copy_version_copied)
@@ -113,6 +118,11 @@ fun AboutScreen() {
             sectionHeading(sectionPrivacy)
             paragraph(privacyP1)
             paragraph(privacyP2)
+            item {
+                TextButton(onClick = { uriHandler.openUri(AppLinks.PRIVACY_POLICY_URL) }) {
+                    Text(privacyWebsiteLabel)
+                }
+            }
             sectionHeading(sectionFeedback)
             paragraph(feedbackIntro)
             items(feedbackItems) { item ->

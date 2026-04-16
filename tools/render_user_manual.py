@@ -61,8 +61,23 @@ DOCUMENTS = (
 
 
 def render_inline(text: str) -> str:
-    escaped = html.escape(text, quote=False)
-    return re.sub(r"`([^`]+)`", lambda match: f"<code>{match.group(1)}</code>", escaped)
+    parts: list[str] = []
+    cursor = 0
+    pattern = re.compile(r"`([^`]+)`|\[([^\]]+)\]\((https?://[^)]+)\)")
+    for match in pattern.finditer(text):
+        if match.start() > cursor:
+            parts.append(html.escape(text[cursor:match.start()], quote=False))
+        code_text, link_label, link_url = match.groups()
+        if code_text is not None:
+            parts.append(f"<code>{html.escape(code_text, quote=False)}</code>")
+        else:
+            parts.append(
+                f'<a href="{html.escape(link_url, quote=True)}">{html.escape(link_label, quote=False)}</a>'
+            )
+        cursor = match.end()
+    if cursor < len(text):
+        parts.append(html.escape(text[cursor:], quote=False))
+    return "".join(parts)
 
 
 def render_markdown_body(markdown: str) -> str:
