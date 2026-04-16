@@ -1,9 +1,9 @@
 # ToDo & Roadmap
 
 Diese Datei ist ein **lebendes** Team-Dokument (2 Menschen + 1 Codex-Agent).
-Bitte bei Änderungen:
+Bitte bei Aenderungen:
 - Items klein halten, klar formulieren, mit Akzeptanzkriterium.
-- Erledigte Punkte regelmäßig bereinigen (oder nach `docs/ChangeLog.md` übernehmen).
+- Erledigte Punkte regelmaessig bereinigen (oder nach `docs/ChangeLog.md` uebernehmen).
 
 Legende:
 - `[x]` erledigt
@@ -12,57 +12,58 @@ Legende:
 
 ---
 
-## A) Developer Workflow / Qualität
+## A) Doku-Kanon / Qualitaet
 
-- [x] Fast Checks definiert und in `AGENTS.md` verankert (`:app:testDebugUnitTest`, optional `:app:lintDebug`, `:app:assembleDebug`).
-- [x] Lint-Setup etabliert (`app/lint.xml`) und Baseline bereinigt.
-- [x] Unit-Test-Suite ausgebaut (u. a. BlindView Planner/Tracker/Formatter/Distance, SceneAnalyzer, StreamingTTS).
+- [x] Fast Checks sind in `AGENTS.md` verankert (`:app:testDebugUnitTest`, optional `:app:lintDebug`, `:app:assembleDebug`).
+- [x] Lint-Setup ist etabliert (`app/lint.xml`) und Baseline bereinigt.
+- [x] CI-Workflow fuer Unit-Tests und Lint bei Pull Requests ist vorhanden (`.github/workflows/android-unit-lint.yml`).
+- [x] Unit-Test-Suite fuer aktuelle VLM-/Settings-/Audio-Pfade ist vorhanden.
 
-**Nächste sinnvolle Verbesserungen**
-- [ ] CI Workflow (ohne Emulator): `:app:testDebugUnitTest` + `:app:lintDebug` bei PR/Push.
-- [ ] Optional: `DispatcherProvider`/Clock-Injection an zentralen Stellen, um Tests einfacher/deterministischer zu machen.
-- [ ] Dokument: `docs/DEVELOPMENT.md` aktuell halten (Setup + Checks + Troubleshooting).
-
----
-
-## B) CV Pipeline / Stabilisierung
-
-- [x] CameraX Preview + ImageAnalysis (latest wins).
-- [x] Preprocessing: Rotation, 448×448 Input, FrameMapping.
-- [~] IMU Roll-Derotation (experimentell, quality-gated).
-- [~] Translation-Stabilisierung des Crop-Windows (Patch-Matching; quality-gated).
-
-**Nächste sinnvolle Verbesserungen**
-- [ ] Mehr Unit-Tests für `processing/` (Mapping, crop update, dx/dy smoothing, quality gating).
-- [ ] Optional: NMS-/BoundingBox-Utilities (nur wenn Model/Backend es benötigt).
-- [ ] Performance-Messung: einfache Timing-Metriken in Diagnostics verifizieren (kein Benchmarking-Overkill).
+**Naechste sinnvolle Verbesserungen**
+- [ ] `docs/README.md` und die Kern-Dokumente bei Architektur- oder Release-Pfadaenderungen konsequent synchron halten.
+- [ ] Optional: `DispatcherProvider`/Clock-Injection an zentralen Stellen, um Tests einfacher und deterministischer zu machen.
+- [ ] `docs/DEVELOPMENT.md` als operative Einstiegsdoku aktuell halten.
 
 ---
 
-## C) Scene / BlindView / Hazard
+## B) Release-/Produktionsreife
 
-- [x] IoU-Tracking + EMA + Consecutive Hits.
-- [x] Announce Planner Tests vorhanden (Basis).
-- [~] Hazard-Logik heuristisch (Person/Fahrzeug/Ampel) + Decay.
+- [x] Produktionsdefault ist `BACKEND_MANAGED`.
+- [x] BYOK bleibt als separater produktiver Direktpfad erhalten.
+- [x] Release-Builds shippen keinen eingebetteten OpenRouter-Key.
+- [~] Profilmigration auf Registry-/Remote-First ist teilweise abgeschlossen; `vlm-profiles.json` bleibt noch Legacy-Fallback.
 
-**Nächste sinnvolle Verbesserungen**
-- [ ] Tests für Hazard-Priorisierung & Message-Auswahl (Regressionen vermeiden).
-- [ ] Bessere Distanz-Heuristik / Kategorien (nur wenn Produktziel es braucht).
-
----
-
-## D) VLM (OpenRouter)
-
-- [x] On-Demand VLM mit Profilen (`vlm-profiles.json`), optional Autoscan.
-- [x] Streaming-Handling (SSE) + Raw-Debug.
-
-**Nächste sinnvolle Verbesserungen**
-- [ ] Dokumentation der Profile/Parameter in `docs/VLM.md` konsolidieren (nur wenn Team es braucht).
-- [ ] UX: klare „Privacy“-Hinweise im UI (On-Demand, kein Dauerupload).
+**Naechste sinnvolle Verbesserungen**
+- [ ] Kurzen dokumentierten Release-Smoketest fuer reale Geraete festziehen.
+- [ ] Backend-SSE- und `/api/v1/profiles`-Verfuegbarkeit vor Releases operativ absichern.
+- [ ] Legacy-Rand zwischen oeffentlichem Profilfeed und app-lokalen BYOK-Details weiter reduzieren.
 
 ---
 
-## E) Optional / Später
+## C) VLM / UX
 
-- [ ] Haptisches Feedback (Vibration) – nur wenn gewünscht.
-- [ ] Instrumented Tests – nur wenn ein konkreter Android-Bug ohne JVM-Test nicht abdeckbar ist.
+- [x] On-demand VLM mit Follow-ups, Profilen und optionalem Autoscan ist vorhanden.
+- [x] Backend- und BYOK-Transport sind im UI unterscheidbar und dokumentiert.
+- [~] Zusatzbilder bei Folgefragen sind aktuell nur im direkten `DIRECT_OPENROUTER_BYOK`-Pfad verfuegbar.
+
+**Naechste sinnvolle Verbesserungen**
+- [ ] UI-Wording fuer Backend/BYOK/Debug-Fallback weiterhin konsistent halten.
+- [ ] Optional: sichtbarer Release-/Support-Hinweis fuer Backend-Einschraenkungen bei Zusatzbildern.
+
+---
+
+## D) Privacy / Store Readiness
+
+- [x] Oeffentliche Privacy-Policy ist in der App verlinkt.
+- [~] Repo-Wording unterscheidet Backend, BYOK und Debug-Fallback inzwischen sauberer.
+
+**Naechste sinnvolle Verbesserungen**
+- [ ] Finale Play-Console-Data-Safety-Angaben gegen den aktuellen Produktionspfad abgleichen.
+- [ ] Backend-/Website-/App-Wording zu Empfaengern, Aufbewahrung und Verantwortlichkeiten final synchronisieren.
+
+---
+
+## E) Optional / Spaeter
+
+- [ ] Haptisches Feedback (Vibration) nur wenn gewuenscht.
+- [ ] Instrumented Tests nur wenn ein konkreter Android-Bug ohne JVM-Test nicht abdeckbar ist.

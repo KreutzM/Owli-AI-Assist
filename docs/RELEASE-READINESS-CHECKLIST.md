@@ -35,7 +35,7 @@ Dieses Dokument ist bewusst kein Release-Plan und keine Privacy Policy. Es besch
 - QR-Import, manueller Import und Key-Info-Flow sind vorhanden.
 - Backend-Streaming ist integriert, inklusive fruehem Fallback auf non-streaming bei Fehlern vor dem ersten sinnvollen Delta.
 - Remote-Profile werden bevorzugt geladen, lokal gecached und fallen kontrolliert zurueck.
-- Persistierte ungueltige Transportzustande werden auf einen nutzbaren Produktionspfad normalisiert.
+- Persistierte ungueltige Transportzustaende werden auf einen nutzbaren Produktionspfad normalisiert.
 - Privacy-/Data-Safety-Wording im Repo und in der App unterscheidet Backend, BYOK und Debug-Fallback inzwischen klarer.
 
 ## 3) Manuelle Verifikation vor Release
@@ -97,7 +97,7 @@ Dieses Dokument ist bewusst kein Release-Plan und keine Privacy Policy. Es besch
 
 - Ein kurzer dokumentierter Release-Smoketest-Ablauf fuer menschliche Tester fehlt noch.
 - Die aktuelle Profilmigration ist bewusst nur teilweise abgeschlossen; der verbleibende Adapterrand zwischen oeffentlichem Profilfeed und app-lokalen BYOK-Details sollte weiter reduziert werden.
-- `docs/VLM-Mode.md` beschreibt noch aeltere OpenRouter-direkte Annahmen und sollte vor externer Nutzung entweder aktualisiert oder als historisch markiert werden.
+- `docs/VLM.md` sollte der alleinige kanonische VLM-Referenzpunkt bleiben; neue Transport- oder Profilpfade duerfen nicht wieder parallel in Neben-Dokumenten abdriften.
 
 ## 8) Nice-to-have
 
