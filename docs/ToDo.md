@@ -1,69 +1,86 @@
 # ToDo & Roadmap
 
-Diese Datei ist ein **lebendes** Team-Dokument (2 Menschen + 1 Codex-Agent).
+Diese Datei ist der priorisierte Plan fuer die aktuell noch **berechtigten** Review-Befunde in App und Backend.
 Bitte bei Aenderungen:
 - Items klein halten, klar formulieren, mit Akzeptanzkriterium.
-- Erledigte Punkte regelmaessig bereinigen (oder nach `docs/ChangeLog.md` uebernehmen).
+- Erledigte Punkte regelmaessig bereinigen oder nach `docs/ChangeLog.md` uebernehmen.
+- Bei App- und Backend-Aenderungen die gekoppelte Gegenseite mitpruefen.
 
 Legende:
+- `[P0]` releaseblockierend / vor produktiver Freigabe klaeren
+- `[P1]` wichtig / zeitnah nachziehen
+- `[P2]` sinnvoll / danach abarbeiten
 - `[x]` erledigt
-- `[ ]` offen
-- `[~]` teilweise / experimentell
 
 ---
 
-## A) Doku-Kanon / Qualitaet
+## P0) Produktionspfad App <-> Backend finalisieren
 
-- [x] Fast Checks sind in `AGENTS.md` verankert (`:app:testDebugUnitTest`, optional `:app:lintDebug`, `:app:assembleDebug`).
-- [x] Lint-Setup ist etabliert (`app/lint.xml`) und Baseline bereinigt.
-- [x] CI-Workflow fuer Unit-Tests und Lint bei Pull Requests ist vorhanden (`.github/workflows/android-unit-lint.yml`).
-- [x] Unit-Test-Suite fuer aktuelle VLM-/Settings-/Audio-Pfade ist vorhanden.
+- [ ] `wrangler.jsonc` fuer `staging` und `prod` auf einen bewusst freigegebenen Zielzustand bringen.
+  Akzeptanzkriterium: `FEATURE_SCENE_DESCRIBE_ENABLED`, `FEATURE_FOLLOWUP_ENABLED` und `OPENROUTER_ENABLED` sind fuer den geplanten Betriebsmodus explizit entschieden und dokumentiert.
+- [ ] Release-Freigabeprozess fuer Backend-Managed sauber dokumentieren.
+  Akzeptanzkriterium: Es gibt einen kurzen Operator-Runbook-Abschnitt fuer `session/bootstrap`, `scene/describe`, `scene/followup`, SSE und `GET /api/v1/profiles`.
+- [ ] App und Backend nicht nur implizit ueber `https://api.owli-ai.com` koppeln, sondern den produktiven Zielpfad explizit beschreiben.
+  Akzeptanzkriterium: App-Doku, Backend-Doku und Release-Checkliste nennen denselben produktiven Transportpfad ohne Widerspruch.
 
-**Naechste sinnvolle Verbesserungen**
-- [ ] `docs/README.md` und die Kern-Dokumente bei Architektur- oder Release-Pfadaenderungen konsequent synchron halten.
-- [ ] Optional: `DispatcherProvider`/Clock-Injection an zentralen Stellen, um Tests einfacher und deterministischer zu machen.
-- [ ] `docs/DEVELOPMENT.md` als operative Einstiegsdoku aktuell halten.
+## P0) Echte Attestation integrieren
 
----
+- [ ] Attestation in der App erzeugen und beim Bootstrap mitsenden.
+  Akzeptanzkriterium: `POST /api/v1/session/bootstrap` enthaelt im produktiven Pfad ein echtes Attestation-Token.
+- [ ] Placeholder-Verifier im Backend durch echten Verifier ersetzen.
+  Akzeptanzkriterium: `staging` und `prod` akzeptieren Bootstrap nur noch mit erfolgreicher echter Verifikation.
+- [ ] Fehler- und Fallback-Verhalten fuer Attestation sauber dokumentieren.
+  Akzeptanzkriterium: Doku beschreibt erlaubte Dev-Fallbacks getrennt von produktivem Verhalten.
 
-## B) Release-/Produktionsreife
+## P0) Scene-Token datenschutzsauber umbauen
 
-- [x] Produktionsdefault ist `BACKEND_MANAGED`.
-- [x] BYOK bleibt als separater produktiver Direktpfad erhalten.
-- [x] Release-Builds shippen keinen eingebetteten OpenRouter-Key.
-- [~] Profilmigration auf Registry-/Remote-First ist teilweise abgeschlossen; `vlm-profiles.json` bleibt noch Legacy-Fallback.
-
-**Naechste sinnvolle Verbesserungen**
-- [ ] Kurzen dokumentierten Release-Smoketest fuer reale Geraete festziehen.
-- [ ] Backend-SSE- und `/api/v1/profiles`-Verfuegbarkeit vor Releases operativ absichern.
-- [ ] Legacy-Rand zwischen oeffentlichem Profilfeed und app-lokalen BYOK-Details weiter reduzieren.
-
----
-
-## C) VLM / UX
-
-- [x] On-demand VLM mit Follow-ups, Profilen und optionalem Autoscan ist vorhanden.
-- [x] Backend- und BYOK-Transport sind im UI unterscheidbar und dokumentiert.
-- [~] Zusatzbilder bei Folgefragen sind aktuell nur im direkten `DIRECT_OPENROUTER_BYOK`-Pfad verfuegbar.
-
-**Naechste sinnvolle Verbesserungen**
-- [ ] UI-Wording fuer Backend/BYOK/Debug-Fallback weiterhin konsistent halten.
-- [ ] Optional: sichtbarer Release-/Support-Hinweis fuer Backend-Einschraenkungen bei Zusatzbildern.
+- [ ] `sceneToken` ohne lesbaren `sceneText` neu designen.
+  Akzeptanzkriterium: Follow-up funktioniert ohne im Token offengelegten Szenentext, z. B. ueber opaque Handle oder verschluesselten Kontext.
+- [ ] Backend-Follow-up auf das neue Kontextmodell umstellen.
+  Akzeptanzkriterium: `scene/followup` nutzt keinen im Klartext dekodierbaren Szeneninhalt mehr.
+- [ ] Privacy-Doku und Data-Safety-Angaben an das neue Tokenmodell anpassen.
+  Akzeptanzkriterium: App-, Website- und Backend-Doku beschreiben denselben Datenfluss.
 
 ---
 
-## D) Privacy / Store Readiness
+## P1) Backend-Qualitaet und Absicherung hochziehen
 
-- [x] Oeffentliche Privacy-Policy ist in der App verlinkt.
-- [~] Repo-Wording unterscheidet Backend, BYOK und Debug-Fallback inzwischen sauberer.
+- [ ] Backend-Test-Suite fuer Token-, Validation-, Rate-Limit- und Profilpfade aufbauen.
+  Akzeptanzkriterium: Mindestens Session-Token, Scene-Token, Bootstrap-/Describe-/Follow-up-Validierung, Registry-Projection und zentrale Fehlerpfade sind automatisiert getestet.
+- [ ] CI fuer das Backend einfuehren.
+  Akzeptanzkriterium: Ein Workflow prueft mindestens `npm run check` und die neue Test-Suite bei Pull Requests.
+- [ ] Selbstgebaute Tokenlogik entweder haerten oder bewusst absichern.
+  Akzeptanzkriterium: Entweder Umstieg auf etablierte JOSE/JWT-Library oder dokumentierte Entscheidung plus gezielte Negativtests fuer Signatur-, Expiry- und Parsing-Fehler.
 
-**Naechste sinnvolle Verbesserungen**
-- [ ] Finale Play-Console-Data-Safety-Angaben gegen den aktuellen Produktionspfad abgleichen.
-- [ ] Backend-/Website-/App-Wording zu Empfaengern, Aufbewahrung und Verantwortlichkeiten final synchronisieren.
+## P1) Environment-Konfiguration der App enthaerten
+
+- [ ] Backend-API-Base-URL und Profil-Endpoint nicht mehr hart im Code verdrahten.
+  Akzeptanzkriterium: dev/staging/prod sind ueber Build-Konfiguration oder klaren App-Config-Pfad unterscheidbar.
+- [ ] Release- und Testpfade mit derselben Konfiguration pruefbar machen.
+  Akzeptanzkriterium: Release-Smoke-Tests koennen gegen einen nicht-produktiven Zielhost gefahren werden, ohne Source-Code zu patchen.
+
+## P1) Backend-Doku auf Ist-Stand ziehen
+
+- [ ] Veraltete Phase-0-/Scaffold-Reste in Backend-Doku und Metadaten entfernen.
+  Akzeptanzkriterium: `package.json`, `README.md` und Schluesseldocs beschreiben den aktuellen Backend-Stand.
+- [ ] Widersprueche bei Profil-Endpoint und App-Remote-Loading bereinigen.
+  Akzeptanzkriterium: Backend-Doku beschreibt `/api/v1/profiles` und das app-seitige Remote-Loading konsistent.
+- [ ] Repo-unsaubere absolute Windows-Pfade aus Markdown-Links entfernen.
+  Akzeptanzkriterium: Backend-Doku verwendet nur portable Repo-Pfade.
 
 ---
 
-## E) Optional / Spaeter
+## P2) App-Sicherheits- und UX-Raender nachziehen
 
-- [ ] Haptisches Feedback (Vibration) nur wenn gewuenscht.
-- [ ] Instrumented Tests nur wenn ein konkreter Android-Bug ohne JVM-Test nicht abdeckbar ist.
+- [ ] QR-Key-Import ohne Default-PIN `1597` neu fassen.
+  Akzeptanzkriterium: Keine implizite Default-PIN mehr oder mindestens deutlich als schwache Transporthuerde gekennzeichnet und nicht als Schutz suggeriert.
+- [ ] Lokale Hilfe-WebView weiter haerten.
+  Akzeptanzkriterium: Es ist geprueft und dokumentiert, ob `allowFileAccess` wirklich noetig ist; falls nicht, ist es deaktiviert.
+- [ ] Permission-, Offline- und Backend-Fehler-UX produktnaeher machen.
+  Akzeptanzkriterium: Kamera-, Netzwerk- und Backend-Fehler haben kurze, accessibility-taugliche Nutzertexte und klaren Retry-Pfad.
+
+## P2) Doku-Kanon weiter sauber halten
+
+- [x] App-Systemdoku (`docs/System-Spezifikation.md`, `docs/System-Architektur.md`, `docs/VLM.md`) ist wieder auf aktuellem Stand.
+- [ ] App- und Backend-Doku bei Architektur- oder Release-Pfadaenderungen kuenftig gemeinsam aktualisieren.
+  Akzeptanzkriterium: Kein bekannter Widerspruch mehr zwischen App-Repo, Backend-Repo und Privacy-/Release-Doku.
