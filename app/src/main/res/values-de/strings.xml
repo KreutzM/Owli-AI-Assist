@@ -59,10 +59,14 @@
     <string name="vlm_voice_listening_auto_send">Spracheingabe &amp; sofort senden</string>
     <string name="vlm_voice_input">Spracheingabe</string>
     <string name="vlm_question_label">Frage stellen</string>
+    <string name="vlm_question_input_cd">Frageeingabe</string>
     <string name="vlm_send_message">Nachricht senden</string>
     <string name="vlm_voice_hint">Tippen: diktieren  Gedrueckt halten: sofort senden</string>
     <string name="vlm_voice_status_listening">Hoere zu&#8230;</string>
     <string name="vlm_voice_status_processing">Verarbeite&#8230;</string>
+    <string name="vlm_attachment_aiming">Richte die Kamera aus und nimm dann das Zusatzbild auf.</string>
+    <string name="vlm_attachment_capture">Bild aufnehmen</string>
+    <string name="vlm_attachment_cancel">Bild abbrechen</string>
 
     <string name="settings_language_title">Sprache</string>
     <string name="settings_language_hint">Standard: Systemsprache.</string>

@@ -108,6 +108,7 @@ import java.io.File
 import java.io.ByteArrayInputStream
 
 private enum class CaptureUiMode { Preview, Frozen }
+private enum class AttachmentCaptureState { None, Aiming }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -142,6 +143,7 @@ fun VlmScreen(
     var lastSpeakable by remember { mutableStateOf<Pair<String?, String?>?>(null) }
     var attachmentsDialogVisible by remember { mutableStateOf(false) }
     var captureMode by rememberSaveable { mutableStateOf(CaptureUiMode.Preview) }
+    var attachmentState by rememberSaveable { mutableStateOf(AttachmentCaptureState.None) }
     var captureInFlight by remember { mutableStateOf(false) }
     val snackbarHostState = remember { SnackbarHostState() }
     val coroutineScope = rememberCoroutineScope()
@@ -181,6 +183,7 @@ fun VlmScreen(
             is VlmUiState.Inactive -> {
                 lastSpeakable = null
                 captureMode = CaptureUiMode.Preview
+                attachmentState = AttachmentCaptureState.None
             }
             else -> Unit
         }
@@ -189,10 +192,13 @@ fun VlmScreen(
         if (isAutoScanRunning && captureMode != CaptureUiMode.Preview) {
             captureMode = CaptureUiMode.Preview
         }
+        if (isAutoScanRunning && attachmentState != AttachmentCaptureState.None) {
+            attachmentState = AttachmentCaptureState.None
+        }
     }
     val sendQuestion = {
         val text = question.trim()
-        if (text.isNotEmpty() && !isBusy) {
+        if (canSubmitFollowUp(text, attachments.size, isBusy)) {
             onAsk(text)
             question = ""
         }
@@ -224,9 +230,13 @@ fun VlmScreen(
     val voiceInputLabel = stringResource(R.string.vlm_voice_input)
     val voiceListeningLabel = stringResource(R.string.vlm_voice_listening)
     val voiceAutoSendLabel = stringResource(R.string.vlm_voice_listening_auto_send)
+    val questionInputLabel = stringResource(R.string.vlm_question_input_cd)
     val moreActionsLabel = stringResource(R.string.vlm_more_actions)
     val repeatLastAnswerLabel = stringResource(R.string.vlm_repeat_last_answer)
     val addImageLabel = stringResource(R.string.vlm_add_image)
+    val addImageAimingLabel = stringResource(R.string.vlm_attachment_aiming)
+    val addImageCaptureLabel = stringResource(R.string.vlm_attachment_capture)
+    val addImageCancelLabel = stringResource(R.string.vlm_attachment_cancel)
     val captureFailedText = stringResource(R.string.vlm_capture_failed)
     val canRepeatLastAnswer = lastSpeakable != null
     val imageCapture = remember {
@@ -330,7 +340,7 @@ fun VlmScreen(
             }
         )
     }
-    val sendEnabled = !isBusy && (question.isNotBlank() || attachments.isNotEmpty())
+    val sendEnabled = canSubmitFollowUp(question, attachments.size, isBusy)
     LaunchedEffect(isProcessingSpeech, focusSendAfterVoice, sendEnabled) {
         if (!focusSendAfterVoice || isProcessingSpeech) return@LaunchedEffect
         if (sendEnabled) {
@@ -352,6 +362,8 @@ fun VlmScreen(
             object : ImageCapture.OnImageSavedCallback {
                 override fun onError(exception: ImageCaptureException) {
                     captureInFlight = false
+                    attachmentState = AttachmentCaptureState.Aiming
+                    captureMode = CaptureUiMode.Preview
                     coroutineScope.launch {
                         snackbarHostState.showSnackbar(message = addImageFailedText)
                     }
@@ -365,11 +377,15 @@ fun VlmScreen(
                         runCatching { file.delete() }
                         captureInFlight = false
                         if (bytes == null) {
+                            attachmentState = AttachmentCaptureState.Aiming
+                            captureMode = CaptureUiMode.Preview
                             snackbarHostState.showSnackbar(message = addImageFailedText)
                             return@launch
                         }
                         val count = onAddImage(bytes)
                         if (count == null) {
+                            attachmentState = AttachmentCaptureState.Aiming
+                            captureMode = CaptureUiMode.Preview
                             snackbarHostState.showSnackbar(message = addImageFailedText)
                             return@launch
                         }
@@ -378,6 +394,8 @@ fun VlmScreen(
                         } else {
                             attachmentCountFormat.format(count)
                         }
+                        attachmentState = AttachmentCaptureState.None
+                        captureMode = CaptureUiMode.Frozen
                         snackbarHostState.showSnackbar(
                             message = "$addImageAddedText. $countLabel"
                         )
@@ -464,77 +482,107 @@ fun VlmScreen(
                                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Box {
-                                    IconButton(
-                                        onClick = { actionsMenuExpanded = true },
-                                        modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                if (attachmentState == AttachmentCaptureState.Aiming) {
+                                    OutlinedButton(
+                                        onClick = {
+                                            attachmentState = AttachmentCaptureState.None
+                                            captureMode = CaptureUiMode.Frozen
+                                        },
+                                        modifier = Modifier.sizeIn(minHeight = 48.dp)
                                     ) {
-                                        Icon(
-                                            imageVector = Icons.Filled.MoreVert,
-                                            contentDescription = moreActionsLabel
-                                        )
+                                        Text(addImageCancelLabel)
                                     }
-                                    DropdownMenu(
-                                        expanded = actionsMenuExpanded,
-                                        onDismissRequest = { actionsMenuExpanded = false }
-                                    ) {
-                                        DropdownMenuItem(
-                                            text = { Text(repeatLastAnswerLabel) },
-                                            onClick = {
-                                                actionsMenuExpanded = false
-                                                lastSpeakable?.let { (primary, secondary) ->
-                                                    onRepeatLastResponse(primary, secondary)
-                                                }
-                                            },
-                                            leadingIcon = {
-                                                Icon(
-                                                    imageVector = Icons.Filled.Replay,
-                                                    contentDescription = null
-                                                )
-                                            },
-                                            enabled = canRepeatLastAnswer
-                                        )
-                                        DropdownMenuItem(
-                                            text = { Text(addImageLabel) },
-                                            onClick = {
-                                                actionsMenuExpanded = false
-                                                captureAttachment()
-                                            },
-                                            leadingIcon = {
-                                                Icon(
-                                                    imageVector = Icons.Filled.AddPhotoAlternate,
-                                                    contentDescription = null
-                                                )
-                                            }
-                                        )
-                                    }
-                                }
-                                Button(
-                                    onClick = {
-                                        if (!isBusy) {
-                                            if (captureMode == CaptureUiMode.Preview) {
-                                                if (isAutoScanRunning) {
-                                                    onStopAutoScan()
-                                                }
-                                                captureNewScene(true)
-                                            } else {
-                                                onReset()
+                                    Button(
+                                        onClick = {
+                                            if (captureMode != CaptureUiMode.Preview) {
                                                 captureMode = CaptureUiMode.Preview
                                             }
+                                            captureAttachment()
+                                        },
+                                        enabled = !captureInFlight,
+                                        modifier = Modifier.sizeIn(minHeight = 48.dp)
+                                    ) {
+                                        Text(addImageCaptureLabel)
+                                    }
+                                } else {
+                                    Box {
+                                        IconButton(
+                                            onClick = { actionsMenuExpanded = true },
+                                            modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                        ) {
+                                            Icon(
+                                                imageVector = Icons.Filled.MoreVert,
+                                                contentDescription = moreActionsLabel
+                                            )
                                         }
-                                    },
-                                    enabled = !isBusy,
-                                    modifier = Modifier
-                                        .sizeIn(minHeight = 48.dp)
-                                        .semantics {
-                                            contentDescription = if (captureMode == CaptureUiMode.Preview) {
-                                                newSceneLabel
-                                            } else {
-                                                resetLabel
+                                        DropdownMenu(
+                                            expanded = actionsMenuExpanded,
+                                            onDismissRequest = { actionsMenuExpanded = false }
+                                        ) {
+                                            DropdownMenuItem(
+                                                text = { Text(repeatLastAnswerLabel) },
+                                                onClick = {
+                                                    actionsMenuExpanded = false
+                                                    lastSpeakable?.let { (primary, secondary) ->
+                                                        onRepeatLastResponse(primary, secondary)
+                                                    }
+                                                },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        imageVector = Icons.Filled.Replay,
+                                                        contentDescription = null
+                                                    )
+                                                },
+                                                enabled = canRepeatLastAnswer
+                                            )
+                                            DropdownMenuItem(
+                                                text = { Text(addImageLabel) },
+                                                onClick = {
+                                                    actionsMenuExpanded = false
+                                                    if (captureMode == CaptureUiMode.Frozen) {
+                                                        captureMode = CaptureUiMode.Preview
+                                                    }
+                                                    attachmentState = AttachmentCaptureState.Aiming
+                                                    coroutineScope.launch {
+                                                        snackbarHostState.showSnackbar(message = addImageAimingLabel)
+                                                    }
+                                                },
+                                                leadingIcon = {
+                                                    Icon(
+                                                        imageVector = Icons.Filled.AddPhotoAlternate,
+                                                        contentDescription = null
+                                                    )
+                                                }
+                                            )
+                                        }
+                                    }
+                                    Button(
+                                        onClick = {
+                                            if (!isBusy) {
+                                                if (captureMode == CaptureUiMode.Preview) {
+                                                    if (isAutoScanRunning) {
+                                                        onStopAutoScan()
+                                                    }
+                                                    captureNewScene(true)
+                                                } else {
+                                                    onReset()
+                                                    captureMode = CaptureUiMode.Preview
+                                                }
                                             }
-                                        }
-                                ) {
-                                    Text(if (captureMode == CaptureUiMode.Preview) newSceneLabel else resetLabel)
+                                        },
+                                        enabled = !isBusy,
+                                        modifier = Modifier
+                                            .sizeIn(minHeight = 48.dp)
+                                            .semantics {
+                                                contentDescription = if (captureMode == CaptureUiMode.Preview) {
+                                                    newSceneLabel
+                                                } else {
+                                                    resetLabel
+                                                }
+                                            }
+                                    ) {
+                                        Text(if (captureMode == CaptureUiMode.Preview) newSceneLabel else resetLabel)
+                                    }
                                 }
                             }
                         }
@@ -572,30 +620,6 @@ fun VlmScreen(
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     val micEnabled = !isBusy && !isListening
-                                    OutlinedTextField(
-                                        value = question,
-                                        onValueChange = { question = it },
-                                        label = { Text(stringResource(R.string.vlm_question_label)) },
-                                        modifier = Modifier.weight(1f),
-                                        enabled = !isBusy,
-                                        maxLines = 34,
-                                        minLines = 1,
-                                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
-                                        keyboardActions = KeyboardActions(
-                                            onSend = { sendQuestion() },
-                                            onDone = { sendQuestion() }
-                                        )
-                                    )
-                                    IconButton(
-                                        onClick = { sendQuestion() },
-                                        modifier = Modifier
-                                            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
-                                            .focusRequester(sendFocusRequester)
-                                            .semantics { contentDescription = sendMessageLabel },
-                                        enabled = sendEnabled
-                                    ) {
-                                        Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = null)
-                                    }
                                     Box(
                                         modifier = Modifier
                                             .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
@@ -615,6 +639,32 @@ fun VlmScreen(
                                         contentAlignment = Alignment.Center
                                     ) {
                                         Icon(imageVector = Icons.Filled.Mic, contentDescription = null)
+                                    }
+                                    OutlinedTextField(
+                                        value = question,
+                                        onValueChange = { question = it },
+                                        label = { Text(stringResource(R.string.vlm_question_label)) },
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .semantics { contentDescription = questionInputLabel },
+                                        enabled = !isBusy,
+                                        maxLines = 34,
+                                        minLines = 1,
+                                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                                        keyboardActions = KeyboardActions(
+                                            onSend = { sendQuestion() },
+                                            onDone = { sendQuestion() }
+                                        )
+                                    )
+                                    IconButton(
+                                        onClick = { sendQuestion() },
+                                        modifier = Modifier
+                                            .sizeIn(minWidth = 48.dp, minHeight = 48.dp)
+                                            .focusRequester(sendFocusRequester)
+                                            .semantics { contentDescription = sendMessageLabel },
+                                        enabled = sendEnabled
+                                    ) {
+                                        Icon(imageVector = Icons.AutoMirrored.Filled.Send, contentDescription = null)
                                     }
                                 }
                                 if (!isListening) {
