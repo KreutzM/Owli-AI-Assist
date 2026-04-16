@@ -11,10 +11,10 @@ Dieses Dokument ist die Einstiegstelle fuer den taeglichen Workflow (2 Menschen 
 
 ### OpenRouter client key (interim)
 - `OPENROUTER_API_KEY=...` in `local.properties` setzen (nicht committen).
-- Der aktuelle Release-Pfad uebernimmt diesen Wert in `BuildConfig`, damit die App OpenRouter direkt ansprechen kann.
-- Das ist ein app-shipped Client-Key fuer die Zwischenphase, keine sichere Secret-Speicherung. Ein spaeterer Backend-/Token-Service bleibt die saubere Zielarchitektur.
-- Die Settings enthalten bereits einen nicht-geheimen Modus fuer `embedded app key` vs. `user-provided key`.
-- Aktuell wird noch kein Nutzer-Key gespeichert; QR-Import und manuelle Eingabe sind nur als zukuenftiger Settings-Einstiegspunkt sichtbar.
+- Debug-Builds uebernehmen diesen Wert in `BuildConfig`, damit der direkte OpenRouter-Pfad lokal getestet werden kann.
+- Release-Builds shippen bewusst keinen eingebetteten OpenRouter-Key.
+- Das ist nur ein Debug-/Entwicklungs-Fallback und keine sichere Secret-Speicherung.
+- Produktion arbeitet standardmaessig ueber das Owli-Backend; direkter OpenRouter-Betrieb ist nur der separate BYOK-Pfad mit lokal verschluesselt gespeichertem Nutzer-Key.
 
 ### Build (PowerShell)
 - `gradlew.bat :app:assembleDebug`
@@ -22,15 +22,16 @@ Dieses Dokument ist die Einstiegstelle fuer den taeglichen Workflow (2 Menschen 
 ### Release defaults
 - Release-Builds aktivieren R8/Minify und Resource-Shrinking.
 - App-Backup und Android data extraction sind fuer die shipped App deaktiviert.
-- Fuer den aktuellen Release-Pfad nutzt die App OpenRouter direkt; Bilder, optionale Zusatzbilder und Fragetext verlassen das Geraet nur nach expliziter Nutzeraktion.
-- Der aktuelle OpenRouter-Client-Key bleibt eine Zwischenloesung im Client. Siehe `docs/PLAYSTORE-PRIVACY-READINESS.md`.
+- Der normale Produktionspfad ist `BACKEND_MANAGED` gegen `https://api.owli-ai.com`.
+- Bilder und Fragetexte verlassen das Geraet nur nach expliziter Nutzeraktion, je nach aktivem Transport entweder an das Owli-Backend oder direkt an OpenRouter im BYOK-Modus.
+- Release-Builds bieten keinen eingebetteten Provider-Key als normalen Produktionspfad an. Siehe `docs/PLAYSTORE-PRIVACY-READINESS.md`.
 
 ---
 
 ## 1a) VLM-First UX
 - App startet standardmaessig im VLM-Modus.
 - Die Live-Kamera dient zum Ausrichten; eine Szene wird erst bei `Neue Szene` aufgenommen.
-- Einstellungen betreffen Sprache, TTS, VLM-Profilwahl und den zukuenftigen OpenRouter-Key-Einstieg.
+- Einstellungen betreffen Sprache, TTS, VLM-Profilauswahl sowie den Transport-/Key-Bildschirm fuer Backend, BYOK und Debug-Fallback.
 
 ---
 
@@ -81,7 +82,8 @@ Dieses Dokument ist die Einstiegstelle fuer den taeglichen Workflow (2 Menschen 
 
 - VLM-Antworten werden nur nach expliziter Nutzeraktion angefordert.
 - Kamera-Permission muss fuer Live-Vorschau und Bildaufnahme vorliegen.
-- VLM-Profile und Prompts liegen unter `app/src/main/assets/vlm-profiles.json`.
+- Die kanonische Profil-Registry liegt unter `app/src/main/assets/vlm-profile-registry.json`; `vlm-profiles.json` ist nur noch der letzte Legacy-Fallback.
+- Oeffentliche Remote-Profile werden ueber `GET https://api.owli-ai.com/api/v1/profiles` geladen, lokal gecached und bei Bedarf gegen Registry/Fallback zusammengefuehrt.
 
 ---
 

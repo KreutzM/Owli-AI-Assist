@@ -42,8 +42,10 @@ und Reasoning nur fuer Debug/Telemetry nutzen.
 - An das Owli-Backend oder direkt an OpenRouter gehen nur Daten aus expliziten VLM-Aktionen.
 - Backend-Modus: Snapshot-Bild fuer `scene/describe`, danach Textfragen fuer `scene/followup`.
 - Direct-BYOK-Modus: Snapshot-Bild, optionale weitere Bild-Anhaenge und der zugehoerige Nutzertext gehen direkt an OpenRouter.
+- Backend-Modus sendet keinen direkten OpenRouter-Nutzer-Key aus der App; der Provider-Zugriff liegt in diesem Pfad beim Owli-Backend.
 - Die Antwort kommt als Text zurueck; die App zeigt aktuell Rohtext an und kann ihn optional per TTS ausgeben.
 - Android-Backup und Device-Transfer-Restore sind fuer die shipped App deaktiviert; lokale App-Daten werden daher nicht ueber Android-Backup migriert.
+- Fuer Privacy-/Data-Safety-Readiness gilt: DataStore speichert nur nicht-geheime Settings, der Direct-BYOK-Key liegt getrennt verschluesselt im `OpenRouterUserKeyStore`, und der Profil-Cache enthaelt nur oeffentliche client-sichere Registry-Daten.
 
 ## 1) Zentrale Konfiguration
 
