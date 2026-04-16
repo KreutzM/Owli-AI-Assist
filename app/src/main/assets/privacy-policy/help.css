@@ -1,0 +1,11 @@
+:root { color-scheme: light dark; }
+body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; line-height: 1.5; margin: 0; padding: 0; }
+header, main, footer { max-width: 860px; margin: 0 auto; padding: 16px; }
+header { border-bottom: 1px solid rgba(127,127,127,.35); }
+nav ul { padding-left: 18px; }
+a { color: inherit; }
+h1, h2, h3 { line-height: 1.2; }
+.note { border-left: 4px solid rgba(127,127,127,.6); padding: 8px 12px; margin: 12px 0; background: rgba(127,127,127,.10); border-radius: 8px; }
+.kbd { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; padding: 0 6px; border: 1px solid rgba(127,127,127,.35); border-radius: 6px; }
+hr { border: none; border-top: 1px solid rgba(127,127,127,.35); margin: 20px 0; }
+.small { opacity: .8; font-size: .95em; }

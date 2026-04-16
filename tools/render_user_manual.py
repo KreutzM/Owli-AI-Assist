@@ -10,31 +10,52 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 @dataclass(frozen=True)
-class ManualSpec:
+class DocumentSpec:
     source: Path
     target: Path
     lang: str
     head_title: str
     header_note: str
     updated_label: str
+    generated_from_glob: str
 
 
-MANUALS = (
-    ManualSpec(
+DOCUMENTS = (
+    DocumentSpec(
         source=REPO_ROOT / "docs" / "user-manual" / "user-manual.de.md",
         target=REPO_ROOT / "app" / "src" / "main" / "assets" / "help" / "de" / "index.html",
         lang="de",
         head_title="Owli-AI Assist - Benutzerhandbuch",
         header_note="Offline-Hilfe. Keine Internetverbindung erforderlich.",
         updated_label="Zuletzt aktualisiert:",
+        generated_from_glob="docs/user-manual/*.md",
     ),
-    ManualSpec(
+    DocumentSpec(
         source=REPO_ROOT / "docs" / "user-manual" / "user-manual.en.md",
         target=REPO_ROOT / "app" / "src" / "main" / "assets" / "help" / "en" / "index.html",
         lang="en",
         head_title="Owli-AI Assist - User Manual",
         header_note="Offline help content. No internet required.",
         updated_label="Last updated:",
+        generated_from_glob="docs/user-manual/*.md",
+    ),
+    DocumentSpec(
+        source=REPO_ROOT / "docs" / "privacy-policy" / "privacy-policy.de.md",
+        target=REPO_ROOT / "app" / "src" / "main" / "assets" / "privacy-policy" / "de" / "index.html",
+        lang="de",
+        head_title="Owli-AI Assist - Datenschutzerklaerung",
+        header_note="Offline-Datenschutzhinweise. Keine Internetverbindung erforderlich.",
+        updated_label="Zuletzt aktualisiert:",
+        generated_from_glob="docs/privacy-policy/*.md",
+    ),
+    DocumentSpec(
+        source=REPO_ROOT / "docs" / "privacy-policy" / "privacy-policy.en.md",
+        target=REPO_ROOT / "app" / "src" / "main" / "assets" / "privacy-policy" / "en" / "index.html",
+        lang="en",
+        head_title="Owli-AI Assist - Privacy Policy",
+        header_note="Offline privacy content. No internet required.",
+        updated_label="Last updated:",
+        generated_from_glob="docs/privacy-policy/*.md",
     ),
 )
 
@@ -110,10 +131,11 @@ def extract_updated_value(markdown: str) -> str:
     raise ValueError("Missing 'Stand:' or 'Version:' line in user manual")
 
 
-def render_manual(spec: ManualSpec) -> None:
+def render_document(spec: DocumentSpec) -> None:
     markdown = spec.source.read_text(encoding="utf-8")
     updated_value = extract_updated_value(markdown)
     body_html = render_markdown_body(markdown)
+    spec.target.parent.mkdir(parents=True, exist_ok=True)
     page = "\n".join(
         [
             "<!doctype html>",
@@ -125,7 +147,7 @@ def render_manual(spec: ManualSpec) -> None:
             '  <link rel="stylesheet" href="../help.css">',
             "</head>",
             "<body>",
-            "<!-- Generated from docs/user-manual/*.md via tools/render_user_manual.py -->",
+            f"<!-- Generated from {spec.generated_from_glob} via tools/render_user_manual.py -->",
             "<header>",
             f"  <h1>{html.escape(spec.head_title)}</h1>",
             f'  <p class="small">{html.escape(spec.header_note)}</p>',
@@ -146,8 +168,8 @@ def render_manual(spec: ManualSpec) -> None:
 
 
 def main() -> None:
-    for spec in MANUALS:
-        render_manual(spec)
+    for spec in DOCUMENTS:
+        render_document(spec)
 
 
 if __name__ == "__main__":
