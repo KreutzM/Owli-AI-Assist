@@ -3,6 +3,7 @@
 Kurzer Ueberblick ueber die wichtigsten Dokumente:
 
 - `docs/DEVELOPMENT.md` - Team-Workflow, Setup, Fast/Full Checks
+- `docs/RELEASE-READINESS-CHECKLIST.md` - aktueller Release-Iststand, Blocker, Should-fix, manuelle Freigabechecks
 - `docs/System-Architektur.md` - Ist-Architektur (bitte auf VLM-only-Aktualitaet pruefen)
 - `docs/System-Spezifikation.md` - Anforderungen (Soll + Ist-Markierungen)
 - `docs/TESTING.md` - Test-Policy (JVM-first) + Patterns
