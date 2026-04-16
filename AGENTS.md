@@ -24,6 +24,19 @@
 - Avoid speculative rewrites.
 - Inspect the relevant code and docs first, then implement the smallest defensible change.
 
+### Branch closure policy (required)
+- Every completed run branch must end in one explicit state:
+  - **merged** to `main`
+  - **superseded** by a newer branch or commit
+  - **kept for later** by explicit decision
+  - **deleted** as obsolete
+- Do not leave old branches in an ambiguous state.
+- If a branch is superseded, record the replacement commit or branch in the final `RUN REVIEW`.
+- Before deleting or ignoring an unmerged branch, classify it explicitly as:
+  - already contained **in substance**
+  - still relevant and pending
+  - obsolete and safe to delete
+
 ### Commit policy (required)
 - Make progress via **frequent, small commits**.
 - Each commit must be:
@@ -40,6 +53,10 @@
 - End every Codex run with a compact review packet that can be reviewed in chat or pasted into a PR.
 - Do not wait for the user to request it explicitly; every run must include this packet by default.
 - If a user prompt requests a different review format for that run, follow the user prompt.
+- Do not claim the repo is "clean" unless:
+  - the working tree is clean
+  - `main` is in sync with `origin/main`
+  - no still-relevant local branches remain unreviewed or unclassified
 - Use this exact structure:
 
 ```text
