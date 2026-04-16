@@ -77,17 +77,17 @@
     <string name="settings_slider_value_format">%1$s: %2$.2f</string>
 
     <string name="vlm_settings_profile_title">VLM Profil</string>
-    <string name="vlm_settings_profile_backend_note">Im Backend-Modus nutzt die App aktuell den Owli-gesteuerten Describe-/Follow-up-Pfad. Direkte OpenRouter-Profile gelten fuer BYOK oder den Debug-Modus.</string>
+    <string name="vlm_settings_profile_backend_note">Im Backend-Modus nutzt die App den Owli-gesteuerten Describe-/Follow-up-Pfad. Direkte OpenRouter-Profile gelten nur fuer BYOK oder den Debug-Modus.</string>
     <string name="vlm_settings_select">Auswaehlen</string>
     <string name="vlm_settings_streaming_tts">Streaming TTS (VLM)</string>
     <string name="vlm_settings_streaming_tts_helper">Frueher TTS-Start bei Streaming</string>
     <string name="vlm_settings_openrouter_key_title">VLM-Transport</string>
     <string name="vlm_settings_openrouter_key_manage">Key verwalten</string>
-    <string name="vlm_settings_openrouter_key_entry_helper">Oeffne den Transport-Bildschirm, um das Owli-Backend zu nutzen, auf direkten OpenRouter-BYOK zu wechseln oder den gespeicherten eigenen Key zu verwalten.</string>
+    <string name="vlm_settings_openrouter_key_entry_helper">Oeffne den Transport-Bildschirm, um den Owli-Backend-Produktionspfad zu nutzen, auf direkten OpenRouter-BYOK zu wechseln oder den gespeicherten eigenen Key zu verwalten.</string>
     <string name="vlm_settings_openrouter_key_status_backend">Aktuell wird das Owli-Backend verwendet.</string>
     <string name="vlm_settings_openrouter_key_status_user">Eigener Nutzer-Key ausgewaehlt.</string>
     <string name="vlm_settings_openrouter_key_status_embedded_debug">Aktuell wird der eingebettete App-Key im Debug-Modus verwendet.</string>
-    <string name="vlm_settings_openrouter_key_helper">Waehle den aktiven VLM-Transport. Der Backend-Modus ist der normale Produktionspfad. Direkter OpenRouter nutzt deinen gespeicherten eigenen Key. Der eingebettete App-Key bleibt nur fuer Debug-Zwecke.</string>
+    <string name="vlm_settings_openrouter_key_helper">Waehle den aktiven VLM-Transport. Der Backend-Modus sendet Anfragen an das Owli-Backend und ist der normale Produktionspfad. Direkter OpenRouter-BYOK sendet Anfragen mit deinem gespeicherten eigenen Key. Der eingebettete App-Key ist nur in Debug- oder Entwicklungs-Builds verfuegbar.</string>
     <string name="vlm_settings_openrouter_key_scan_qr">QR-Code scannen</string>
     <string name="vlm_settings_openrouter_key_input_label">OpenRouter Key</string>
     <string name="vlm_settings_openrouter_key_stored_yes">Ein eigener Key ist gespeichert.</string>
@@ -106,7 +106,7 @@
     <string name="vlm_settings_openrouter_key_missing_user_key">Speichere zuerst einen eigenen Key, bevor du den direkten OpenRouter-BYOK-Modus auswaehlst.</string>
     <string name="vlm_settings_openrouter_key_stored_but_backend_active">Ein eigener Key ist gespeichert, aber aktuell ist das Owli-Backend aktiv.</string>
     <string name="vlm_settings_openrouter_key_info_backend_note">OpenRouter-Key-Infos sind nur verfuegbar, wenn ein direkter OpenRouter-Modus aktiv ist.</string>
-    <string name="vlm_settings_openrouter_key_debug_note">Der eingebettete App-Key bleibt nur fuer Debug- oder Entwicklungs-Kompatibilitaet erhalten.</string>
+    <string name="vlm_settings_openrouter_key_debug_note">Der eingebettete App-Key bleibt nur fuer Debug- oder Entwicklungs-Kompatibilitaet verfuegbar und ist kein ausgelieferter Produktions-Transport.</string>
     <string name="openrouter_qr_import_title">OpenRouter Key per QR-Code scannen</string>
     <string name="openrouter_qr_import_helper">Richte die Kamera auf einen QR-Code, der einen rohen OpenRouter Key, openrouter:key=&lt;KEY&gt; oder eine PIN-geschuetzte verschluesselte Import-Payload enthaelt.</string>
     <string name="openrouter_qr_import_permission">Kamerazugriff ist notwendig, um den QR-Code zu scannen.</string>
@@ -178,8 +178,8 @@
     <string name="about_development_team_item_1">- Justine Buss (BSc) und Dr.-Ing. Michael Kreutzer vom Institut fuer Technik &amp; Informatik (ITI), Technische Hochschule Mittelhessen</string>
     <string name="about_feedback_contact">Feedback an: feedback@owli-ai.com</string>
     <string name="about_supporters_intro">Wir danken fuer Unterstuetzung und Zusammenarbeit:</string>
-    <string name="about_privacy_p1">Wenn du eine Anfrage sendest, werden dein Foto und weitere angehaengte Bilder sowie dein Text an einen KI-Dienst uebertragen, um eine Antwort zu erzeugen.</string>
-    <string name="about_privacy_p2">Die Uebertragung erfolgt nur nach deiner Aktion. Fuer die KI-Antwort ist eine Internetverbindung erforderlich.</string>
+    <string name="about_privacy_p1">Wenn du eine Anfrage sendest, uebertraegt die App dein Foto und deine Fragedaten nur nach deiner Aktion. Im normalen Produktionsmodus geht das an das Owli-Backend. Im direkten BYOK-Modus geht es mit deinem gespeicherten eigenen Key direkt an OpenRouter.</string>
+    <string name="about_privacy_p2">Fuer KI-Antworten ist eine Internetverbindung erforderlich. Weitere angehaengte Bilder werden nur im direkten OpenRouter-BYOK-Modus gesendet.</string>
     <string name="about_feedback_intro">Wenn du Feedback sendest, hilft uns Folgendes besonders:</string>
     <string name="about_copy_version_label">Version-Infos kopieren</string>
     <string name="about_copy_version_copied">Version-Infos kopiert</string>

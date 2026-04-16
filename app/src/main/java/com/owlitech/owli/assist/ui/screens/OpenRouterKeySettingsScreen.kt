@@ -133,12 +133,13 @@ fun OpenRouterKeySettingsScreen(
         ) {
             Text(stringResource(R.string.vlm_settings_openrouter_key_use_custom_key_transport))
         }
-        OutlinedButton(
-            onClick = onSelectEmbeddedDebugTransport,
-            enabled = hasEmbeddedAppKey,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.vlm_settings_openrouter_key_use_app_key_debug))
+        if (hasEmbeddedAppKey) {
+            OutlinedButton(
+                onClick = onSelectEmbeddedDebugTransport,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text(stringResource(R.string.vlm_settings_openrouter_key_use_app_key_debug))
+            }
         }
         OutlinedButton(
             onClick = onOpenQrImport,
@@ -186,7 +187,7 @@ fun OpenRouterKeySettingsScreen(
                 style = MaterialTheme.typography.bodySmall
             )
         }
-        if (transportMode == VlmTransportMode.EMBEDDED_DEBUG) {
+        if (hasEmbeddedAppKey && transportMode == VlmTransportMode.EMBEDDED_DEBUG) {
             Text(
                 stringResource(R.string.vlm_settings_openrouter_key_debug_note),
                 style = MaterialTheme.typography.bodySmall

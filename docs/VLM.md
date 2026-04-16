@@ -12,12 +12,13 @@ und Reasoning nur fuer Debug/Telemetry nutzen.
   - `EMBEDDED_DEBUG`
 - Der normale Produktionspfad ist `BACKEND_MANAGED` gegen `https://api.owli-ai.com`.
 - Direkter OpenRouter-Betrieb bleibt als separater BYOK-Pfad erhalten und nutzt den lokal verschluesselt gespeicherten Nutzer-Key.
-- Die App liest `OPENROUTER_API_KEY` weiter lokal aus `local.properties`, uebernimmt ihn in `BuildConfig`, behandelt ihn aber nur noch als Debug-/Entwicklungs-Fallback.
+- Die App liest `OPENROUTER_API_KEY` nur noch fuer Debug-Builds lokal aus `local.properties` ein; Release-Builds shippen bewusst keinen eingebetteten OpenRouter-Key.
 - In Settings fuehrt ein eigener Unterbildschirm fuer Transport- und Key-Verwaltung zur manuellen Eingabe, expliziten Paste-Aktion oder zum QR-Code-Import.
 - QR-Import akzeptiert rohe OpenRouter-Keys, `openrouter:key=<KEY>` und PIN-geschuetzte QR-Payloads im Format `openrouter:keyenc:v1:pbkdf2-sha256:<iterations>:<salt_b64url>:<iv_b64url>:<ciphertext_b64url>`.
 - Im Key-Verwalten-Bildschirm kann die App fuer den aktuell aktiven direkten OpenRouter-Key ueber `GET /api/v1/key` Key-Infos wie Label, Limits, Reset-Info, Nutzungswerte und Free-Tier-Status abrufen.
 - QR-Decoding nutzt ML Kit Barcode Scanning; CameraX liefert nur Kamera-Frames und keinen QR-Decoder.
 - Beim Speichern eines Nutzer-Keys wird `DIRECT_OPENROUTER_BYOK` aktiv, beim Loeschen faellt die App auf `BACKEND_MANAGED` zurueck.
+- Persistierte Transportwuensche ohne nutzbare Produktionsvoraussetzung, etwa `DIRECT_OPENROUTER_BYOK` ohne gespeicherten Key oder `EMBEDDED_DEBUG` ausserhalb eines Debug-Builds, werden beim Start aktiv auf `BACKEND_MANAGED` normalisiert.
 - `OpenRouterUserKeyStore` ist die schmale Storage-API fuer spaetere Import-/Eingabe-Flows (`saveKey`, `loadKey`, `hasKey`, `clearKey`).
 - `AndroidOpenRouterUserKeyStore` verschluesselt den Nutzer-Key mit einem Android-Keystore-backed AES-GCM-Key und speichert nur Version, IV und Ciphertext in separaten privaten Preferences.
 - Der Nutzer-Key wird nicht in `AppSettings`, DataStore, Logs oder Docs persistiert; leere Keys werden abgelehnt, vorhandene Keys werden beim Speichern ueberschrieben, `clearKey` entfernt den gespeicherten Blob.
@@ -41,8 +42,10 @@ und Reasoning nur fuer Debug/Telemetry nutzen.
 - An das Owli-Backend oder direkt an OpenRouter gehen nur Daten aus expliziten VLM-Aktionen.
 - Backend-Modus: Snapshot-Bild fuer `scene/describe`, danach Textfragen fuer `scene/followup`.
 - Direct-BYOK-Modus: Snapshot-Bild, optionale weitere Bild-Anhaenge und der zugehoerige Nutzertext gehen direkt an OpenRouter.
+- Backend-Modus sendet keinen direkten OpenRouter-Nutzer-Key aus der App; der Provider-Zugriff liegt in diesem Pfad beim Owli-Backend.
 - Die Antwort kommt als Text zurueck; die App zeigt aktuell Rohtext an und kann ihn optional per TTS ausgeben.
 - Android-Backup und Device-Transfer-Restore sind fuer die shipped App deaktiviert; lokale App-Daten werden daher nicht ueber Android-Backup migriert.
+- Fuer Privacy-/Data-Safety-Readiness gilt: DataStore speichert nur nicht-geheime Settings, der Direct-BYOK-Key liegt getrennt verschluesselt im `OpenRouterUserKeyStore`, und der Profil-Cache enthaelt nur oeffentliche client-sichere Registry-Daten.
 
 ## 1) Zentrale Konfiguration
 
