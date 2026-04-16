@@ -330,7 +330,7 @@ fun VlmScreen(
             }
         )
     }
-    val sendEnabled = !isBusy && question.isNotBlank()
+    val sendEnabled = !isBusy && (question.isNotBlank() || attachments.isNotEmpty())
     LaunchedEffect(isProcessingSpeech, focusSendAfterVoice, sendEnabled) {
         if (!focusSendAfterVoice || isProcessingSpeech) return@LaunchedEffect
         if (sendEnabled) {
