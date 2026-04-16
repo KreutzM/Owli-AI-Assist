@@ -1,12 +1,16 @@
 package com.owlitech.owli.assist.ui.screens
 
+import android.content.Intent
+import android.net.Uri
 import android.os.Build
+import android.webkit.WebResourceRequest
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.viewinterop.AndroidView
+import com.owlitech.owli.assist.util.AppLinks
 import java.util.Locale
 import kotlin.math.roundToInt
 
@@ -62,7 +66,19 @@ private fun AssetDocumentScreen(
                 settings.displayZoomControls = false
                 settings.textZoom = textZoom
                 settings.allowFileAccess = true
-                webViewClient = WebViewClient()
+                webViewClient = object : WebViewClient() {
+                    override fun shouldOverrideUrlLoading(
+                        view: WebView?,
+                        request: WebResourceRequest?
+                    ): Boolean {
+                        val url = request?.url?.toString() ?: return false
+                        if (url == AppLinks.PRIVACY_POLICY_URL || url.startsWith("http://") || url.startsWith("https://")) {
+                            context.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
+                            return true
+                        }
+                        return false
+                    }
+                }
                 loadUrl(documentUrl)
             }
         },
