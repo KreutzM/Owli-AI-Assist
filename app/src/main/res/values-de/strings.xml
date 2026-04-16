@@ -7,6 +7,7 @@
     <string name="nav_title_openrouter_key_settings">VLM-Transport</string>
     <string name="nav_title_openrouter_key_info">OpenRouter Key-Infos</string>
     <string name="nav_title_openrouter_key_qr_import">OpenRouter Key scannen</string>
+    <string name="nav_title_privacy_policy">Datenschutzerklaerung</string>
     <string name="nav_title_help">Hilfe</string>
     <string name="nav_title_about">Ueber</string>
 

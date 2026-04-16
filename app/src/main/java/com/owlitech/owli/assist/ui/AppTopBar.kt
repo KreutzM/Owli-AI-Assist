@@ -26,6 +26,7 @@ fun AppTopBar(
     canNavigateBack: Boolean,
     onNavigateBack: () -> Unit,
     onOpenVlmSettings: () -> Unit,
+    onOpenPrivacyPolicy: () -> Unit,
     onOpenHelp: () -> Unit,
     onOpenAbout: () -> Unit
 ) {
@@ -55,6 +56,13 @@ fun AppTopBar(
                     onClick = {
                         menuExpanded = false
                         onOpenVlmSettings()
+                    }
+                )
+                DropdownMenuItem(
+                    text = { Text(stringResource(R.string.nav_title_privacy_policy)) },
+                    onClick = {
+                        menuExpanded = false
+                        onOpenPrivacyPolicy()
                     }
                 )
                 DropdownMenuItem(

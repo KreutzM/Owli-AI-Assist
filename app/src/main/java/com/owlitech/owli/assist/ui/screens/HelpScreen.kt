@@ -14,6 +14,27 @@ import kotlin.math.roundToInt
 fun HelpScreen(
     modifier: Modifier = Modifier
 ) {
+    AssetDocumentScreen(
+        assetFolder = "help",
+        modifier = modifier
+    )
+}
+
+@Composable
+fun PrivacyPolicyScreen(
+    modifier: Modifier = Modifier
+) {
+    AssetDocumentScreen(
+        assetFolder = "privacy-policy",
+        modifier = modifier
+    )
+}
+
+@Composable
+private fun AssetDocumentScreen(
+    assetFolder: String,
+    modifier: Modifier = Modifier
+) {
     val configuration = LocalConfiguration.current
     val fontScale = configuration.fontScale
     val locale = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
@@ -24,10 +45,10 @@ fun HelpScreen(
         configuration.locale
     }
     val language = locale.language.lowercase(Locale.ROOT)
-    val helpUrl = if (language.startsWith("de")) {
-        "file:///android_asset/help/de/index.html"
+    val documentUrl = if (language.startsWith("de")) {
+        "file:///android_asset/$assetFolder/de/index.html"
     } else {
-        "file:///android_asset/help/en/index.html"
+        "file:///android_asset/$assetFolder/en/index.html"
     }
     val textZoom = (fontScale * 100).roundToInt()
 
@@ -42,15 +63,15 @@ fun HelpScreen(
                 settings.textZoom = textZoom
                 settings.allowFileAccess = true
                 webViewClient = WebViewClient()
-                loadUrl(helpUrl)
+                loadUrl(documentUrl)
             }
         },
         update = { webView ->
             if (webView.settings.textZoom != textZoom) {
                 webView.settings.textZoom = textZoom
             }
-            if (webView.url != helpUrl) {
-                webView.loadUrl(helpUrl)
+            if (webView.url != documentUrl) {
+                webView.loadUrl(documentUrl)
             }
         }
     )

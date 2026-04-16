@@ -20,6 +20,7 @@ import com.owlitech.owli.assist.ui.screens.HelpScreen
 import com.owlitech.owli.assist.ui.screens.OpenRouterKeyInfoScreen
 import com.owlitech.owli.assist.ui.screens.OpenRouterKeyQrImportScreen
 import com.owlitech.owli.assist.ui.screens.OpenRouterKeySettingsScreen
+import com.owlitech.owli.assist.ui.screens.PrivacyPolicyScreen
 import com.owlitech.owli.assist.ui.screens.VlmProfilesScreen
 import com.owlitech.owli.assist.ui.screens.VlmScreen
 import com.owlitech.owli.assist.ui.screens.VlmSettingsScreen
@@ -152,6 +153,11 @@ fun AppNavHost(
         composable(AppRoute.Help.route) {
             Box(modifier = Modifier.padding(defaultPadding)) {
                 HelpScreen(modifier = Modifier.fillMaxSize())
+            }
+        }
+        composable(AppRoute.PrivacyPolicy.route) {
+            Box(modifier = Modifier.padding(defaultPadding)) {
+                PrivacyPolicyScreen(modifier = Modifier.fillMaxSize())
             }
         }
         composable(AppRoute.About.route) {

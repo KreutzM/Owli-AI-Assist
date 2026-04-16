@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Owli-AI Assist - Privacy Policy</title>
+  <link rel="stylesheet" href="../help.css">
+</head>
+<body>
+<!-- Generated from docs/privacy-policy/*.md via tools/render_user_manual.py -->
+<header>
+  <h1>Owli-AI Assist - Privacy Policy</h1>
+  <p class="small">Offline privacy content. No internet required.</p>
+</header>
+<main>
+<h1>Owli-AI Assist - Privacy Policy</h1>
+<p>Version: 2026-04-16</p>
+<h2>1. Purpose of the app</h2>
+<p>Owli-AI Assist is an accessibility-oriented assistant app for image descriptions and follow-up questions about a captured scene.</p>
+<h2>2. When data leaves the device</h2>
+<p>Images and text are sent only after your explicit action, for example after <code>New scene</code> or when sending a follow-up question.</p>
+<h2>3. Production mode: Owli backend</h2>
+<p>In normal production mode, the app uses the Owli backend.</p>
+<ul>
+<li>For <code>New scene</code>, the app sends a captured image to <code>https://api.owli-ai.com</code>.</li>
+<li>For follow-up questions, the app sends the question text to the Owli backend.</li>
+<li>In this mode, the app does not use a direct OpenRouter user key on the device.</li>
+</ul>
+<h2>4. Optional direct mode: your own OpenRouter key (BYOK)</h2>
+<p>If you explicitly activate direct OpenRouter BYOK mode in Settings, the app sends requests directly to OpenRouter.</p>
+<ul>
+<li>In this mode, the scene image, optional additional image attachments, and your question text may be sent directly to OpenRouter.</li>
+<li>This mode is used only if you select it yourself and a custom key is stored.</li>
+</ul>
+<h2>5. Data stored locally</h2>
+<p>The app stores the following locally on the device:</p>
+<ul>
+<li>language settings</li>
+<li>TTS settings</li>
+<li>the selected VLM transport mode</li>
+<li>the selected VLM profile</li>
+<li>an optional custom OpenRouter key only as separate encrypted local storage in the Android Keystore context</li>
+<li>a cache of public profile metadata from the Owli backend</li>
+</ul>
+<p>The optional custom OpenRouter key is not stored as plaintext in normal app settings.</p>
+<h2>6. What stays local</h2>
+<p>The live camera preview runs locally on the device. Data is sent only after an explicit user action for a VLM request.</p>
+<h2>7. Profile and runtime data</h2>
+<p>The app can load public profile information from <code>https://api.owli-ai.com/api/v1/profiles</code> and cache it locally so profile selection remains available during temporary backend issues. This cache does not contain user keys.</p>
+<h2>8. Debug and development mode</h2>
+<p>An embedded app key is intended only for debug or development builds and is not a normal production path in release builds.</p>
+<h2>9. Contact</h2>
+<p>For questions about app behavior or privacy-related notes: <code>feedback@owli-ai.com</code></p>
+</main>
+<footer>
+  <hr>
+  <p class="small">Last updated: 2026-04-16</p>
+</footer>
+</body>
+</html>
