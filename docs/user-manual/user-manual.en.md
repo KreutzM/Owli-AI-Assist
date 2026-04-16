@@ -29,7 +29,7 @@ Owli-AI Assist is an accessibility-oriented assistant app. In VLM mode, you aim 
 - Live preview: helps you aim before capture.
 - Still image: shown after `New scene`.
 - App menu in the top bar: opens Settings, Privacy Policy, Help, and About.
-- In-chat actions: use `More actions` to repeat the last answer or attach another image to the current chat.
+- In-chat actions: use `More actions` to repeat the last answer or prepare another image for the current chat. Then aim the camera and confirm the extra image with `Capture image`.
 - Attachments: manage additional images for the current chat.
 - Auto: if the active VLM profile supports auto scan, you can toggle periodic `New scene` requests on or off.
 

@@ -29,7 +29,7 @@ Owli-AI Assist ist eine barrierearme Assistenz-App. Im VLM-Modus richtest du die
 - Live-Vorschau: hilft beim Ausrichten vor der Aufnahme.
 - Standbild: wird nach `Neue Szene` angezeigt.
 - App-Menue oben rechts: oeffnet Einstellungen, Datenschutzerklaerung, Hilfe und Ueber.
-- In-Chat-Aktionen: ueber `Weitere Aktionen` kannst du die letzte Antwort erneut sprechen oder ein weiteres Bild fuer den aktuellen Chat anhaengen.
+- In-Chat-Aktionen: ueber `Weitere Aktionen` kannst du die letzte Antwort erneut sprechen oder ein weiteres Bild fuer den aktuellen Chat vorbereiten. Danach richtest du die Kamera aus und bestaetigst das Zusatzbild mit `Bild aufnehmen`.
 - Anhaenge: zusaetzliche Bilder fuer den aktuellen Chat verwalten.
 - Auto: falls das aktive VLM-Profil Autoscan unterstuetzt, kannst du periodische `Neue Szene`-Anfragen ein- und ausschalten.
 

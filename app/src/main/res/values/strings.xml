@@ -59,10 +59,14 @@
     <string name="vlm_voice_listening_auto_send">Voice input and send now</string>
     <string name="vlm_voice_input">Voice input</string>
     <string name="vlm_question_label">Ask a question</string>
+    <string name="vlm_question_input_cd">Question input</string>
     <string name="vlm_send_message">Send message</string>
     <string name="vlm_voice_hint">Tap: dictate  Press and hold: send now</string>
     <string name="vlm_voice_status_listening">Listening&#8230;</string>
     <string name="vlm_voice_status_processing">Processing&#8230;</string>
+    <string name="vlm_attachment_aiming">Aim the camera, then capture the additional image.</string>
+    <string name="vlm_attachment_capture">Capture image</string>
+    <string name="vlm_attachment_cancel">Cancel image</string>
 
     <string name="settings_language_title">Language</string>
     <string name="settings_language_hint">Default: system language.</string>
